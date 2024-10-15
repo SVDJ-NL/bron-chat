@@ -1,0 +1,7 @@
+fastapi
+qdrant-client
+cohere
+fastembed
+uvicorn[standard]
+websockets
+python-dotenv

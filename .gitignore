@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Database
+*.db
+
+# OS generated files
+.DS_Store
+
+# Environment variables
+.env
+
+# Frontend
+frontend/node_modules
+frontend/dist
+frontend/build
+frontend/public/
+frontend/src/
+frontend/tailwind.config.js
+
+# Backend
+backend/app/__pycache__/
+backend/app/main.pyc
+backend/app/main.pyo
+backend/app/main.pyc
+backend/app/main.pyo
+backend/app/main.pyc
+backend/app/main.pyo
+backend/app/main.pyc
+backend/app/main.pyo
+
+models/
