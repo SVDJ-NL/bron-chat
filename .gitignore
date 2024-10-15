@@ -30,6 +30,7 @@ frontend/build
 frontend/public/
 frontend/src/
 frontend/tailwind.config.js
+frontend/.npmrc
 
 # Backend
 backend/app/__pycache__/
