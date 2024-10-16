@@ -7,6 +7,8 @@
 
     let newMessageContent = '';
 
+    let selectedCitation = null;
+
     function handleSubmit() {
         if (newMessageContent.trim()) {
             dispatch('newMessage', {
@@ -17,8 +19,30 @@
         }
     }
 
+    function resetAllCitations() {
+        if (typeof document !== 'undefined') {
+            const allCitations = document.querySelectorAll('.citation-link');
+            allCitations.forEach(citation => {
+                citation.classList.remove('selected');
+            });
+        }
+        selectedCitation = null;
+    }
     function handleCitationClick(documentIds) {
+        resetAllCitations();
+        if (selectedCitation) {
+            selectedCitation.classList.remove('selected');
+        }
         dispatch('citationClick', documentIds);
+        selectedCitation = event.target;
+        selectedCitation.classList.add('selected');
+    }
+
+    function resetSelectedCitation() {
+        if (selectedCitation) {
+            selectedCitation.classList.remove('selected');
+            selectedCitation = null;
+        }
     }
 
     function insertClickableCitations(text_formatted) {
@@ -30,7 +54,7 @@
             const documentIds = span.getAttribute('data-document-ids');
             const citationText = span.textContent;
             const link = doc.createElement('a');
-            link.className = 'bg-gray-200 hover:bg-blue-300 text-blue-900 px-1 inline rounded cursor-pointer transition-colors duration-200 whitespace-normal text-left';
+            link.className = 'citation-link';
             link.textContent = citationText;
             link.setAttribute('onclick', `handleCitationClick(${documentIds})`);
             span.parentNode.replaceChild(link, span);
@@ -50,8 +74,29 @@
 
     if (typeof window !== 'undefined') {
         window.handleCitationClick = handleCitationClick;
+        window.resetSelectedCitation = resetSelectedCitation;
+        window.resetAllCitations = resetAllCitations;
     }
 </script>
+
+<style lang="postcss">
+    :global(.citation-link) {
+        @apply bg-gray-200 text-blue-900 px-0.5 py-0.5 -mx-0.5 inline rounded cursor-pointer transition-colors duration-200 whitespace-normal text-left relative;
+    }
+
+    :global(.citation-link:hover) {
+        @apply bg-blue-200;
+    }
+
+    :global(.citation-link.selected) {
+        @apply bg-yellow-200;
+    }
+
+    :global(.citation-link.selected:hover) {
+        @apply bg-yellow-300;
+    }
+
+</style>
 
 <div class="flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden">
     <div class="flex-1 overflow-y-auto p-4 space-y-4">

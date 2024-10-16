@@ -1548,7 +1548,7 @@ def format_text_with_citations(text, citations):
         # Add the citation
         citation_text = text[citation['start']:citation['end']] 
         document_id_list_string = ','.join([f"'{doc_id}'" for doc_id in citation['document_ids']])
-        text_w_citations += f'<span data-document-ids="[{document_id_list_string}]">{citation_text}</span>'                
+        text_w_citations += f'<span class="citation-link" data-document-ids="[{document_id_list_string}]">{citation_text}</span>'                
         last_end = citation['end']
     
     # Add any remaining text after the last citation

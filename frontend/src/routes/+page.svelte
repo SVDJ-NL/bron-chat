@@ -111,6 +111,7 @@
 
     function handleShowAllDocuments() {
         selectedDocuments = null;
+        window.resetAllCitations();
     }
 
     onMount(async () => {
