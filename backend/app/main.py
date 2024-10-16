@@ -1371,16 +1371,28 @@ async def retrieve_relevant_documents(query: str) -> List[Dict]:
         )
         
         qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]           
-            
+          
+    logger.info(f"Reranked documents: {qdrant_documents[0]}")  
+        
     return [ 
         { 
-            'id': f'{doc.id}',
+            'id': f'{doc.id}',                
+            'score': doc.score,  
             'data': { 
                 'source_id': doc.payload['meta']['source_id'],
                 'url': doc.payload['meta']['url'],
                 'title': doc.payload['meta']['title'],
-                'location': doc.payload['meta']['location_name'],
-                'snippet': doc.payload['content'] 
+                'location': doc.payload['meta']['location'],
+                'location_name': doc.payload['meta']['location_name'],
+                'modified': doc.payload['meta']['modified'],
+                'published': doc.payload['meta']['published'],
+                'type': doc.payload['meta']['type'],
+                'identifier': doc.payload['meta']['identifier'],
+                'url': doc.payload['meta']['url'],
+                'source': doc.payload['meta']['source'],                
+                'page_number': doc.payload['meta']['page_number'] ,                
+                'page_count': doc.payload['meta']['page_count'] ,                
+                'content': doc.payload['content']
             } 
         } for doc in qdrant_documents 
     ]  
@@ -1427,10 +1439,20 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
     logger.info(f"Generating response for messages and documents: {messages}")
     system_message = ChatMessage(role="system", content="Antwoordt altijd in het Nederlands.")
     messages = [system_message] + messages
+    
+    formatted_docs = [{     
+            'id': doc['id'],   
+            "data": {
+                "title": doc['data']['title'],
+                "snippet": doc['data']['content']  # Limit snippet to 1000 characters
+            }
+        } for doc in relevant_docs
+    ]
+    
     response = cohere_client.chat(
         model="command-r-plus",
-        messages=messages,
-        documents=relevant_docs
+        messages=[{"role": msg.role, "content": msg.content} for msg in messages],
+        documents=formatted_docs
     )
     # logger.info(f"Response: {response}")
     return response
@@ -1450,49 +1472,40 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
     logger.info(f"Generating full response for query: {query}")
     llm_response = await generate_response([ChatMessage(role="user", content=query)], relevant_docs)
     
-    text = llm_response.message.content[0].text
-    citations = llm_response.message.citations
-    
-    # logger.info(f"LLM response: {llm_response}")
-    
-    # text_w_citations = text    
-    processed_citations = []
-    text_formatted = text
-    if citations:
-        for citation in citations:
-            processed_citation = {
-                'start': citation.start,
-                'end': citation.end,
-                'text': citation.text,
-                'document_ids': [source.document['id'] for source in citation.sources]
-            }
-            processed_citations.append(processed_citation)
-    
-        text_formatted = format_text_with_citations(text, processed_citations)
+    if llm_response is None:
+        # Handle the case where no valid documents were found
+        full_response = {
+            "type": "full",
+            "role": "assistant",
+            "content": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
+            "content_original": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
+            "citations": []
+        }
+    else:
+        text = llm_response.message.content[0].text
+        citations = llm_response.message.citations
+        
+        processed_citations = []
+        text_formatted = text
+        if citations:
+            for citation in citations:
+                processed_citation = {
+                    'start': citation.start,
+                    'end': citation.end,
+                    'text': citation.text,
+                    'document_ids': [source.document['id'] for source in citation.sources]
+                }
+                processed_citations.append(processed_citation)
+        
+            text_formatted = format_text_with_citations(text, processed_citations)
 
-    # text_formatted = text
-    # processed_citations = []
-    # if citations:
-    #     for citation in citations:
-    #         processed_citation = {
-    #             'start': citation['start'],
-    #             'end': citation['end'],
-    #             'text': citation['text'],
-    #             'document_ids': [source['document']['id'] for source in citation['sources']]
-    #         }
-    #         processed_citations.append(processed_citation)
-    
-    #     # logger.info(f"Citations: {processed_citations}")
-    
-    #     text_formatted = format_text_with_citations(text, processed_citations)
-            
-    full_response = {
-        "type": "full",
-        "role": "assistant",
-        "content": text_formatted,
-        "content_original": text,
-        "citations": processed_citations
-    }
+        full_response = {
+            "type": "full",
+            "role": "assistant",
+            "content": text_formatted,
+            "content_original": text,
+            "citations": processed_citations
+        }
     
     return json.dumps(full_response) + "\n"
 

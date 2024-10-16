@@ -128,16 +128,16 @@
     });
 </script>
 
-<main class="flex h-screen bg-gray-100">
-    <div class="w-1/2 p-4 flex flex-col">
-        <Chat {messages} {currentMessage} on:newMessage={handleNewMessage} on:citationClick={handleCitationClick} />
-    </div>
-    <div class="w-1/2 p-4 flex flex-col">
+<main class="flex flex-col md:flex-row h-screen bg-gray-100">
+    <div class="order-1 md:order-2 md:w-3/5 {documents.length > 0 ? 'h-1/2' : 'h-1/12'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden transition-all duration-300">
         <Documents 
             {documents} 
             {selectedDocuments} 
             on:showAllDocuments={handleShowAllDocuments} 
         />
+    </div>
+    <div class="order-2 md:order-1 md:w-2/5 {documents.length > 0 ? 'h-1/2' : 'h-full'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden mb-14 md:mb-0 transition-all duration-300">
+        <Chat {messages} {currentMessage} on:newMessage={handleNewMessage} on:citationClick={handleCitationClick} />
     </div>
 </main>
 
@@ -148,5 +148,10 @@
 
     :global(html, body) {
         @apply h-full;
+    }
+
+    /* Make both panels scrollable */
+    main > div {
+        @apply overflow-y-auto;
     }
 </style>
