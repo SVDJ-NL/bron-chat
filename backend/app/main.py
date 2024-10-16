@@ -1313,8 +1313,24 @@ app = FastAPI()
 
 # Configure CORS
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    CORSMiddleware,    
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://0.0.0.0:5173", 
+        "http://127.0.0.1:5173", 
+        "http://localhost:8000", 
+        "http://0.0.0.0:8000", 
+        "http://127.0.0.1:8000", 
+        "http://dl:8000",
+        "http://bron.ngrok.app", 
+        "https://bron.ngrok.app", 
+        "http://bron.ngrok.app:5173", 
+        "https://bron.ngrok.app:5173", 
+        "http://bron.ngrok.app:8000", 
+        "https://bron.ngrok.app:8000", 
+        "http://bron.ngrok.io", 
+        "https://bron.ngrok.io"
+    ],
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -1416,7 +1432,7 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
         messages=messages,
         documents=relevant_docs
     )
-    logger.info(f"Response: {response}")
+    # logger.info(f"Response: {response}")
     return response
 
 async def generate_initial_response(query: str, relevant_docs: List[Dict]):
@@ -1441,6 +1457,7 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
     
     # text_w_citations = text    
     processed_citations = []
+    text_formatted = text
     if citations:
         for citation in citations:
             processed_citation = {
@@ -1479,7 +1496,7 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
     
     return json.dumps(full_response) + "\n"
 
-@app.post("/chat")
+@app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     logger.info(f"Received chat request: {request.content}")
     try:
@@ -1507,15 +1524,15 @@ async def chat_endpoint(request: ChatRequest):
         logger.error(f"Error in chat endpoint: {str(e)}")
         return {"error": "An error occurred while processing your request."}
 
-@app.get("/documents")
+@app.get("/api/documents")
 async def documents_endpoint():
     query = "klimaat almelo"
     relevant_docs = await retrieve_relevant_documents(query)
     return {"documents": relevant_docs}
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+# @app.get("/")
+# async def root():
+#     return {"message": "Hello Worlds"}
 
 def format_text_with_citations(text, citations):
     citations_list = sorted(citations, key=lambda x: x['start'])
@@ -1538,7 +1555,3 @@ def format_text_with_citations(text, citations):
     text_w_citations += text[last_end:]    
     
     return text_w_citations
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

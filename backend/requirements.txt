@@ -5,3 +5,4 @@ fastembed
 uvicorn[standard]
 websockets
 python-dotenv
+watchfiles

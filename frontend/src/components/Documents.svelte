@@ -30,7 +30,9 @@
             <div class="p-4">
                 {#each selectedDocuments as doc}
                     <div class="mb-6 p-4 bg-blue-100 rounded-lg">
-                        <h2 class="text-lg font-bold mb-2 leading-snug">{doc.data.title}</h2>
+                        <h2 class="text-lg font-bold mb-2 leading-snug">
+                            {doc.data.title || "< Naamloos document >"}
+                        </h2>
                         <p class="text-sm text-gray-600 mb-4">ID: {doc.id}</p>
                         <div class="max-w-none prose-sm text-sm">
                             [...] {@html doc.data.snippet} [...]
@@ -44,13 +46,12 @@
                     <ul class="space-y-2">
                         {#each documents as doc}
                             <li class="p-2 bg-gray-100 rounded">
-                                <h3 class="font-semibold">{doc.data.title}</h3>
+                                <h3 class="font-semibold">
+                                    {doc.data.title || "< Naamloos document>"}</h3>
                                 <p class="text-sm text-gray-600">ID: {doc.id}</p>
                             </li>
                         {/each}
                     </ul>
-                {:else}
-                    <p>No related documents found.</p>
                 {/if}
             </div>
         {/if}

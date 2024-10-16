@@ -6,7 +6,7 @@ services:
     environment:
       - QDRANT_URL=${QDRANT_URL}
       - COHERE_API_KEY=${COHERE_API_KEY}
-      - UVICORN_RELOAD=false
+      - UVICORN_RELOAD=true
     volumes:
       - ./backend/app:/app
     extra_hosts:
