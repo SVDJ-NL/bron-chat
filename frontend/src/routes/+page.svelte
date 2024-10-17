@@ -41,13 +41,15 @@
         currentMessage = message;
     }
 
-    export const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
+    export const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL;
 
     async function sendMessage(message) {
         try {
+            console.log("API_BASE_URL", API_BASE_URL);
+
             updateCurrentMessage({ role: 'assistant', content: 'Bron zoekt nu de relevante documenten...' });
             
-            const response = await fetch(`https://bron.ngrok.app/api/chat`, {
+            const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

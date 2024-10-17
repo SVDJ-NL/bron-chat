@@ -10,8 +10,7 @@ COPY package*.json ./
 # Install project dependencies
 RUN npm install
 
+COPY . .
+
 # Expose the development server port (default is 5173 for Vite)
 EXPOSE 5173
-
-# Command to start the development server
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

@@ -1,10 +1,13 @@
 services:
   backend:
+    env_file:
+      - .env
     build: ./backend
     ports:
       - "8000:8000"
     environment:
-      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT}
       - COHERE_API_KEY=${COHERE_API_KEY}
       - UVICORN_RELOAD=true
     volumes:
@@ -13,15 +16,19 @@ services:
       - "host.docker.internal:host-gateway"
 
   frontend:
+    env_file:
+      - .env
     build: ./frontend
     ports:
       - "5173:5173"
     stdin_open: true
     tty: true
     environment:
-      - PUBLIC_API_URL=${PUBLIC_API_URL}
+      - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+      - TEST_VARIABLE=${TEST_VARIABLE}
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
     depends_on:
       - backend

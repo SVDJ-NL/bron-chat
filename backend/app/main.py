@@ -13,6 +13,8 @@ import json
 from fastapi.responses import StreamingResponse
 import asyncio
 from markdown import markdown 
+from dotenv import load_dotenv
+import locale
 
 
 # Set up logging
@@ -48,8 +50,18 @@ app.add_middleware(
 
 # Initialize clients
 # qdrant_client = QdrantClient(os.getenv("QDRANT_URL"))
-qdrant_client = QdrantClient(host="host.docker.internal", port=6333)
-cohere_client = CohereClient(api_key=os.getenv("COHERE_API_KEY"))
+# qdrant_client = QdrantClient(host="host.docker.internal", port=6333)
+# cohere_client = CohereClient(api_key=os.getenv("COHERE_API_KEY"))
+
+load_dotenv()
+
+qdrant_host = os.getenv("QDRANT_HOST", "host.docker.internal")
+qdrant_port = int(os.getenv("QDRANT_PORT", 6333))
+cohere_api_key = os.getenv("COHERE_API_KEY")
+
+# Initialize clients
+qdrant_client = QdrantClient(host=qdrant_host, port=qdrant_port)
+cohere_client = CohereClient(api_key=cohere_api_key)
 
 class ChatMessage(BaseModel):
     role: str
@@ -151,9 +163,47 @@ def get_bron_documents_from_qdrant(cohere_client, query, limit=50):
         return None
 
 async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]):    
-    logger.info(f"Generating response for messages and documents: {messages}")
-    system_message = ChatMessage(role="system", content="Antwoordt altijd in het Nederlands.")
+    
+    from datetime import datetime
+
+    # Get the current date and time
+    current_datetime = datetime.now()
+
+    # Format the date in Dutch using the locale settings
+    try:
+        formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S')
+    except:
+        logger.warning("Failed to format date using locale. Using default format.")
+        formatted_date = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Set the locale to Dutch
+    locale.setlocale(locale.LC_TIME, 'nl_NL.UTF-8')
+
+    # Get the current date and time
+    current_datetime = datetime.now()
+
+    # Format the date in Dutch using the locale settings
+    formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S')
+
+    
+    pirate_system_message='''
+
+## Task and Context
+
+You are Command. You are an extremely capable large language model built by Cohere. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with government documents and asked to answer questions based on these documents. Today’s date is {date}”
+
+## Style Guide
+
+Always answer in Dutch. Formulate your response as an investigative journalist would.
+
+'''
+    # Update the pirate_system_message with the formatted date
+    pirate_system_message = pirate_system_message.format(date=formatted_date)
+    
+    system_message = ChatMessage(role="system", content=pirate_system_message)
     messages = [system_message] + messages
+    
+    logger.info(f"Generating response for messages and documents: {messages}")
     
     formatted_docs = [{     
             'id': doc['id'],   
@@ -288,3 +338,13 @@ def add_citations_to_text(text, citations):
     text_w_citations += text[last_end:]    
     
     return text_w_citations
+
+# Try to set the locale, but don't fail if it's not available
+try:
+    locale.setlocale(locale.LC_TIME, 'nl_NL.UTF-8')
+except locale.Error:
+    logger.warning("Failed to set locale to nl_NL.UTF-8. Trying nl_NL.utf8...")
+    try:
+        locale.setlocale(locale.LC_TIME, 'nl_NL.utf8')
+    except locale.Error:
+        logger.warning("Failed to set locale to nl_NL.utf8. Using default locale.")

@@ -4,7 +4,8 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - QDRANT_URL=${QDRANT_URL}
+      - QDRANT_HOST=${QDRANT_HOST}
+      - QDRANT_PORT=${QDRANT_PORT}
       - COHERE_API_KEY=${COHERE_API_KEY}
       - UVICORN_RELOAD=false
     volumes:
@@ -19,9 +20,13 @@ services:
     stdin_open: true
     tty: true
     environment:
-      - PUBLIC_API_URL=${PUBLIC_API_URL}
+      - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+      - TEST_VARIABLE=${TEST_VARIABLE}
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
+
+env_file:
+  - .env
