@@ -6,3 +6,4 @@ uvicorn[standard]
 websockets
 python-dotenv
 watchfiles
+markdown

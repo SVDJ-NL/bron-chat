@@ -28,12 +28,14 @@
         }
         selectedCitation = null;
     }
-    function handleCitationClick(documentIds) {
+    function handleCitationClick(documentIds, citationText) {
         resetAllCitations();
         if (selectedCitation) {
             selectedCitation.classList.remove('selected');
         }
-        dispatch('citationClick', documentIds);
+        console.log('documentIds:', documentIds);
+        console.log('citationText:', citationText);
+        dispatch('citationClick', { documentIds, citationText });
         selectedCitation = event.target;
         selectedCitation.classList.add('selected');
     }
@@ -56,7 +58,7 @@
             const link = doc.createElement('a');
             link.className = 'citation-link';
             link.textContent = citationText;
-            link.setAttribute('onclick', `handleCitationClick(${documentIds})`);
+            link.setAttribute('onclick', `handleCitationClick(${documentIds}, "${citationText}")`);
             span.parentNode.replaceChild(link, span);
         });
 
@@ -96,14 +98,61 @@
         @apply bg-yellow-300;
     }
 
+    :global(.message-content h1) {
+        @apply text-xl font-bold mb-4 mt-6;
+    }
+
+    :global(.message-content h2) {
+        @apply text-lg font-bold mb-3 mt-5;
+    }
+
+    :global(.message-content h3) {
+        @apply text-base font-bold mb-2 mt-4;
+    }
+
+    :global(.message-content p) {
+        @apply mb-4;
+    }
+
+    :global(.message-content ul, .message-content ol) {
+        @apply mb-4 pl-8;
+    }
+
+    :global(.message-content ul) {
+        @apply list-disc;
+    }
+
+    :global(.message-content ol) {
+        @apply list-decimal;
+    }
+
+    :global(.message-content li) {
+        @apply mb-2;
+    }
+
+    :global(.message-content blockquote) {
+        @apply border-l-4 border-gray-300 pl-4 italic my-4;
+    }
+
+    :global(.message-content code) {
+        @apply bg-gray-100 rounded px-1 py-0.5 font-mono text-sm;
+    }
+
+    :global(.message-content pre) {
+        @apply bg-gray-100 rounded p-4 overflow-x-auto mb-4;
+    }
+
+    :global(.message-content pre code) {
+        @apply bg-transparent p-0;
+    }
 </style>
 
 <div class="flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden">
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
-        <h2 class="text-xl font-bold mb-4 mt-2">Chat with Bron</h2>
+        <h2 class="text-lg font-bold mb-4">Chat with Bron</h2>
         {#each messages as message}
             <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
                     {#if message.role === 'user'}
                         <p>{message.content}</p>
                     {:else if message.role === 'assistant'}
@@ -119,8 +168,8 @@
         
         {#if currentMessage}
             <div class="flex justify-start">
-                <div class="max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
-                    {#if currentMessage.content === "Rechts vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." || currentMessage.content === "Bron zoekt nu de relevante documenten..."}
+                <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
+                    {#if currentMessage.content === "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." || currentMessage.content === "Bron zoekt nu de relevante documenten..."}
                         <div class="flex items-start">
                           <div class="flex-shrink-0 mr-2 mt-1"> {@html getWaitingIcon()} </div>
                           <p class="flex-grow">{currentMessage.content}</p>

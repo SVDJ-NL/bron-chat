@@ -1,5 +1,25 @@
 <script>
+    import { onMount } from 'svelte';
+    import { marked } from 'marked';
+    import DOMPurify from 'dompurify';
+
     export let doc;
+    export let citationWords = [];
+
+    let parsedContent = '';
+
+    onMount(() => {
+        let content = marked.parse(doc.data.content || '');
+        
+        // Highlight citationWords
+        citationWords.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            content = content.replace(regex, match => `<mark>${match}</mark>`);
+        });
+
+        parsedContent = DOMPurify.sanitize(content);
+        console.log('Parsed content:', parsedContent);
+    });
 
     function formatDate(dateString) {
         if (!dateString) return 'Onbekend';
@@ -12,7 +32,7 @@
         <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal">
             {doc.data.title || "< Naamloos document >"}
         </h3>
-        <div class="flex flex-col sm:flex-row items-start sm:items-center text-gray-500 text-sm mt-1">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center text-gray-500 text-sm mt-1 flex-wrap space-y-2 sm:space-y-0">
             <div class="flex items-center mb-1 sm:mb-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
@@ -40,18 +60,18 @@
                 </svg>                                        
                 {doc.data.source || 'Onbekend'}       
             </div>
-            <span class="hidden sm:inline mx-2">•</span>   
+            <!-- <span class="hidden sm:inline mx-2">•</span>   
             <div class="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clip-rule="evenodd" />
                 </svg>
                 {doc.score ? `${(doc.score * 100).toFixed(1)}%` : 'Onbekend'}
-            </div>
+            </div> -->
         </div>
     </header>
     
     <p class="text-gray-600 text-sm">
-        [...] {@html doc.data.content} [...]                                
+        {@html parsedContent}
     </p>
     
     <div class="flex mt-3">
