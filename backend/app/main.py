@@ -162,8 +162,7 @@ def get_bron_documents_from_qdrant(cohere_client, query, limit=50):
         logger.error(f"Error retrieving documents from Qdrant: {e}")   
         return None
 
-async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]):    
-    
+def get_formatted_dutch_date():    
     from datetime import datetime
 
     # Get the current date and time
@@ -171,10 +170,10 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
 
     # Format the date in Dutch using the locale settings
     try:
-        formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S')
+        formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S %Z')
     except:
         logger.warning("Failed to format date using locale. Using default format.")
-        formatted_date = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        formatted_date = current_datetime.strftime('%Y-%m-%d %H:%M:%S %Z')
 
     # Set the locale to Dutch
     locale.setlocale(locale.LC_TIME, 'nl_NL.UTF-8')
@@ -183,8 +182,12 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
     current_datetime = datetime.now()
 
     # Format the date in Dutch using the locale settings
-    formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S')
+    formatted_date = current_datetime.strftime('%A, %d %B %Y %H:%M:%S %Z')
+    
+    return formatted_date
 
+def get_system_message():
+    formatted_date = get_formatted_dutch_date()
     
     pirate_system_message='''
 
@@ -200,7 +203,10 @@ Always answer in Dutch. Formulate your response as an investigative journalist w
     # Update the pirate_system_message with the formatted date
     pirate_system_message = pirate_system_message.format(date=formatted_date)
     
-    system_message = ChatMessage(role="system", content=pirate_system_message)
+    return pirate_system_message
+
+async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]):  
+    system_message = ChatMessage(role="system", content=get_system_message())    
     messages = [system_message] + messages
     
     logger.info(f"Generating response for messages and documents: {messages}")
