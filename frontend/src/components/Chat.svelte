@@ -198,7 +198,9 @@
                     {#if currentMessage.content === "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." }
                         <div class="flex items-start">
                           <div class="flex-shrink-0 mr-2 mt-1"> {@html getWaitingIcon()} </div>
-                          <p class="flex-grow">{currentMessage.content}</p>
+                          <div class="flex-grow">
+                            {@html (currentMessage.content)}
+                          </div>
                         </div>
                     {:else}
                         {@html insertClickableCitations(streamedContent)}

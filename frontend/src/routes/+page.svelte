@@ -109,25 +109,37 @@
                 break;
             case 'citation':
                 console.log('Citation:', data);
-                // if (data.content && typeof data.content === 'object') {
-                //     streamedContent = addCitationToText(streamedContent, data.content);
-                //     updateCurrentMessage({
-                //         role: 'assistant',
-                //         content: streamedContent
-                //     });
-                // } else {
-                //     console.error('Invalid citation data:', data.content);
-                // }
-                break;
-            case 'full':
-                addMessage({
+                updateCurrentMessage({
                     role: 'assistant',
-                    content: streamedContent,
+                    content: data.content,
                     content_original: data.content_original,
                     citations: data.citations
                 });
+                break;
+            case 'full':
+                // Add this case to handle the final message
+
+                // Strip the loading message from the content
+                let content_original = data.content_original || '';
+                let content = data.content || '';
+
+                // Strip the loading message from the content
+                if (content_original) {
+                    content_original = content_original.replace("<p><em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht.</em></p>", "");
+                }
+
+                // Also update the original content if it exists
+                if (content) {
+                    content = content.replace("<p><em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht.</em></p>", "");
+                }
+
+                addMessage({
+                    role: 'assistant',
+                    content: content,
+                    content_original: content_original,
+                    citations: data.citations
+                });
                 currentMessage = null;
-                streamedContent = '';
                 break;
         }
     }

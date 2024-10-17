@@ -84,23 +84,27 @@ async def retrieve_relevant_documents(query: str) -> List[Dict]:
         limit=100
     )
 
+    # Check if qdrant_documents is None or empty
+    if not qdrant_documents:
+        logger.warning("No documents retrieved from Qdrant")
+        return []
+
     # Rerank documents using Cohere
-    if qdrant_documents is not None and len(qdrant_documents) > 0:
-        logger.info(f"Documents: {qdrant_documents[0]}")
-        # convert Qdrant ScoredPoint to Cohere RerankDocument
-        document_texts = [document.payload['content'] for document in qdrant_documents]
-        reranked_documents = cohere_client.rerank(
-            query = query,
-            documents = document_texts,
-            top_n = 20,
-            model = 'rerank-multilingual-v3.0',
-            return_documents=True
-        )
-        
-        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]           
-          
+    logger.info(f"Documents: {qdrant_documents[0]}")
+    # convert Qdrant ScoredPoint to Cohere RerankDocument
+    document_texts = [document.payload['content'] for document in qdrant_documents]
+    reranked_documents = cohere_client.rerank(
+        query = query,
+        documents = document_texts,
+        top_n = 20,
+        model = 'rerank-multilingual-v3.0',
+        return_documents=True
+    )
+    
+    qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]           
+      
     logger.info(f"Reranked documents: {qdrant_documents[0]}")  
-        
+    
     return [ 
         { 
             'id': f'{doc.id}',                
@@ -156,6 +160,9 @@ def get_bron_documents_from_qdrant(cohere_client, query, limit=50):
             collection_name="1_gemeente_cohere",            
             limit=limit   
         )
+        
+        if not qdrant_documents:
+            logger.warning("No documents found in Qdrant")
         
         return qdrant_documents    
     except Exception as e:
@@ -239,7 +246,7 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
                 if first_citation:
                     yield {
                         "type": "text",
-                        "content": " \n\n<br><br><em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht. Nog even geduld...</em>"
+                        "content": " \n\n<em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht.</em>"
                     }
                     first_citation = False
                     
@@ -285,9 +292,13 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
             await asyncio.sleep(0)
         elif event["type"] == "citation":
             citations.append(event["content"])
+            text_formatted = format_text(full_text, citations)
             yield json.dumps({
                 "type": "citation",
-                "content": event["content"],
+                "role": "assistant",
+                "content": text_formatted,
+                "content_original": full_text,
+                "citations": citations,
             }) + "\n"
             await asyncio.sleep(0)
     
@@ -298,20 +309,21 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
             "content": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
             "content_original": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
             "citations": []
-        }
+        }    
+        yield json.dumps(full_response) + "\n"
+        await asyncio.sleep(0)
     else:
+        # Send the final full message
         text_formatted = format_text(full_text, citations)
-        full_response = {
+        yield json.dumps({
             "type": "full",
             "role": "assistant",
             "content": text_formatted,
             "content_original": full_text,
-            "citations": citations
-        }
+            "citations": citations,
+        }) + "\n"
+        await asyncio.sleep(0)
     
-    yield json.dumps(full_response) + "\n"
-    await asyncio.sleep(0)
-
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
     logger.info(f"Received chat request: {request.content}")
@@ -386,6 +398,7 @@ except locale.Error:
         locale.setlocale(locale.LC_TIME, 'nl_NL.utf8')
     except locale.Error:
         logger.warning("Failed to set locale to nl_NL.utf8. Using default locale.")
+
 
 
 
