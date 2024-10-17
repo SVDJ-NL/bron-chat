@@ -2,20 +2,33 @@
     export let messages = [];
     export let currentMessage = null;
 
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
     const dispatch = createEventDispatcher();
 
     let newMessageContent = '';
 
     let selectedCitation = null;
 
+    let isLoading = false;
+
+    let streamedContent = '';
+
+    $: if (currentMessage && currentMessage.content !== streamedContent) {
+        streamedContent = currentMessage.content;
+    }
+
     function handleSubmit() {
-        if (newMessageContent.trim()) {
+        if (newMessageContent.trim() && !isLoading) {
+            isLoading = true;
             dispatch('newMessage', {
                 role: 'user',
                 content: newMessageContent
             });
             newMessageContent = '';
+            // Use setTimeout to wait for UI update
+            setTimeout(() => {
+                isLoading = false;
+            }, 100);
         }
     }
 
@@ -27,17 +40,6 @@
             });
         }
         selectedCitation = null;
-    }
-    function handleCitationClick(documentIds, citationText) {
-        resetAllCitations();
-        if (selectedCitation) {
-            selectedCitation.classList.remove('selected');
-        }
-        // console.log('documentIds:', documentIds);
-        // console.log('citationText:', citationText);
-        dispatch('citationClick', { documentIds, citationText });
-        selectedCitation = event.target;
-        selectedCitation.classList.add('selected');
     }
 
     function resetSelectedCitation() {
@@ -65,6 +67,18 @@
         return doc.body.innerHTML;
     }
 
+    function handleCitationClick(documentIds, citationText) {
+        resetAllCitations();
+        if (selectedCitation) {
+            selectedCitation.classList.remove('selected');
+        }
+        // console.log('documentIds:', documentIds);
+        // console.log('citationText:', citationText);
+        dispatch('citationClick', { documentIds, citationText });
+        selectedCitation = event.target;
+        selectedCitation.classList.add('selected');
+    }
+
     function getWaitingIcon() {
         return `
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -78,6 +92,22 @@
         window.handleCitationClick = handleCitationClick;
         window.resetSelectedCitation = resetSelectedCitation;
         window.resetAllCitations = resetAllCitations;
+    }
+
+    let chatContainer;
+
+    onMount(() => {
+        scrollToBottom();
+    });
+
+    afterUpdate(() => {
+        scrollToBottom();
+    });
+
+    function scrollToBottom() {
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
     }
 </script>
 
@@ -148,7 +178,7 @@
 </style>
 
 <div class="flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+    <div bind:this={chatContainer} class="flex-1 overflow-y-auto p-4 space-y-4">
         <h2 class="text-lg font-bold mb-4">Chat with Bron</h2>
         {#each messages as message}
             <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
@@ -156,11 +186,7 @@
                     {#if message.role === 'user'}
                         <p>{message.content}</p>
                     {:else if message.role === 'assistant'}
-                        {#if message.content}
-                            {@html insertClickableCitations(message.content)}
-                        {:else}
-                            <p>{message.content}</p>
-                        {/if}
+                        {@html insertClickableCitations(message.content)}
                     {/if}
                 </div>
             </div>
@@ -169,13 +195,13 @@
         {#if currentMessage}
             <div class="flex justify-start">
                 <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
-                    {#if currentMessage.content === "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." || currentMessage.content === "Bron zoekt nu de relevante documenten..."}
+                    {#if currentMessage.content === "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." }
                         <div class="flex items-start">
                           <div class="flex-shrink-0 mr-2 mt-1"> {@html getWaitingIcon()} </div>
                           <p class="flex-grow">{currentMessage.content}</p>
                         </div>
                     {:else}
-                        <p>{@html insertClickableCitations(currentMessage.content)}</p>
+                        {@html insertClickableCitations(streamedContent)}
                     {/if}
                 </div>
             </div>

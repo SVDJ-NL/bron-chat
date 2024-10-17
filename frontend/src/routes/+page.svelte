@@ -10,6 +10,7 @@
     let currentMessage = null;
     let citationText = '';
     let citationWords = [];
+    let streamedContent = '';
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -23,18 +24,15 @@
     }
 
     function handleCitationClick(event) {
-        // console.log('Citation clicked:', event.detail);
         const documentIds = event.detail.documentIds;
         selectedDocuments = documents.filter(doc => documentIds.includes(doc.id));
         citationText = event.detail.citationText;
         
         citationWords = removeStopwords(event.detail.citationText.split(' '), nld);
-        // console.log('Citation words:', citationWords);
     }
 
     function addMessage(message) {
         messages = [...messages, message];
-        // console.log('Adding message:', message);
     }
 
     function updateCurrentMessage(message) {
@@ -45,9 +43,7 @@
 
     async function sendMessage(message) {
         try {
-            console.log("API_BASE_URL", API_BASE_URL);
-
-            updateCurrentMessage({ role: 'assistant', content: 'Bron zoekt nu de relevante documenten...' });
+            streamedContent = '';
             
             const response = await fetch(`${API_BASE_URL}/chat`, {
                 method: 'POST',
@@ -99,20 +95,61 @@
                 if (data.documents) {
                     handleNewDocuments({ detail: data.documents });
                 }
+                addMessage({
+                    role: 'assistant',
+                    content: data.content,
+                });                
+                break;
+            case 'partial':
+                streamedContent += data.content;
                 updateCurrentMessage({
                     role: 'assistant',
-                    content: data.content
+                    content: streamedContent
                 });
+                break;
+            case 'citation':
+                console.log('Citation:', data);
+                // if (data.content && typeof data.content === 'object') {
+                //     streamedContent = addCitationToText(streamedContent, data.content);
+                //     updateCurrentMessage({
+                //         role: 'assistant',
+                //         content: streamedContent
+                //     });
+                // } else {
+                //     console.error('Invalid citation data:', data.content);
+                // }
                 break;
             case 'full':
                 addMessage({
                     role: 'assistant',
-                    content: data.content,
-                    content_original: data.content_original
+                    content: streamedContent,
+                    content_original: data.content_original,
+                    citations: data.citations
                 });
                 currentMessage = null;
+                streamedContent = '';
                 break;
         }
+    }
+
+    function addCitationToText(text, citation) {
+        const { start, end, document_ids } = citation;
+        
+        // Ensure start and end are valid numbers
+        const safeStart = Math.max(0, Math.min(start, text.length));
+        const safeEnd = Math.max(safeStart, Math.min(end, text.length));
+        
+        const beforeCitation = text.slice(0, safeStart);
+        const citationText = text.slice(safeStart, safeEnd);
+        const afterCitation = text.slice(safeEnd);
+        
+        // Ensure document_ids is an array and stringify it properly
+        const safeDocumentIds = Array.isArray(document_ids) ? document_ids : [];
+        const documentIdListString = JSON.stringify(safeDocumentIds);
+        
+        const citationSpan = `<span class="citation-link" data-document-ids='${documentIdListString}'>${citationText}</span>`;
+        
+        return beforeCitation + citationSpan + afterCitation;
     }
 
     function handleShowAllDocuments() {
@@ -123,16 +160,7 @@
     }
 
     onMount(async () => {
-        // try {
-        //     handleNewMessage({
-        //         detail: {
-        //             role: 'user',
-        //             content: 'Klimaat Almelo'
-        //         }
-        //     });
-        // } catch (error) {
-        //     console.error('Error in onMount:', error);
-        // }
+        // Commented out auto-message on mount
     });
 </script>
 

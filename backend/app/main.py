@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, AsyncGenerator, Tuple
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -205,7 +205,7 @@ Always answer in Dutch. Formulate your response as an investigative journalist w
     
     return pirate_system_message
 
-async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]):  
+async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]) -> AsyncGenerator[Dict, None]:
     system_message = ChatMessage(role="system", content=get_system_message())    
     messages = [system_message] + messages
     
@@ -215,18 +215,48 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
             'id': doc['id'],   
             "data": {
                 "title": doc['data']['title'],
-                "snippet": doc['data']['content']  # Limit snippet to 1000 characters
+                "snippet": doc['data']['content']
             }
         } for doc in relevant_docs
     ]
     
-    response = cohere_client.chat(
+    response_stream = cohere_client.chat_stream(
         model="command-r-plus",
         messages=[{"role": msg.role, "content": msg.content} for msg in messages],
         documents=formatted_docs
-    )
-    # logger.info(f"Response: {response}")
-    return response
+    )    
+    
+    current_citation = None
+    first_citation = True
+    for event in response_stream:   
+        if event:
+            if event.type == "content-delta":
+                yield {
+                    "type": "text",
+                    "content": event.delta.message.content.text
+                }
+            elif event.type == 'citation-start':       
+                if first_citation:
+                    yield {
+                        "type": "text",
+                        "content": " \n\n<br><br><em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht. Nog even geduld...</em>"
+                    }
+                    first_citation = False
+                    
+                current_citation = {
+                    'start': event.delta.message.citations.start,
+                    'end': event.delta.message.citations.end,
+                    'text': event.delta.message.citations.text,
+                    'document_ids': [source.document['id'] for source in event.delta.message.citations.sources]
+                }
+                
+            elif event.type == 'citation-end':
+                if current_citation:
+                    yield {
+                        "type": "citation",
+                        "content": current_citation
+                    }
+                    current_citation = None
 
 async def generate_initial_response(query: str, relevant_docs: List[Dict]):
     logger.info(f"Generating initial response for query: {query}")
@@ -241,10 +271,27 @@ async def generate_initial_response(query: str, relevant_docs: List[Dict]):
 
 async def generate_full_response(query: str, relevant_docs: List[Dict]):
     logger.info(f"Generating full response for query: {query}")
-    llm_response = await generate_response([ChatMessage(role="user", content=query)], relevant_docs)
+    full_text = ""
+    citations = []
     
-    if llm_response is None:
-        # Handle the case where no valid documents were found
+    async for event in generate_response([ChatMessage(role="user", content=query)], relevant_docs):
+        if event["type"] == "text":
+            full_text += event["content"]
+            yield json.dumps({
+                "type": "partial",
+                "role": "assistant",
+                "content": event["content"],
+            }) + "\n"
+            await asyncio.sleep(0)
+        elif event["type"] == "citation":
+            citations.append(event["content"])
+            yield json.dumps({
+                "type": "citation",
+                "content": event["content"],
+            }) + "\n"
+            await asyncio.sleep(0)
+    
+    if not full_text:
         full_response = {
             "type": "full",
             "role": "assistant",
@@ -253,32 +300,17 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
             "citations": []
         }
     else:
-        text = llm_response.message.content[0].text
-        citations = llm_response.message.citations
-        
-        processed_citations = []
-        text_formatted = text
-        if citations:
-            for citation in citations:
-                processed_citation = {
-                    'start': citation.start,
-                    'end': citation.end,
-                    'text': citation.text,
-                    'document_ids': [source.document['id'] for source in citation.sources]
-                }
-                processed_citations.append(processed_citation)
-        
-            text_formatted = format_text(text, processed_citations)
-
+        text_formatted = format_text(full_text, citations)
         full_response = {
             "type": "full",
             "role": "assistant",
             "content": text_formatted,
-            "content_original": text,
-            "citations": processed_citations
+            "content_original": full_text,
+            "citations": citations
         }
     
-    return json.dumps(full_response) + "\n"
+    yield json.dumps(full_response) + "\n"
+    await asyncio.sleep(0)
 
 @app.post("/api/chat")
 async def chat_endpoint(request: ChatRequest):
@@ -295,13 +327,13 @@ async def chat_endpoint(request: ChatRequest):
             await asyncio.sleep(0)  # Ensure the initial response is flushed
             
             # Send full response
-            full_response = await generate_full_response(query, relevant_docs)
-            yield full_response
+            async for response in generate_full_response(query, relevant_docs):
+                yield response
         
         return StreamingResponse(
             response_generator(),
             media_type="application/x-ndjson",
-            headers={"X-Accel-Buffering": "no"}  # Disable nginx buffering if you're using it
+            headers={"X-Accel-Buffering": "no"}
         )
     
     except Exception as e:
@@ -318,6 +350,7 @@ async def documents_endpoint():
 # async def root():
 #     return {"message": "Hello Worlds"}
 
+
 def format_text(text, citations):
     text_w_citations = add_citations_to_text(text, citations)    
     html_text = markdown(text_w_citations)  # Change this line
@@ -328,7 +361,6 @@ def add_citations_to_text(text, citations):
     
     text_w_citations = ""
     last_end = 0
-    footnotes = []
     
     for i, citation in enumerate(citations_list, start=1):
         # Add text before the citation
@@ -354,3 +386,7 @@ except locale.Error:
         locale.setlocale(locale.LC_TIME, 'nl_NL.utf8')
     except locale.Error:
         logger.warning("Failed to set locale to nl_NL.utf8. Using default locale.")
+
+
+
+
