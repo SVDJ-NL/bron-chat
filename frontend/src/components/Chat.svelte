@@ -33,8 +33,8 @@
         if (selectedCitation) {
             selectedCitation.classList.remove('selected');
         }
-        console.log('documentIds:', documentIds);
-        console.log('citationText:', citationText);
+        // console.log('documentIds:', documentIds);
+        // console.log('citationText:', citationText);
         dispatch('citationClick', { documentIds, citationText });
         selectedCitation = event.target;
         selectedCitation.classList.add('selected');

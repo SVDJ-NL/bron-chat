@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, afterUpdate } from 'svelte';
     import { marked } from 'marked';
     import DOMPurify from 'dompurify';
 
@@ -7,30 +7,63 @@
     export let citationWords = [];
 
     let parsedContent = '';
+    let contentElement;
+    let parsedTitle = '';
+    let titleElement;
 
     onMount(() => {
-        let content = marked.parse(doc.data.content || '');
-        
-        // Highlight citationWords
-        citationWords.forEach(word => {
-            const regex = new RegExp(`\\b${word}\\b`, 'gi');
-            content = content.replace(regex, match => `<mark>${match}</mark>`);
-        });
-
-        parsedContent = DOMPurify.sanitize(content);
-        console.log('Parsed content:', parsedContent);
+        updateContent();
+        updateTitle();
     });
+
+    afterUpdate(() => {
+        updateContent();
+        updateTitle();
+    });
+
+
+    function highlightCitationWords(text, citationWords) {
+        citationWords.forEach(word => {
+            const regex = new RegExp(word, 'gi');
+            text = text.replace(regex, match => `<mark>${match}</mark>`);
+        });
+        return text;
+    }
+
+    function updateTitle() {
+        let title = doc.data.title || "< Naamloos document >";
+        parsedTitle = highlightCitationWords(title, citationWords);
+
+        if (titleElement) {
+            titleElement.innerHTML = parsedTitle;
+        }
+    }
+
+    function updateContent() {
+        let content = marked.parse(doc.data.content || '');
+        content = highlightCitationWords(content, citationWords);
+        parsedContent = DOMPurify.sanitize(content);
+        
+        if (contentElement) {
+            contentElement.innerHTML = parsedContent;
+        }
+    }
 
     function formatDate(dateString) {
         if (!dateString) return 'Onbekend';
         return new Date(dateString).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 </script>
+<style lang="postcss">
+    :global(mark) {
+        @apply bg-yellow-200 px-0.5 py-0.5 -mx-0.5 inline rounded transition-colors duration-200 whitespace-normal ;
+    }
+</style>
 
 <div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-100" data-doc-id="{doc.id}">
     <header class="mb-4">
-        <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal">
-            {doc.data.title || "< Naamloos document >"}
+        <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal" bind:this={titleElement}>
+            <!-- Content will be inserted here by the updateTitle function -->
         </h3>
         <div class="flex flex-col sm:flex-row items-start sm:items-center text-gray-500 text-sm mt-1 flex-wrap space-y-2 sm:space-y-0">
             <div class="flex items-center mb-1 sm:mb-0">
@@ -70,8 +103,8 @@
         </div>
     </header>
     
-    <p class="text-gray-600 text-sm">
-        {@html parsedContent}
+    <p class="text-gray-600 text-sm" bind:this={contentElement}>
+        <!-- Content will be inserted here by the updateContent function -->
     </p>
     
     <div class="flex mt-3">

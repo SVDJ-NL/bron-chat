@@ -23,17 +23,13 @@
     }
 
     function handleCitationClick(event) {
-        // console.log('All documents:', documents);
-        // console.log('event:', event);
-        console.log('Citation clicked:', event.detail);
+        // console.log('Citation clicked:', event.detail);
         const documentIds = event.detail.documentIds;
-        // Update selectedDocuments to be an array of documents
         selectedDocuments = documents.filter(doc => documentIds.includes(doc.id));
-        // console.log('Selected documents:', selectedDocuments);
-        citationText = event.detail.citationText; // Assuming the first citation is used for the title
+        citationText = event.detail.citationText;
         
-        citationWords = removeStopwords(event.detail.citationText.split(' '), nld); // Assuming the first citation is used for the title
-        console.log('Citation words:', citationWords);
+        citationWords = removeStopwords(event.detail.citationText.split(' '), nld);
+        // console.log('Citation words:', citationWords);
     }
 
     function addMessage(message) {
@@ -119,7 +115,7 @@
 
     function handleShowAllDocuments() {
         selectedDocuments = null;
-        citationText = ''; // Reset citation text
+        citationText = '';
         citationWords = [];
         window.resetAllCitations();
     }

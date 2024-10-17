@@ -1,10 +1,11 @@
 <script>
     import { createEventDispatcher } from 'svelte';
+    import { fade } from 'svelte/transition';
     import Document from './Document.svelte';
 
     export let documents = [];
     export let selectedDocuments = null;
-    export let citationText = ''; // New prop for citation text
+    export let citationText = '';
     export let citationWords = [];
 
     const dispatch = createEventDispatcher();
@@ -56,13 +57,13 @@
             {#if sortedSelectedDocuments && sortedSelectedDocuments.length > 0}
                 {#each sortedSelectedDocuments as doc, index}
                     <div in:fade={{delay: index * 300, duration: 300}}>
-                        <Document {doc} citationWords={citationWords} />
+                        <Document {doc} {citationWords} />
                     </div>
                 {/each}
             {:else if sortedDocuments.length > 0}
                 {#each sortedDocuments as doc, index}
                     <div in:fade={{delay: index * 300, duration: 300}}>
-                        <Document {doc} citationWords={citationWords} />
+                        <Document {doc} {citationWords} />
                     </div>
                 {/each}      
             {:else}
