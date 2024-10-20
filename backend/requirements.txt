@@ -7,3 +7,6 @@ websockets
 python-dotenv
 watchfiles
 markdown
+sqlalchemy
+mysqlclient
+uuid
