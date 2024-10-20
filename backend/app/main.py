@@ -15,6 +15,10 @@ import asyncio
 from markdown import markdown 
 from dotenv import load_dotenv
 import locale
+from sqlalchemy.orm import Session
+from database import get_db, Session as DBSession
+import uuid
+from datetime import datetime
 
 
 # Set up logging
@@ -399,7 +403,114 @@ except locale.Error:
     except locale.Error:
         logger.warning("Failed to set locale to nl_NL.utf8. Using default locale.")
 
+class SessionCreate(BaseModel):
+    name: str = None
+    messages: List[Dict] = []
+    documents: List[Dict] = []
 
+class SessionUpdate(BaseModel):
+    name: str = None
+    messages: List[Dict] = None
+    documents: List[Dict] = None
+
+@app.post("/api/chat")
+async def chat_endpoint(request: ChatRequest):
+    logger.info(f"Received chat request: {request.content}")
+    try:
+        query = request.content
+        
+        async def response_generator():
+            relevant_docs = await retrieve_relevant_documents(query)
+            
+            # Send initial response
+            initial_response = await generate_initial_response(query, relevant_docs)
+            yield initial_response
+            await asyncio.sleep(0)  # Ensure the initial response is flushed
+            
+            # Send full response
+            async for response in generate_full_response(query, relevant_docs):
+                yield response
+        
+        return StreamingResponse(
+            response_generator(),
+            media_type="application/x-ndjson",
+            headers={"X-Accel-Buffering": "no"}
+        )
+    
+    except Exception as e:
+        logger.error(f"Error in chat endpoint: {str(e)}")
+        return {"error": "An error occurred while processing your request."}
+
+
+@app.get("/api/documents")
+async def documents_endpoint():
+    query = "klimaat almelo"
+    relevant_docs = await retrieve_relevant_documents(query)
+    return {"documents": relevant_docs}
+
+
+@app.post("/api/sessions")
+async def create_session(session: SessionCreate, db: Session = Depends(get_db)):
+    logger.info(f"Creating session: {session}")
+    
+    try:
+        if session.name is None:
+            # Generate a default name if none is provided
+            default_name = f"Sessie {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            session.name = default_name
+
+        db_session = DBSession(
+            id=str(uuid.uuid4()),
+            name=session.name,
+            messages=session.messages,
+            documents=session.documents
+        )
+        db.add(db_session)
+        db.commit()
+        db.refresh(db_session)
+        return {"session_id": db_session.id}
+    except Exception as e:
+        logger.error(f"Error creating session: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An error occurred while creating the session")
+
+
+@app.get("/api/sessions/{session_id}")
+async def get_session(session_id: str, db: Session = Depends(get_db)):
+    db_session = db.query(DBSession).filter(DBSession.id == session_id).first()
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_session
+
+@app.put("/api/sessions/{session_id}")
+async def update_session(session_id: str, session: SessionUpdate, db: Session = Depends(get_db)):
+    db_session = db.query(DBSession).filter(DBSession.id == session_id).first()
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if session.name is not None:
+        db_session.name = session.name
+    if session.messages is not None:
+        db_session.messages = session.messages
+    if session.documents is not None:
+        db_session.documents = session.documents
+    
+    db.commit()
+    db.refresh(db_session)
+    return {"message": "Session updated successfully"}
+
+@app.post("/api/generate_session_name")
+async def generate_session_name(request: ChatRequest):
+    system_message = "You are an AI assistant tasked with generating a short, catchy name for a chat session based on its content. The name should be concise, relevant, and engaging. Always generate the name in Dutch."
+    
+    response = cohere_client.chat(
+        model="command",
+        message=f"Generate a short, catchy name (maximum 5 words) in Dutch for a chat session with the following content: {request.content}",
+        temperature=0.7,
+        chat_history=[{"role": "system", "message": system_message}]
+    )
+    
+    return {"name": response.text.strip()}
 
 
 
