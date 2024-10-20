@@ -175,10 +175,22 @@
     :global(.message-content pre code) {
         @apply bg-transparent p-0;
     }
+
+    .chat-container {
+        @apply flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden;
+    }
+
+    .messages-container {
+        @apply flex-1 overflow-y-auto p-4 space-y-4;
+    }
+
+    .input-container {
+        @apply p-4 bg-white border-t;
+    }
 </style>
 
-<div class="flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden">
-    <div bind:this={chatContainer} class="flex-1 overflow-y-auto p-4 space-y-4">
+<div class="chat-container">
+    <div bind:this={chatContainer} class="messages-container">
         <h2 class="text-lg font-bold mb-4">Chat with Bron</h2>
         {#each messages as message}
             <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
@@ -210,7 +222,7 @@
         {/if}
     </div>
 
-    <div class="p-4 bg-white border-t">
+    <div class="input-container">
         <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
             <input 
                 bind:value={newMessageContent} 
