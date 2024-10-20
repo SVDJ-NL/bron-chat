@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict, AsyncGenerator, Tuple
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import qdrant_client
@@ -327,45 +327,6 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
             "citations": citations,
         }) + "\n"
         await asyncio.sleep(0)
-    
-@app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
-    logger.info(f"Received chat request: {request.content}")
-    try:
-        query = request.content
-        
-        async def response_generator():
-            relevant_docs = await retrieve_relevant_documents(query)
-            
-            # Send initial response
-            initial_response = await generate_initial_response(query, relevant_docs)
-            yield initial_response
-            await asyncio.sleep(0)  # Ensure the initial response is flushed
-            
-            # Send full response
-            async for response in generate_full_response(query, relevant_docs):
-                yield response
-        
-        return StreamingResponse(
-            response_generator(),
-            media_type="application/x-ndjson",
-            headers={"X-Accel-Buffering": "no"}
-        )
-    
-    except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}")
-        return {"error": "An error occurred while processing your request."}
-
-@app.get("/api/documents")
-async def documents_endpoint():
-    query = "klimaat almelo"
-    relevant_docs = await retrieve_relevant_documents(query)
-    return {"documents": relevant_docs}
-
-# @app.get("/")
-# async def root():
-#     return {"message": "Hello Worlds"}
-
 
 def format_text(text, citations):
     text_w_citations = add_citations_to_text(text, citations)    
