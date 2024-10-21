@@ -45,44 +45,38 @@
         try {
             streamedContent = '';
             
-            const response = await fetch(`${API_BASE_URL}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ content: message.content }),
-            });
+            const params = new URLSearchParams({ content: message.content });
+            const eventSource = new EventSource(`${API_BASE_URL}/chat?${params}`);
             
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop();
-
-                for (const line of lines) {
-                    if (line.trim()) {
-                        const data = JSON.parse(line);
-                        handleStreamedResponse(data);
-                    }
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleStreamedResponse(data);
+                } catch (error) {
+                    console.error('Error parsing event data:', error);
                 }
-            }
-
-            if (buffer) {
-                const data = JSON.parse(buffer);
-                handleStreamedResponse(data);
-            }
-
-            currentMessage = null;
+            };
+            
+            eventSource.onerror = (error) => {
+                console.log('EventSource error:', error);
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    console.log('EventSource connection closed');
+                } else {
+                    console.error('Unexpected EventSource error:', error);
+                    updateCurrentMessage({ role: 'assistant', content: 'An unexpected error occurred while processing your request.' });
+                }
+                eventSource.close();
+            };
+            
+            eventSource.onopen = () => {
+                console.log('EventSource connection opened');
+            };
+            
+            eventSource.addEventListener('close', () => {
+                console.log('EventSource connection closed by server');
+                eventSource.close();
+                currentMessage = null;
+            });
         } catch (error) {
             console.error('Error sending message:', error);
             updateCurrentMessage({ role: 'assistant', content: 'An error occurred while processing your request.' });
@@ -91,6 +85,8 @@
 
     function handleStreamedResponse(data) {
         switch (data.type) {
+            case 'start':   
+                break;
             case 'initial':
                 if (data.documents) {
                     handleNewDocuments({ detail: data.documents });
@@ -140,6 +136,13 @@
                     citations: data.citations
                 });
                 currentMessage = null;
+                break;
+            case 'end':   
+                console.log('Received end event');
+                break;
+            case 'error':
+                console.error('Received error event:', data.content);
+                updateCurrentMessage({ role: 'assistant', content: `An error occurred: ${data.content}` });
                 break;
         }
     }
