@@ -1,20 +1,24 @@
 <script>
     export let messages = [];
     export let currentMessage = null;
+    export let statusMessages = [];
+    export let currentStatusMessage = null;
 
     import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
     const dispatch = createEventDispatcher();
 
     let newMessageContent = '';
-
     let selectedCitation = null;
-
     let isLoading = false;
-
     let streamedContent = '';
+    let streamedStatusContent = '';
 
     $: if (currentMessage && currentMessage.content !== streamedContent) {
         streamedContent = currentMessage.content;
+    }
+
+    $: if (currentStatusMessage && currentStatusMessage.content !== streamedStatusContent) {
+        streamedStatusContent = currentStatusMessage.content;
     }
 
     function handleSubmit() {
@@ -49,7 +53,10 @@
         }
     }
 
-    function insertClickableCitations(text_formatted) {
+    function insertClickableCitations(text_formatted, messageType) {
+        if (messageType === 'status') {
+            return text_formatted.split('\n').map(line => `<p>${line}</p>`).join('');
+        }
         const parser = new DOMParser();
         const doc = parser.parseFromString(text_formatted, 'text/html');
         const spans = doc.querySelectorAll('span[data-document-ids]');
@@ -72,8 +79,6 @@
         if (selectedCitation) {
             selectedCitation.classList.remove('selected');
         }
-        // console.log('documentIds:', documentIds);
-        // console.log('citationText:', citationText);
         dispatch('citationClick', { documentIds, citationText });
         selectedCitation = event.target;
         selectedCitation.classList.add('selected');
@@ -187,6 +192,18 @@
     .input-container {
         @apply p-4 bg-white border-t;
     }
+
+    :global(.message-content.status) {
+        @apply bg-gray-100 text-gray-600 border border-gray-300;
+    }
+
+    :global(.message-content.status p) {
+        @apply mb-1 mb-0;
+    }
+
+    :global(.message-content.status p:last-child) {
+        @apply mb-0;
+    }
 </style>
 
 <div class="chat-container">
@@ -194,29 +211,30 @@
         <h2 class="text-lg font-bold mb-4">Chat with Bron</h2>
         {#each messages as message}
             <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}">
+                <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
                     {#if message.role === 'user'}
                         <p>{message.content}</p>
                     {:else if message.role === 'assistant'}
-                        {@html insertClickableCitations(message.content)}
+                        {@html insertClickableCitations(message.content, message.type)}
                     {/if}
                 </div>
             </div>
         {/each}
         
+        {#if currentStatusMessage }
+            <div class="flex justify-start">
+                <div class="message-content max-w-3/4 p-3 rounded-lg status">
+                    <div class="flex items-start">
+                        {@html (streamedStatusContent)}
+                    </div>
+                </div>
+            </div>
+        {/if}
+
         {#if currentMessage}
             <div class="flex justify-start">
                 <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
-                    {#if currentMessage.content === "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag..." }
-                        <div class="flex items-start">
-                          <div class="flex-shrink-0 mr-2 mt-1"> {@html getWaitingIcon()} </div>
-                          <div class="flex-grow">
-                            {@html (currentMessage.content)}
-                          </div>
-                        </div>
-                    {:else}
-                        {@html insertClickableCitations(streamedContent)}
-                    {/if}
+                    {@html insertClickableCitations(streamedContent)}
                 </div>
             </div>
         {/if}

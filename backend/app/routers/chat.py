@@ -22,19 +22,31 @@ async def chat_endpoint(
     async def event_generator():
         try:
             yield 'data: ' + json.dumps({
-                "type": "start", 
+                "type": "status", 
                 "role": "assistant", 
-                "content": "Documenten worden opgehaald..."
+                "content": "Starting to process your request..."
                 }) + "\n\n"
             await sleep(0)
             
-            relevant_docs = await retrieve_relevant_documents(content)            
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": "Retrieving relevant documents..."
+                }) + "\n\n"
+            await sleep(0)
             
-            # Send initial response
+            relevant_docs = await retrieve_relevant_documents(content)                       
             initial_response = await generate_initial_response(content, relevant_docs)
             yield 'data: ' + json.dumps(initial_response) + "\n\n"
             await sleep(0)
-                        
+            
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": "Documenten gevonden. Bron genereert nu een antwoord op uw vraag..."
+                }) + "\n\n"
+            await sleep(0)            
+            
             async for response in generate_full_response(content, relevant_docs):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)

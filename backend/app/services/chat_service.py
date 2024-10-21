@@ -221,8 +221,8 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
             elif event.type == 'citation-start':       
                 if first_citation:
                     yield {
-                        "type": "text",
-                        "content": " \n\n<em>De bronnen om deze tekst te onderbouwen worden er nu bij gezocht.</em>"
+                        "type": "status",
+                        "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
                     }
                     first_citation = False
                     
@@ -244,10 +244,8 @@ async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dic
 async def generate_initial_response(query: str, relevant_docs: List[Dict]):
     logger.info(f"Generating initial response for query: {query}")
     return {
-        "type": "initial",
+        "type": "documents",
         "role": "assistant",
-        "content": "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag...",
-        "content_original": "Hier vast de relevante documenten. Bron genereert nu een antwoord op uw vraag...",
         "documents": relevant_docs
     }
 
@@ -257,7 +255,14 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
     citations = []
     
     async for event in generate_response([ChatMessage(role="user", content=query)], relevant_docs):
-        if event["type"] == "text":
+        if event["type"] == "status":
+            yield {
+                "type": "status",
+                "role": "assistant",
+                "content": event["content"],
+                "content_original": event["content"],
+            }
+        elif event["type"] == "text":
             full_text += event["content"]
             yield {
                 "type": "partial",
@@ -277,7 +282,7 @@ async def generate_full_response(query: str, relevant_docs: List[Dict]):
     
     if not full_text:
         yield {
-            "type": "full",
+            "type": "status",
             "role": "assistant",
             "content": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
             "content_original": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
