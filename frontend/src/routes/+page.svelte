@@ -13,6 +13,7 @@
     let citationText = '';
     let citationWords = [];
     let streamedContent = '';
+    let sessionId = null;
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -48,18 +49,31 @@
         currentStatusMessage = statusMessage + '\n';
     }
 
+    function setSessionId(id) {
+        sessionId = id;
+        console.log('Session ID set to:', sessionId);
+    }
+
     export const API_BASE_URL = import.meta.env.VITE_PUBLIC_API_URL;
 
     async function sendMessage(message) {
         try {
             streamedContent = '';
             
-            const params = new URLSearchParams({ content: message.content });
+            const params = new URLSearchParams({ 
+                content: message.content,
+                session_id: sessionId
+            });
             const eventSource = new EventSource(`${API_BASE_URL}/chat?${params}`);
             
             eventSource.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
+                    if (data.session_id && !sessionId) {
+                        sessionId = data.session_id;
+                        // Optionally, you can update the URL here to include the session ID
+                        // window.history.pushState({}, '', `/chat/${sessionId}`);
+                    }
                     handleStreamedResponse(data);
                 } catch (error) {
                     console.error('Error parsing event data:', error);
@@ -95,6 +109,9 @@
 
     function handleStreamedResponse(data) {
         switch (data.type) {
+            case 'session':
+                setSessionId(data.session_id);
+                break;
             case 'status':
                 updateCurrentStatusMessage({
                     role: 'assistant',

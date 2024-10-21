@@ -308,3 +308,4 @@ except locale.Error:
         locale.setlocale(locale.LC_TIME, 'nl_NL.utf8')
     except locale.Error:
         logger.warning("Failed to set locale to nl_NL.utf8. Using default locale.")
+
