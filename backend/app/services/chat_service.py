@@ -1,5 +1,6 @@
 from ..config import settings
 from ..schemas import ChatMessage
+from ..models import Session
 import os
 from typing import List, Dict, AsyncGenerator, Tuple
 from qdrant_client import QdrantClient
@@ -90,8 +91,11 @@ def get_formatted_dutch_date():
     
     return formatted_date
 
+def get_formatted_date_english():
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')
+
 def get_system_message():
-    formatted_date = get_formatted_dutch_date()
+    formatted_date = get_formatted_date_english()
     
     pirate_system_message='''
 
@@ -135,7 +139,9 @@ def add_citations_to_text(text, citations):
     
     return text_w_citations
 
-async def retrieve_relevant_documents(query: str) -> List[Dict]:  
+async def retrieve_relevant_documents(session: Session) -> List[Dict]:  
+    query = session.messages[-1]['content']
+    
     logger.info(f"Retrieving relevant documents for query: {query}")
     # Get documents from Qdrant
     qdrant_documents = get_bron_documents_from_qdrant(
@@ -186,7 +192,7 @@ async def retrieve_relevant_documents(query: str) -> List[Dict]:
                 'content': format_content(doc.payload['content'])
             } 
         } for doc in qdrant_documents 
-    ]  
+    ]
     
 async def generate_response(messages: List[ChatMessage], relevant_docs: List[Dict]) -> AsyncGenerator[Dict, None]:
     system_message = ChatMessage(role="system", content=get_system_message())    

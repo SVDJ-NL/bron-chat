@@ -10,10 +10,10 @@ class ChatRequest(BaseModel):
 
 class SessionCreate(BaseModel):
     name: Optional[str] = None
-    messages: List[Dict] = []
+    messages: List[ChatMessage] = []
     documents: List[Dict] = []
 
 class SessionUpdate(BaseModel):
     name: Optional[str] = None
-    messages: Optional[List[Dict]] = None
+    messages: Optional[List[ChatMessage]] = None
     documents: Optional[List[Dict]] = None

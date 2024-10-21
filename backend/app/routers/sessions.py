@@ -6,13 +6,15 @@ from ..schemas import SessionCreate, SessionUpdate, ChatRequest
 
 router = APIRouter()
 
-@router.post("/api/sessions")
-async def create_session(session: SessionCreate, db: Session = Depends(get_db)):
-    return session_service.create_session(session, db)
-
 @router.get("/api/sessions/{session_id}")
 async def get_session(session_id: str, db: Session = Depends(get_db)):
-    return session_service.get_session(session_id, db)
+    session = session_service.get_session(session_id, db)
+    return {
+        "id": session.id,
+        "name": session.name,
+        "messages": session.messages,
+        "documents": session.documents
+    }
 
 @router.put("/api/sessions/{session_id}")
 async def update_session(session_id: str, session: SessionUpdate, db: Session = Depends(get_db)):
