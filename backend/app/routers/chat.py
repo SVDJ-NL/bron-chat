@@ -24,14 +24,14 @@ async def chat_endpoint(
             yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
-                "content": "Starting to process your request..."
+                "content": "Uw verzoek wordt nu verwerkt..."
                 }) + "\n\n"
             await sleep(0)
             
             yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
-                "content": "Retrieving relevant documents..."
+                "content": "Documenten worden gezocht..."
                 }) + "\n\n"
             await sleep(0)
             
@@ -43,7 +43,14 @@ async def chat_endpoint(
             yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
-                "content": "Documenten gevonden. Bron genereert nu een antwoord op uw vraag..."
+                "content": "Documenten gevonden."
+                }) + "\n\n"
+            await sleep(0)    
+            
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": "Bron genereert nu een antwoord op uw vraag..."
                 }) + "\n\n"
             await sleep(0)            
             
