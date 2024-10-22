@@ -228,8 +228,6 @@
                     </div>
                 </div>
             {/each}
-        {:else}
-            <p>No messages yet.</p>
         {/if}
         
         {#if currentStatusMessage }

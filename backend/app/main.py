@@ -21,5 +21,5 @@ fast_api_app.include_router(sessions.router)
 
 @fast_api_app.on_event("startup")
 async def startup_event():
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
     init_db()

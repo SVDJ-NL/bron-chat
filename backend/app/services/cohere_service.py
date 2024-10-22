@@ -37,7 +37,7 @@ class CohereService:
             embedding_types=["float"]
         ).embeddings.float[0]
         
-    def get_system_message():
+    def get_system_message(self):
         formatted_date = get_formatted_date_english()
         
         pirate_system_message='''

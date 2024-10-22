@@ -7,6 +7,7 @@ from asyncio import sleep
 from ..database import get_db
 from ..services.chat_service import ChatService
 from ..services.session_service import SessionService
+from ..services.cohere_service import CohereService
 from ..schemas import SessionCreate, SessionUpdate, ChatMessage
 
 router = APIRouter()
@@ -15,10 +16,6 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-async def send_data(message):
-    yield 'data: ' + json.dumps(message) + "\n\n"
-    await sleep(0)
-
 @router.get("/api/chat")
 async def chat_endpoint(
     content: str = Query(..., description="The chat message content"),
@@ -26,60 +23,68 @@ async def chat_endpoint(
     db: Session = Depends(get_db)
 ):
     chat_service = ChatService()
-    session_service = SessionService()
+    cohere_service = CohereService()
+    session_service = SessionService(db)
+    
+    system_message = {"role": "system", "content": cohere_service.get_system_message() }
+    message = {"role": "user", "content": content}
     
     if not session_id or session_id is None or session_id == '' or session_id == 'null':
-        system_message = {"role": "system", "content": chat_service.get_system_message() }
-        message = {"role": "user", "content": content}
-        session = session_service.create_session(SessionCreate(messages=[system_message, message]), db)        
+        session = session_service.create_session(SessionCreate(messages=[system_message, message]))        
     else:
-        session = session_service.get_session(session_id, db)          
-        system_message = {"role": "system", "content": chat_service.get_system_message() }
-        message = {"role": "user", "content": content}
-        session_service.update_session(session.id, SessionUpdate(messages=[system_message, message]), db)
+        session = session_service.get_session(session_id)
+        session_service.update_session(session.id, SessionUpdate(messages=[system_message, message]))
         logger.info(f"Using existing session: {session.id}")
 
     async def event_generator():
         try:
-            await send_data({
+            yield 'data: ' + json.dumps({
                 "type": "session",
                 "session_id": session.id
-            })
+            }) + "\n\n"
+            await sleep(0)
             
-            await send_data({
+            yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
                 "content": "Uw verzoek wordt nu verwerkt..."
-            })
+            }) + "\n\n"
+            await sleep(0)
             
-            await send_data({
+            
+            yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
                 "content": "Documenten worden gezocht..."
-            })
+            }) + "\n\n"
+            await sleep(0)
             
             relevant_docs = await chat_service.retrieve_relevant_documents(session)
             logger.info(f"Relevant documents: {relevant_docs}")
             
-            session_service.update_session(session.id, SessionUpdate(documents=relevant_docs), db)
+            session_service.update_session(session.id, SessionUpdate(documents=relevant_docs))
             
             initial_response = await chat_service.generate_initial_response(content, relevant_docs)
-            await send_data(initial_response)
+            yield 'data: ' + json.dumps(initial_response) + "\n\n"
+            await sleep(0)
             
-            await send_data({
+            yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
                 "content": "Documenten gevonden."
-            })
+            }) + "\n\n"
+            await sleep(0)
             
-            await send_data({
+            yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
                 "content": "Bron genereert nu een antwoord op uw vraag..."
-            })
+            }) + "\n\n"
+            await sleep(0)
             
             async for response in chat_service.generate_full_response(content, relevant_docs):
-                await send_data(response)
+                yield 'data: ' + json.dumps(response) + "\n\n"
+                await sleep(0)
 
                 # Update the session with the assistant's response
                 if response["type"] == "full":
@@ -88,17 +93,18 @@ async def chat_endpoint(
                         SessionUpdate(messages=[ChatMessage(
                             role="assistant",
                             content=response["content"]
-                        )]),
-                        db
+                        )])
                     )
 
         except Exception as e:
             logger.error(f"Error in chat_endpoint: {e}")
-            await send_data({"type": "error", "content": str(e)})
+            yield 'data: ' + json.dumps({"type": "error", "content": str(e)}) + "\n\n"
+            await sleep(0)
         
         finally:
             # Always send end and close events
-            await send_data({"type": "end", "content": "Done."})
+            yield 'data: ' + json.dumps({"type": "end", "content": "Done."}) + "\n\n"
+            await sleep(0)
             yield 'event: close\ndata: \n\n'
             await sleep(0)
 

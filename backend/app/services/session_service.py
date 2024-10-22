@@ -11,6 +11,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class SessionService(DatabaseService):
+    def __init__(self, db):
+        super().__init__(db)
+
     def create_new_session(self):
         db_session = Session(
             id=str(uuid.uuid4()),
