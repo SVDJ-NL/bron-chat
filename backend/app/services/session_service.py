@@ -26,8 +26,8 @@ class SessionService(DatabaseService):
         return db_session
 
     def create_session(self, session: SessionCreate):
-        messages = [message.dict() for message in session.messages]
-        documents = [document.dict() for document in session.documents]
+        messages = [message.to_json() for message in session.messages]
+        documents = [document.to_json() for document in session.documents]
         logger.info(f"Creating session with messages: {messages}")
         logger.info(f"Creating session with documents: {documents}")
         db_session = Session(
@@ -55,15 +55,22 @@ class SessionService(DatabaseService):
             
         if session.name is not None:
             db_session.name = session.name
-        if session.messages is not None:
+            
+        if session.messages is not None and len(session.messages) > 0:
             messages = [message.to_json() for message in session.messages]
             logger.info(f"Updating session with messages: {session.messages} with {messages}")
-            db_session.messages = messages
-        if session.documents is not None:
+            if db_session.messages is None:
+                db_session.messages = []
+            db_session.messages = db_session.messages + messages
+        
+        if session.documents is not None and len(session.documents) > 0:
             documents = [document.to_json() for document in session.documents]
-            logger.info(f"Updating session with messages: {session.documents} with {documents}")
-            db_session.documents = documents
+            logger.info(f"Updating with documents: {session.documents} with {documents}")
+            if db_session.documents is None:
+                db_session.documents = []
+            db_session.documents = db_session.documents + documents
                 
+        logger.info(f"Updated session with messages: {db_session.messages}")
         self.db.commit()
         self.db.refresh(db_session)
         return {"message": "Session updated successfully"}

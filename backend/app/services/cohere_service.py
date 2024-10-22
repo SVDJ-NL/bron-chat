@@ -11,17 +11,17 @@ class CohereService:
     def __init__(self):
         self.client = CohereClient(api_key=settings.COHERE_API_KEY)
 
-    async def chat_stream(self, messages: list, documents: list):
+    def chat_stream(self, messages: list, documents: list):
         logger.info("Starting chat stream...")
-        return await self.client.chat_stream(
+        return self.client.chat_stream(
             model="command-r-plus",
             messages=messages,
             documents=documents
         )
 
-    async def rerank_documents(self, query: str, documents: list):
+    def rerank_documents(self, query: str, documents: list):
         logger.info("Reranking documents...")
-        return await self.client.rerank(
+        return self.client.rerank(
             query=query,
             documents=documents,
             top_n=20,
@@ -29,7 +29,7 @@ class CohereService:
             return_documents=True
         )
 
-    async def generate_dense_embedding(self, query: str):
+    def generate_dense_embedding(self, query: str):
         return self.client.embed(
             texts=[query], 
             input_type="search_query", 

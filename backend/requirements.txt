@@ -1,4 +1,5 @@
 fastapi
+watchgod
 qdrant-client
 cohere
 fastembed

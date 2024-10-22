@@ -79,12 +79,12 @@
             let params;
             if (sessionId === null || sessionId === undefined || sessionId === '') {                
                 params = new URLSearchParams({ 
-                    content: message.content
+                    query: message.content
                 });
                 console.log('Sending message without session ID');
             } else {
                 params = new URLSearchParams({ 
-                    content: message.content,
+                    query: message.content,
                     session_id: sessionId
                 });
                 console.log('Sending message with session ID:', sessionId);

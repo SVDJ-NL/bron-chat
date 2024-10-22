@@ -8,7 +8,8 @@ from ..database import get_db
 from ..services.chat_service import ChatService
 from ..services.session_service import SessionService
 from ..services.cohere_service import CohereService
-from ..schemas import SessionCreate, SessionUpdate, ChatMessage
+from ..services.qdrant_service import QdrantService
+from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument
 
 router = APIRouter()
 
@@ -18,16 +19,17 @@ logger = logging.getLogger(__name__)
 
 @router.get("/api/chat")
 async def chat_endpoint(
-    content: str = Query(..., description="The chat message content"),
+    query: str = Query(..., description="The chat message content"),
     session_id: str = Query(None, description="The session ID"),
     db: Session = Depends(get_db)
 ):
     chat_service = ChatService()
+    qdrant_service = QdrantService()
     cohere_service = CohereService()
     session_service = SessionService(db)
     
     system_message = {"role": "system", "content": cohere_service.get_system_message() }
-    message = {"role": "user", "content": content}
+    message = {"role": "user", "content": query}
     
     if not session_id or session_id is None or session_id == '' or session_id == 'null':
         session = session_service.create_session(SessionCreate(messages=[system_message, message]))        
@@ -37,6 +39,7 @@ async def chat_endpoint(
         logger.info(f"Using existing session: {session.id}")
 
     async def event_generator():
+        full_response = ""
         try:
             yield 'data: ' + json.dumps({
                 "type": "session",
@@ -50,8 +53,7 @@ async def chat_endpoint(
                 "content": "Uw verzoek wordt nu verwerkt..."
             }) + "\n\n"
             await sleep(0)
-            
-            
+                        
             yield 'data: ' + json.dumps({
                 "type": "status", 
                 "role": "assistant", 
@@ -59,13 +61,26 @@ async def chat_endpoint(
             }) + "\n\n"
             await sleep(0)
             
-            relevant_docs = await chat_service.retrieve_relevant_documents(session)
-            logger.info(f"Relevant documents: {relevant_docs}")
+            try: 
+                relevant_docs = qdrant_service.retrieve_relevant_documents(query)
+                logger.info(f"Relevant documents: {relevant_docs}")
+            except Exception as e:
+                logger.error(f"Error retrieving relevant documents: {e}")
+                raise e
             
-            session_service.update_session(session.id, SessionUpdate(documents=relevant_docs))
+            try:
+                session_service.update_session(
+                    session.id, 
+                    SessionUpdate(documents=[ChatDocument(id=doc['id'], score=doc['score']) for doc in relevant_docs])
+                )
+            except Exception as e:
+                logger.error(f"Error updating session: {e}")
             
-            initial_response = await chat_service.generate_initial_response(content, relevant_docs)
-            yield 'data: ' + json.dumps(initial_response) + "\n\n"
+            yield 'data: ' + json.dumps({
+                "type": "documents",
+                "role": "assistant",
+                "documents": relevant_docs
+            }) + "\n\n"
             await sleep(0)
             
             yield 'data: ' + json.dumps({
@@ -82,19 +97,12 @@ async def chat_endpoint(
             }) + "\n\n"
             await sleep(0)
             
-            async for response in chat_service.generate_full_response(content, relevant_docs):
+            async for response in chat_service.generate_full_response(query, relevant_docs):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
 
-                # Update the session with the assistant's response
                 if response["type"] == "full":
-                    session_service.update_session(
-                        session_id,
-                        SessionUpdate(messages=[ChatMessage(
-                            role="assistant",
-                            content=response["content"]
-                        )])
-                    )
+                    full_response = response["content"]
 
         except Exception as e:
             logger.error(f"Error in chat_endpoint: {e}")
@@ -102,6 +110,19 @@ async def chat_endpoint(
             await sleep(0)
         
         finally:
+            # Update the session with the assistant's response
+            if full_response:
+                try:
+                    session_service.update_session(
+                        session.id,
+                        SessionUpdate(messages=[ChatMessage(
+                            role="assistant",
+                            content=full_response
+                        )])
+                    )
+                except Exception as e:
+                    logger.error(f"Error updating session: {e}")
+
             # Always send end and close events
             yield 'data: ' + json.dumps({"type": "end", "content": "Done."}) + "\n\n"
             await sleep(0)

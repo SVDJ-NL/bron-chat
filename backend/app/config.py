@@ -25,6 +25,6 @@ class Settings(BaseSettings):
         "http://bron.ngrok.io",
         "https://bron.ngrok.io"
     ]
-    
+    QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION")
 
 settings = Settings()

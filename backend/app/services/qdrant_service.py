@@ -19,6 +19,26 @@ class QdrantService:
         self.qdrant_client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
         self.cohere_service = CohereService()
 
+    def get_documents_by_ids(self, documents: List):
+        document_ids = []
+        for doc in documents:
+            document_ids.append(doc['id'])
+                    
+        if not document_ids:
+            logger.warning("No valid document IDs found.")
+            return []
+        
+        try:
+            qdrant_documents = self.qdrant_client.retrieve(
+                collection_name=settings.QDRANT_COLLECTION,
+                ids=document_ids,
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving documents from Qdrant: {e}")
+            return []
+                
+        return self.prepare_documents_with_scores(qdrant_documents, documents)        
+
     def get_bron_documents_from_qdrant(self, query, limit=50):   
         logger.info(f"Retrieving documents from Qdrant for query: {query}")
 
@@ -32,7 +52,7 @@ class QdrantService:
         try:
             qdrant_documents = self.qdrant_client.search(
                 query_vector=("text-dense", dense_vector),
-                collection_name="1_gemeente_cohere",            
+                collection_name=settings.QDRANT_COLLECTION,            
                 limit=limit   
             )
             
@@ -44,9 +64,7 @@ class QdrantService:
             logger.error(f"Error retrieving documents from Qdrant: {e}")   
             return None
 
-    async def retrieve_relevant_documents(self, session: Session) -> List[Dict]:  
-        query = session.messages[-1]['content']
-        
+    def retrieve_relevant_documents(self, query: str) -> List[Dict]:          
         logger.info(f"Retrieving relevant documents for query: {query}")
         # Get documents from Qdrant
         qdrant_documents = self.get_bron_documents_from_qdrant(
@@ -60,21 +78,20 @@ class QdrantService:
             return []
 
         # Rerank documents using Cohere
-        logger.info(f"Documents: {qdrant_documents[0]}")
+        # logger.info(f"Documents: {qdrant_documents[0]}")
         # convert Qdrant ScoredPoint to Cohere RerankDocument
         document_texts = [document.payload['content'] for document in qdrant_documents]
-        reranked_documents = self.cohere_client.rerank(
+        reranked_documents = self.cohere_service.rerank_documents(
             query = query,
             documents = document_texts,
-            top_n = 20,
-            model = 'rerank-multilingual-v3.0',
-            return_documents=True
         )
         
-        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]           
-          
-        logger.info(f"Reranked documents: {qdrant_documents[0]}")  
+        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]        
+        # logger.info(f"Reranked documents: {qdrant_documents[0]}")  
         
+        return self.prepare_documents(qdrant_documents)
+    
+    def prepare_documents(self, qdrant_documents):
         return [ 
             { 
                 'id': f'{doc.id}',                
@@ -89,11 +106,36 @@ class QdrantService:
                     'published': doc.payload['meta']['published'],
                     'type': doc.payload['meta']['type'],
                     'identifier': doc.payload['meta']['identifier'],
-                    'url': doc.payload['meta']['url'],
                     'source': doc.payload['meta']['source'],                
                     'page_number': doc.payload['meta']['page_number'],                
                     'page_count': doc.payload['meta']['page_count'],                
                     'content': format_content(doc.payload['content'])
                 } 
+            } for doc in qdrant_documents 
+        ]
+
+    def prepare_documents_with_scores(self, qdrant_documents, documents):
+        # Create a dictionary mapping document IDs to their scores
+        score_map = {str(doc['id']): doc['score'] for doc in documents}
+        
+        return [
+            {
+                'id': f'{doc.id}',  
+                'score': score_map.get(doc.id, 0),
+                'data': {
+                    'source_id': doc.payload['meta']['source_id'],
+                    'url': doc.payload['meta']['url'],
+                    'title': doc.payload['meta']['title'],
+                    'location': doc.payload['meta']['location'],
+                    'location_name': doc.payload['meta']['location_name'],
+                    'modified': doc.payload['meta']['modified'],
+                    'published': doc.payload['meta']['published'],
+                    'type': doc.payload['meta']['type'],
+                    'identifier': doc.payload['meta']['identifier'],
+                    'source': doc.payload['meta']['source'],
+                    'page_number': doc.payload['meta']['page_number'],
+                    'page_count': doc.payload['meta']['page_count'],
+                    'content': format_content(doc.payload['content'])
+                }
             } for doc in qdrant_documents 
         ]

@@ -22,7 +22,7 @@ def get_formatted_date_english():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S %Z')
 
 def to_markdown(text):
-    return markdown(text)
+    return markdown.markdown(text)
 
 def format_content(content):
     # Remove leading and trailing whitespace
