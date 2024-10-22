@@ -9,7 +9,7 @@
 
 <ChatLayout 
     sessionId={sessionId}
-    sessionName={sessionName}
-    initialMessages={messages}
-    initialDocuments={documents}
+    sessionName={sessionName || ''}
+    initialMessages={messages || []}
+    initialDocuments={documents || []}
 />

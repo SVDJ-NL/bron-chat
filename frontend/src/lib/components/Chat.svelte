@@ -57,21 +57,28 @@
         if (messageType === 'status') {
             return text_formatted.split('\n').map(line => `<p>${line}</p>`).join('');
         }
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text_formatted, 'text/html');
-        const spans = doc.querySelectorAll('span[data-document-ids]');
+        
+        // Check if we are in a browser environment
+        if (typeof window !== 'undefined') {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text_formatted, 'text/html');
+            const spans = doc.querySelectorAll('span[data-document-ids]');
 
-        spans.forEach(span => {
-            const documentIds = span.getAttribute('data-document-ids');
-            const citationText = span.textContent;
-            const link = doc.createElement('a');
-            link.className = 'citation-link';
-            link.textContent = citationText;
-            link.setAttribute('onclick', `handleCitationClick(${documentIds}, "${citationText}")`);
-            span.parentNode.replaceChild(link, span);
-        });
+            spans.forEach(span => {
+                const documentIds = span.getAttribute('data-document-ids');
+                const citationText = span.textContent;
+                const link = doc.createElement('a');
+                link.className = 'citation-link';
+                link.textContent = citationText;
+                link.setAttribute('onclick', `handleCitationClick(${documentIds}, "${citationText}")`);
+                span.parentNode.replaceChild(link, span);
+            });
 
-        return doc.body.innerHTML;
+            return doc.body.innerHTML;
+        } else {
+            // Fallback if not in a browser environment
+            return text_formatted;
+        }
     }
 
     function handleCitationClick(documentIds, citationText) {
@@ -209,17 +216,21 @@
 <div class="chat-container">
     <div bind:this={chatContainer} class="messages-container">
         <h2 class="text-lg font-bold mb-4">Chat with Bron</h2>
-        {#each messages as message}
-            <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
-                    {#if message.role === 'user'}
-                        <p>{message.content}</p>
-                    {:else if message.role === 'assistant'}
-                        {@html insertClickableCitations(message.content, message.type)}
-                    {/if}
+        {#if messages && messages.length > 0}
+            {#each messages as message}
+                <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
+                    <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
+                        {#if message.role === 'user'}
+                            <p>{message.content}</p>
+                        {:else if message.role === 'assistant'}
+                            {@html insertClickableCitations(message.content, message.type)}
+                        {/if}
+                    </div>
                 </div>
-            </div>
-        {/each}
+            {/each}
+        {:else}
+            <p>No messages yet.</p>
+        {/if}
         
         {#if currentStatusMessage }
             <div class="flex justify-start">

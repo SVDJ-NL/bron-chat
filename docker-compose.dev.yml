@@ -14,10 +14,12 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
-      - ./backend:/app/backend
+      - ./backend:/workspace/backend
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: uvicorn app.main:fast_api_app --host 0.0.0.0 --port 8000 --reload=true
+    depends_on:
+      - mysql
 
   frontend:
     env_file:
@@ -31,7 +33,7 @@ services:
       - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
       - TEST_VARIABLE=${TEST_VARIABLE}
     volumes:
-      - ./frontend:/app
+      - ./frontend:/workspace/frontend
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
     depends_on:

@@ -3,16 +3,17 @@
     import { onMount } from 'svelte';
     import Chat from './Chat.svelte';
     import Documents from './Documents.svelte';
+    import { goto } from '$app/navigation';
 
     export let sessionId = null;
     export let sessionName = '';
     export let initialMessages = [];
     export let initialDocuments = [];
 
-    let messages = initialMessages;
+    let messages = initialMessages || [];  // Ensure messages is always an array
     let statusMessages = [];
     let currentStatusMessage = null;
-    let documents = initialDocuments;
+    let documents = Array.isArray(initialDocuments) ? initialDocuments : [];
     let selectedDocuments = null;
     let currentMessage = null;
     let citationText = '';
@@ -27,7 +28,7 @@
     }
 
     function handleNewDocuments(event) {
-        documents = event.detail;
+        documents = Array.isArray(event.detail) ? event.detail : [];
     }
 
     function handleCitationClick(event) {
@@ -39,6 +40,7 @@
 
     function addStatusMessage(statusMessage) {
         statusMessages = [...statusMessages, statusMessage];
+        currentStatusMessage = statusMessage;
     }
 
     function addMessage(message) {
@@ -55,10 +57,10 @@
 
     function setSessionId(id) {
         sessionId = id;
-        console.log('Session ID set to SSSSS:', sessionId);
+        console.log('Session ID set to:', sessionId);
         if (typeof window !== 'undefined') {
             try {
-                window.history.pushState({}, '', `/s/${sessionId}`);
+                goto(`/s/${sessionId}`, { replaceState: true });
                 console.log('URL updated successfully');
             } catch (error) {
                 console.error('Error updating URL:', error);
@@ -136,14 +138,14 @@
                 setSessionId(data.session_id);
                 break;
             case 'status':
-                updateCurrentStatusMessage({
+                addStatusMessage({
                     role: 'assistant',
                     content: data.content,
                     type: 'status'
                 });
                 break;
             case 'documents':
-                if (data.documents) {
+                if (Array.isArray(data.documents)) {
                     handleNewDocuments({ detail: data.documents });
                 } 
                 break;
@@ -188,8 +190,28 @@
         window.resetAllCitations();
     }
 
+    async function createNewSession() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/new_session`, {
+                method: 'POST',
+            });
+            const session = await response.json();
+            console.log('New session created:', session);
+            if (session.id) {
+                setSessionId(session.id);
+                sessionName = session.name;
+            } else {
+                console.error('Failed to create a new session');
+            }
+        } catch (error) {
+            console.error('Error creating new session:', error);
+        }
+    }
+
     onMount(async () => {
-        // Any initialization logic can go here
+        if (!sessionId) {
+            await createNewSession();
+        }
     });
 </script>
 
@@ -200,15 +222,22 @@
 <main class="flex flex-col md:flex-row h-screen bg-gray-100">
     <div class="order-1 md:order-2 {documents.length > 0 ? 'h-1/2 md:w-3/5' : 'h-1/12 md:w-1/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden transition-all duration-300">
         <Documents 
-            {documents} 
-            {selectedDocuments} 
-            {citationText} 
-            {citationWords}
+            documents={documents}
+            selectedDocuments={selectedDocuments}
+            citationText={citationText}
+            citationWords={citationWords}
             on:showAllDocuments={handleShowAllDocuments} 
         />
     </div>
     <div class="order-2 md:order-1 {documents.length > 0 ? 'h-1/2 md:w-2/5' : 'h-full md:w-4/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden mb-14 md:mb-0 transition-all duration-300">
-        <Chat {messages} {currentMessage} {statusMessages} {currentStatusMessage} on:newMessage={handleNewMessage} on:citationClick={handleCitationClick} />
+        <Chat 
+            messages={messages} 
+            currentMessage={currentMessage} 
+            statusMessages={statusMessages} 
+            currentStatusMessage={currentStatusMessage} 
+            on:newMessage={handleNewMessage} 
+            on:citationClick={handleCitationClick} 
+        />
     </div>
 </main>
 

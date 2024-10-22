@@ -1,0 +1,27 @@
+{
+  "name": "Python Dev Container",
+  "dockerComposeFile": ["../docker-compose.dev.yml"],
+  "service": "backend",
+  "workspaceFolder": "/app/backend",
+
+  "customizations": {
+    "vscode": {
+      "settings": {  // Moved settings here
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "/usr/local/bin/python"
+      },
+      "extensions": [
+        "ms-python.python"
+      ]
+    }
+  },
+  "remoteEnv": {
+    "MYSQL_DATABASE": "${localEnv:MYSQL_DATABASE}",
+    "MYSQL_USER": "${localEnv:MYSQL_USER}",
+    "MYSQL_PASSWORD": "${localEnv:MYSQL_PASSWORD}"
+  },
+  "postCreateCommand": "pip install -r requirements.txt",
+  "mounts": [
+    "source=${localWorkspaceFolder}/backend,target=/app/backend,type=bind"
+  ]
+}
