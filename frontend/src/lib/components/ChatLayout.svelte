@@ -220,7 +220,7 @@
 </svelte:head>
 
 <main class="flex flex-col md:flex-row h-screen bg-gray-100">
-    <div class="order-1 md:order-2 {documents.length > 0 ? 'h-1/2 md:w-3/5' : 'h-1/12 md:w-1/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden transition-all duration-300">
+    <div class="order-1 md:order-2 {documents.length > 0 ? 'h-1/5 md:w-1/2' : 'h-1/12 md:w-1/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden transition-all duration-300">
         <Documents 
             documents={documents}
             selectedDocuments={selectedDocuments}
@@ -229,7 +229,7 @@
             on:showAllDocuments={handleShowAllDocuments} 
         />
     </div>
-    <div class="order-2 md:order-1 {documents.length > 0 ? 'h-1/2 md:w-2/5' : 'h-full md:w-4/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden mb-14 md:mb-0 transition-all duration-300">
+    <div class="order-2 md:order-1 {documents.length > 0 ? 'h-4/5 md:w-1/2' : 'h-full md:w-4/5'} md:h-screen px-4 py-2 md:py-4 flex flex-col overflow-hidden mb-14 md:mb-0 transition-all duration-300">
         <Chat 
             messages={messages} 
             currentMessage={currentMessage} 
