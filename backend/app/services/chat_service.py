@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from ..services.qdrant_service import QdrantService
 from ..services.cohere_service import CohereService
-from ..text_utils import to_markdown, format_content
+from ..text_utils import to_markdown, format_content, get_formatted_date_english, get_formatted_current_date_dutch
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -43,13 +43,17 @@ class ChatService:
         system_message = ChatMessage(role="system", content=self.cohere_service.get_system_message())    
         messages = [system_message] + messages
         
-        logger.info(f"Generating response for messages and documents: {messages}")
+        logger.debug(f"Generating response for messages and documents: {messages}")
         
         formatted_docs = [{     
                 'id': doc['id'],   
                 "data": {
                     "title": doc['data']['title'],
-                    "snippet": doc['data']['content']
+                    "snippet": doc['data']['content'],
+                    "publication date": get_formatted_date_english(
+                        doc['data']['published']
+                    ),
+                    "municipality": doc['data']['location_name']
                 }
             } for doc in relevant_docs
         ]

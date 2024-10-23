@@ -40,7 +40,7 @@ class QdrantService:
         return self.prepare_documents_with_scores(qdrant_documents, documents)        
 
     def get_bron_documents_from_qdrant(self, query, limit=50):   
-        logger.info(f"Retrieving documents from Qdrant for query: {query}")
+        logger.debug(f"Retrieving documents from Qdrant for query: {query}")
 
         try:
             # Generate dense embedding using CohereService
@@ -65,7 +65,7 @@ class QdrantService:
             return None
 
     def retrieve_relevant_documents(self, query: str) -> List[Dict]:          
-        logger.info(f"Retrieving relevant documents for query: {query}")
+        logger.debug(f"Retrieving relevant documents for query: {query}")
         # Get documents from Qdrant
         qdrant_documents = self.get_bron_documents_from_qdrant(
             query=query, 
@@ -78,7 +78,7 @@ class QdrantService:
             return []
 
         # Rerank documents using Cohere
-        # logger.info(f"Documents: {qdrant_documents[0]}")
+        logger.debug(f"Documents: {qdrant_documents[0]}")
         # convert Qdrant ScoredPoint to Cohere RerankDocument
         document_texts = [document.payload['content'] for document in qdrant_documents]
         reranked_documents = self.cohere_service.rerank_documents(
@@ -87,7 +87,7 @@ class QdrantService:
         )
         
         qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]        
-        # logger.info(f"Reranked documents: {qdrant_documents[0]}")  
+        logger.debug(f"Reranked documents: {qdrant_documents[0]}")  
         
         return self.prepare_documents(qdrant_documents)
     
@@ -139,3 +139,6 @@ class QdrantService:
                 }
             } for doc in qdrant_documents 
         ]
+
+    def reorder_documents_by_publication_date(self, documents: List[Dict]):
+        return sorted(documents, key=lambda x: x['data']['published'], reverse=True)

@@ -1,7 +1,7 @@
 from ..config import settings
 from cohere import ClientV2 as CohereClient
 import logging
-from ..text_utils import get_formatted_date_english
+from ..text_utils import get_formatted_current_date_english
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -38,7 +38,7 @@ class CohereService:
         ).embeddings.float[0]
         
     def get_system_message(self):
-        formatted_date = get_formatted_date_english()
+        formatted_date = get_formatted_current_date_english()
         
         pirate_system_message='''
 
@@ -48,7 +48,7 @@ You are Command. You are an extremely capable large language model built by Cohe
 
 ## Style Guide
 
-Always answer in Dutch. Formulate your response as an investigative journalist would.
+Always answer in Dutch. Formulate your answers in the style of a journalist, and when making factual statements, always cite your sources.
 
 '''
         # Update the pirate_system_message with the formatted date

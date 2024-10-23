@@ -28,8 +28,8 @@ class SessionService(DatabaseService):
     def create_session(self, session: SessionCreate):
         messages = [message.to_json() for message in session.messages]
         documents = [document.to_json() for document in session.documents]
-        logger.info(f"Creating session with messages: {messages}")
-        logger.info(f"Creating session with documents: {documents}")
+        logger.debug(f"Creating session with messages: {messages}")
+        logger.debug(f"Creating session with documents: {documents}")
         db_session = Session(
             id=str(uuid.uuid4()),
             name=session.name or f"Sessie {datetime.now().strftime('%Y-%m-%d %H:%M')}",
@@ -58,19 +58,19 @@ class SessionService(DatabaseService):
             
         if session.messages is not None and len(session.messages) > 0:
             messages = [message.to_json() for message in session.messages]
-            logger.info(f"Updating session with messages: {session.messages} with {messages}")
+            logger.debug(f"Updating session with messages: {session.messages} with {messages}")
             if db_session.messages is None:
                 db_session.messages = []
             db_session.messages = db_session.messages + messages
         
         if session.documents is not None and len(session.documents) > 0:
             documents = [document.to_json() for document in session.documents]
-            logger.info(f"Updating with documents: {session.documents} with {documents}")
+            logger.debug(f"Updating with documents: {session.documents} with {documents}")
             if db_session.documents is None:
                 db_session.documents = []
             db_session.documents = db_session.documents + documents
                 
-        logger.info(f"Updated session with messages: {db_session.messages}")
+        logger.debug(f"Updated session with messages: {db_session.messages}")
         self.db.commit()
         self.db.refresh(db_session)
         return {"message": "Session updated successfully"}

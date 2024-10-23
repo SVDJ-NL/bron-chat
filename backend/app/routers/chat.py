@@ -63,15 +63,17 @@ async def chat_endpoint(
             
             try: 
                 relevant_docs = qdrant_service.retrieve_relevant_documents(query)
-                logger.info(f"Relevant documents: {relevant_docs}")
+                logger.debug(f"Relevant documents: {relevant_docs}")
             except Exception as e:
                 logger.error(f"Error retrieving relevant documents: {e}")
                 raise e
             
+            reordered_relevant_docs = qdrant_service.reorder_documents_by_publication_date(relevant_docs)
+            
             try:
                 session_service.update_session(
                     session.id, 
-                    SessionUpdate(documents=[ChatDocument(id=doc['id'], score=doc['score']) for doc in relevant_docs])
+                    SessionUpdate(documents=[ChatDocument(id=doc['id'], score=doc['score']) for doc in reordered_relevant_docs])
                 )
             except Exception as e:
                 logger.error(f"Error updating session: {e}")
@@ -79,7 +81,7 @@ async def chat_endpoint(
             yield 'data: ' + json.dumps({
                 "type": "documents",
                 "role": "assistant",
-                "documents": relevant_docs
+                "documents": reordered_relevant_docs
             }) + "\n\n"
             await sleep(0)
             
