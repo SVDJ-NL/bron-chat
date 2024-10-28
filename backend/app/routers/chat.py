@@ -9,7 +9,8 @@ from ..services.chat_service import ChatService
 from ..services.session_service import SessionService
 from ..services.cohere_service import CohereService
 from ..services.qdrant_service import QdrantService
-from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument
+from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
+from datetime import datetime
 
 router = APIRouter()
 
@@ -28,18 +29,34 @@ async def chat_endpoint(
     cohere_service = CohereService()
     session_service = SessionService(db)
     
-    system_message = {"role": "system", "content": cohere_service.get_system_message() }
-    message = {"role": "user", "content": query}
+    session = session_service.get_session(session_id)        
+    user_message = cohere_service.get_user_message(query)    
+    session_messages = session.get_messages()
     
-    if not session_id or session_id is None or session_id == '' or session_id == 'null':
-        session = session_service.create_session(SessionCreate(messages=[system_message, message]))        
+    is_new_session = not session_messages or len(session_messages) == 0
+    
+    if is_new_session:        
+        system_message_rag = cohere_service.get_rag_system_message()
+        
+        session = session_service.update_session(
+            session.id, 
+            SessionUpdate(
+                messages=[system_message_rag, user_message],
+            )
+        )        
     else:
-        session = session_service.get_session(session_id)
-        session_service.update_session(session.id, SessionUpdate(messages=[system_message, message]))
+        session = session_service.update_session(
+            session.id, 
+            SessionUpdate(
+                messages=session_messages + [user_message]
+            )
+        )
         logger.info(f"Using existing session: {session.id}")
 
     async def event_generator():
-        full_response = ""
+        full_formatted_content = ""
+        full_original_content = ""
+        
         try:
             yield 'data: ' + json.dumps({
                 "type": "session",
@@ -68,16 +85,17 @@ async def chat_endpoint(
                 logger.error(f"Error retrieving relevant documents: {e}")
                 raise e
             
-            reordered_relevant_docs = qdrant_service.reorder_documents_by_publication_date(relevant_docs)
-            
-            try:
-                session_service.update_session(
-                    session.id, 
-                    SessionUpdate(documents=[ChatDocument(id=doc['id'], score=doc['score']) for doc in reordered_relevant_docs])
-                )
-            except Exception as e:
-                logger.error(f"Error updating session: {e}")
-            
+            session_documents = session.get_documents()
+            if not session_documents:
+                combined_relevant_docs = relevant_docs
+            else:
+                if isinstance(session_documents[0], ChatDocument):
+                    combined_relevant_docs = relevant_docs
+                else:
+                    combined_relevant_docs = relevant_docs + session_documents
+
+            reordered_relevant_docs = qdrant_service.reorder_documents_by_publication_date(combined_relevant_docs)
+                                
             yield 'data: ' + json.dumps({
                 "type": "documents",
                 "role": "assistant",
@@ -99,32 +117,55 @@ async def chat_endpoint(
             }) + "\n\n"
             await sleep(0)
             
-            async for response in chat_service.generate_full_response(query, relevant_docs):
+            async for response in chat_service.generate_full_response(session.get_messages(), relevant_docs):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
 
                 if response["type"] == "full":
-                    full_response = response["content"]
+                    full_formatted_content = response["content"]
+                    full_original_content = response["content_original"]      
 
         except Exception as e:
-            logger.error(f"Error in chat_endpoint: {e}")
+            logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
             yield 'data: ' + json.dumps({"type": "error", "content": str(e)}) + "\n\n"
             await sleep(0)
         
         finally:
             # Update the session with the assistant's response
-            if full_response:
+            if full_original_content:
                 try:
+                    if is_new_session:
+                        chat_name = cohere_service.create_chat_session_name(user_message)
+                        # Always send end and close events
+                        yield 'data: ' + json.dumps({"type": "session_name", "content": chat_name}) + "\n\n"
+                        await sleep(0)
+                    else:
+                        chat_name = session.name
+                                        
                     session_service.update_session(
-                        session.id,
-                        SessionUpdate(messages=[ChatMessage(
-                            role="assistant",
-                            content=full_response
-                        )])
+                        session_id=session.id,                        
+                        session_update=SessionUpdate(
+                            name=chat_name,
+                            messages = session.get_messages() + [
+                                ChatMessage(
+                                    role="assistant",
+                                    content=full_original_content,
+                                    formatted_content=full_formatted_content
+                                )
+                            ],
+                            documents = session.get_documents() + [
+                                ChatDocument(
+                                    id=doc['id'],
+                                    score=doc['score']
+                                )
+                                for doc in reordered_relevant_docs
+                            ]   
+                        )
                     )
+                    
                 except Exception as e:
-                    logger.error(f"Error updating session: {e}")
-
+                    logger.error(f"Error updating session: {e}", exc_info=True)
+            
             # Always send end and close events
             yield 'data: ' + json.dumps({"type": "end", "content": "Done."}) + "\n\n"
             await sleep(0)

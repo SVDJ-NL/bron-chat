@@ -40,9 +40,6 @@ class ChatService:
         return html_text
         
     async def generate_response(self, messages: List[ChatMessage], relevant_docs: List[Dict]) -> AsyncGenerator[Dict, None]:        
-        system_message = ChatMessage(role="system", content=self.cohere_service.get_system_message())    
-        messages = [system_message] + messages
-        
         logger.debug(f"Generating response for messages and documents: {messages}")
         
         formatted_docs = [{     
@@ -90,12 +87,12 @@ class ChatService:
                         }
                         current_citation = None
 
-    async def generate_full_response(self, query: str, relevant_docs: List[Dict]):
-        logger.info(f"Generating full response for query: {query}")
+    async def generate_full_response(self, session_messages: List[ChatMessage], relevant_docs: List[Dict]):
+        logger.debug(f"Generating full response for query: {session_messages[-1].content}")
         full_text = ""
         citations = []
         
-        async for event in self.generate_response([ChatMessage(role="user", content=query)], relevant_docs):
+        async for event in self.generate_response(session_messages, relevant_docs):
             if event["type"] == "status":
                 yield {
                     "type": "status",

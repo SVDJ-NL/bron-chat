@@ -6,7 +6,7 @@
         const response = await fetch('/api/new_session', { method: 'POST' });
         const data = await response.json();
         goto(`/s/${data.id}`);
-    });
+    }); 
 </script>
 
 <div class="flex items-center justify-center h-screen bg-gray-100">

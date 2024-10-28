@@ -1,7 +1,6 @@
 <script>
     export let messages = [];
     export let currentMessage = null;
-    export let statusMessages = [];
     export let currentStatusMessage = null;
 
     import { createEventDispatcher, onMount, afterUpdate } from 'svelte';

@@ -11,7 +11,6 @@
     export let initialDocuments = [];
 
     let messages = initialMessages || [];  // Ensure messages is always an array
-    let statusMessages = [];
     let currentStatusMessage = null;
     let documents = Array.isArray(initialDocuments) ? initialDocuments : [];
     let selectedDocuments = null;
@@ -28,7 +27,14 @@
     }
 
     function handleNewDocuments(event) {
-        documents = Array.isArray(event.detail) ? event.detail : [];
+        const newDocs = Array.isArray(event.detail) ? event.detail : [];
+        documents = [...documents, ...newDocs];
+        // Sort documents by publication date (newest first)
+        documents = documents.sort((a, b) => {
+            const dateA = new Date(a.published);
+            const dateB = new Date(b.published);
+            return dateB - dateA;
+        });
     }
 
     function handleCitationClick(event) {
@@ -39,7 +45,6 @@
     }
 
     function addStatusMessage(statusMessage) {
-        statusMessages = [...statusMessages, statusMessage];
         currentStatusMessage = statusMessage;
     }
 
@@ -173,6 +178,9 @@
                 });
                 currentMessage = null;
                 break;
+            case 'session_name':
+                sessionName = data.content;
+                break;
             case 'end':   
                 console.log('Received end event');
                 break;
@@ -233,7 +241,6 @@
         <Chat 
             messages={messages} 
             currentMessage={currentMessage} 
-            statusMessages={statusMessages} 
             currentStatusMessage={currentStatusMessage} 
             on:newMessage={handleNewMessage} 
             on:citationClick={handleCitationClick} 

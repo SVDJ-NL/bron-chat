@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     COHERE_API_KEY: str = os.getenv("COHERE_API_KEY")
     COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL")
     COHERE_RERANK_MODEL: str = os.getenv("COHERE_RERANK_MODEL")
+    SPARSE_EMBED_MODEL: str = os.getenv("SPARSE_EMBED_MODEL")
     ALLOWED_ORIGINS: str = [
         "http://localhost:5173",
         "http://0.0.0.0:5173",
@@ -26,5 +27,9 @@ class Settings(BaseSettings):
         "https://bron.ngrok.io"
     ]
     QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION")
-
+    QDRANT_SPARSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_SPARSE_RETRIEVE_LIMIT"))
+    QDRANT_DENSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_DENSE_RETRIEVE_LIMIT"))
+    QDRANT_HYBRID_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_HYBRID_RETRIEVE_LIMIT"))
+    RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
+    
 settings = Settings()

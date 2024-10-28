@@ -1,38 +1,47 @@
 from pydantic import BaseModel
 from typing import List, Dict, Optional
+from datetime import datetime
 
 class ChatMessage(BaseModel):
     role: str
     content: str
+    formatted_content: Optional[str] = None
     
-    def to_json(self):
-        return self.dict()
-
 class ChatDocument(BaseModel):
     id: str
     score: float
     
-    def to_json(self):
-        return self.dict()
+    def __hash__(self):
+        return hash(self.id)
     
+    def __eq__(self, other):
+        if not isinstance(other, ChatDocument):
+            return False
+        return self.id == other.id
+        
 class ChatRequest(BaseModel):
     content: str
     
-    def to_json(self):
-        return self.dict()
-
-class SessionCreate(BaseModel):
+class SessionBase(BaseModel):
     name: Optional[str] = None
     messages: List[ChatMessage] = []
     documents: List[ChatDocument] = []
     
-    def to_json(self):
-        return self.dict()
-
-class SessionUpdate(BaseModel):
+class SessionBase(BaseModel):
     name: Optional[str] = None
     messages: List[ChatMessage] = []
     documents: List[ChatDocument] = []
-    
-    def to_json(self):
-        return self.dict()
+
+class SessionCreate(SessionBase):
+    pass
+
+class SessionUpdate(SessionBase):
+    pass
+
+class Session(SessionBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

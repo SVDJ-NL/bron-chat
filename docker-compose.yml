@@ -29,7 +29,6 @@ services:
     tty: true
     environment:
       - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
-      - TEST_VARIABLE=${TEST_VARIABLE}
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -52,7 +51,7 @@ services:
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
-      --default-authentication-plugin=mysql_native_password
+      --default-authentication-plugin=caching_sha2_password
       --max-connections=1000
       --innodb-buffer-pool-size=1G
     healthcheck:
