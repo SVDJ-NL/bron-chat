@@ -27,9 +27,9 @@ services:
       - QDRANT_PORT=${QDRANT_PORT}
       - COHERE_API_KEY=${COHERE_API_KEY}
       - ENVIRONMENT=${ENVIRONMENT}
-      - MYSQL_DATABASE: ${MYSQL_DATABASE}
-      - MYSQL_USER: ${MYSQL_USER}
-      - MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
     volumes:
       - ./backend:/app/backend
     extra_hosts:
