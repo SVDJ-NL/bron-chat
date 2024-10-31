@@ -13,7 +13,6 @@ services:
       - '0.0.0.0:80:80'
       - '0.0.0.0:443:443'
       - '0.0.0.0:3306:3306'
-      - '0.0.0.0:6333:6333'
       - '0.0.0.0:9000:9000'
 
   backend:
@@ -56,7 +55,7 @@ services:
     expose:
       - "3000"
     environment:
-      - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+      - APP_PUBLIC_API_URL=${APP_PUBLIC_API_URL}
     depends_on:
       - backend
     restart: unless-stopped
