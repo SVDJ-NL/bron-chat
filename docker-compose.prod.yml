@@ -12,15 +12,13 @@ services:
     ports:
       - '0.0.0.0:80:80'
       - '0.0.0.0:443:443'
-      # - '0.0.0.0:3306:3306'
-      - '0.0.0.0:9000:9000'
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       - QDRANT_HOST=${QDRANT_HOST}
       - QDRANT_PORT=${QDRANT_PORT}

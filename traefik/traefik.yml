@@ -15,22 +15,11 @@ entryPoints:
     # https
     address: ':443'
 
-  # mysql:
-  #   address: ':3306'
-
-  # qdrant:
-  #   address: ':6333'
-
-  portainer:
-    address: ':9000'
-
 certificatesResolvers:
   letsencrypt:
-    # https://docs.traefik.io/master/https/acme/#lets-encrypt
     acme:
       email: 'info@linksmith.nl'
       storage: /etc/traefik/acme/acme.json
-      # https://docs.traefik.io/master/https/acme/#httpchallenge
       httpChallenge:
         entryPoint: web
 
@@ -42,7 +31,6 @@ http:
         - web-secure
       service: frontend
       tls:
-        # https://docs.traefik.io/master/routing/routers/#certresolver
         certResolver: letsencrypt
 
     backend-router:
@@ -51,7 +39,6 @@ http:
         - web-secure
       service: backend
       tls:
-        # https://docs.traefik.io/master/routing/routers/#certresolver
         certResolver: letsencrypt
 
   services:
@@ -65,23 +52,8 @@ http:
         servers:
           - url: http://backend:8000
 
-    # mysql:
-    #   loadBalancer:
-    #     servers:
-    #       - url: http://mysql:3306
-
-    # qdrant:
-    #   loadBalancer:
-    #     servers:
-    #       - url: http://qdrant:6333
-
-    portainer:
-      loadBalancer:
-        servers:
-          - url: http://portainer:9000
-
 providers:
   # https://docs.traefik.io/master/providers/file/
   file:
-    filename: /etc/traefik/traefik.prod.yml
+    filename: /etc/traefik/traefik.yml
     watch: true
