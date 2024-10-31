@@ -12,5 +12,7 @@ RUN npm install
 
 COPY . .
 
+ENV NODE_ENV=development
+
 # Expose the development server port (default is 5173 for Vite)
 EXPOSE 5173

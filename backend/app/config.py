@@ -9,11 +9,11 @@ class Settings(BaseSettings):
     COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL")
     COHERE_RERANK_MODEL: str = os.getenv("COHERE_RERANK_MODEL")
     SPARSE_EMBED_MODEL: str = os.getenv("SPARSE_EMBED_MODEL")
-    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
     QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION")
     QDRANT_SPARSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_SPARSE_RETRIEVE_LIMIT"))
     QDRANT_DENSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_DENSE_RETRIEVE_LIMIT"))
     QDRANT_HYBRID_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_HYBRID_RETRIEVE_LIMIT"))
     RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
     
 settings = Settings()
