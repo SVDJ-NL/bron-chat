@@ -6,14 +6,14 @@ from ..database import get_db
 from ..services.qdrant_service import QdrantService
 import logging
 from datetime import datetime
-from ..config import config
+from ..config import settings
 
 router = APIRouter()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ENVIRONMENT = config.ENVIRONMENT
+ENVIRONMENT = settings.ENVIRONMENT
 
 base_api_url = "/"
 if ENVIRONMENT == "development":

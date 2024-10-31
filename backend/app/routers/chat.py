@@ -11,15 +11,14 @@ from ..services.cohere_service import CohereService
 from ..services.qdrant_service import QdrantService
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
 from datetime import datetime
-from ..config import config
-
+from ..config import settings
 router = APIRouter()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ENVIRONMENT = config.ENVIRONMENT
+ENVIRONMENT = settings.ENVIRONMENT
 
 base_api_url = "/"
 if ENVIRONMENT == "development":
