@@ -2,8 +2,10 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
 
+    export const API_BASE_URL = import.meta.env.APP_PUBLIC_API_URL;
+
     onMount(async () => {
-        const response = await fetch('/api/new_session', { method: 'POST' });
+        const response = await fetch(`${API_BASE_URL}/new_session`, { method: 'POST' });
         const data = await response.json();
         goto(`/s/${data.id}`);
     }); 
