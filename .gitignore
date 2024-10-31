@@ -22,8 +22,9 @@ env/
 
 # Environment variables
 .env
-
-
+.env.production
+.env.development
+.env.staging
 
 # Frontend
 frontend/node_modules

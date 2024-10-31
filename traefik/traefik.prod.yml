@@ -1,0 +1,87 @@
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    # http
+    address: ':80'
+    http:
+      # https://docs.traefik.io/routing/entrypoints/#entrypoint
+      redirections:
+        entryPoint:
+          to: web-secure
+
+  web-secure:
+    # https
+    address: ':443'
+
+  mysql:
+    address: ':3306'
+
+  qdrant:
+    address: ':6333'
+
+  portainer:
+    address: ':9000'
+
+certificatesResolvers:
+  letsencrypt:
+    # https://docs.traefik.io/master/https/acme/#lets-encrypt
+    acme:
+      email: 'info@linksmith.nl'
+      storage: /etc/traefik/acme/acme.json
+      # https://docs.traefik.io/master/https/acme/#httpchallenge
+      httpChallenge:
+        entryPoint: web
+
+http:
+  routers:
+    frontend-router:
+      rule: 'Host(`chat.bron.live`)'
+      entryPoints:
+        - web-secure
+      service: frontend
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+    backend-router:
+      rule: 'Host(`api.chat.bron.live`)'
+      entryPoints:
+        - web-secure
+      service: backend
+      tls:
+        # https://docs.traefik.io/master/routing/routers/#certresolver
+        certResolver: letsencrypt
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: http://frontend:3000
+
+    backend:
+      loadBalancer:
+        servers:
+          - url: http://backend:8000
+
+    mysql:
+      loadBalancer:
+        servers:
+          - url: http://mysql:3306
+
+    qdrant:
+      loadBalancer:
+        servers:
+          - url: http://qdrant:6333
+
+    portainer:
+      loadBalancer:
+        servers:
+          - url: http://portainer:9000
+
+providers:
+  # https://docs.traefik.io/master/providers/file/
+  file:
+    filename: /etc/traefik/traefik.prod.yml
+    watch: true
