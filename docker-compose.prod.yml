@@ -87,8 +87,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - /var/lib/mysql:/var/lib/mysql
-    expose:
+    ports:
       - "3306:3306"
+    expose:
+      - "3306"
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
