@@ -75,7 +75,7 @@
         }
     }
 
-    export const API_BASE_URL = import.meta.env.APP_PUBLIC_API_URL;
+    export const API_BASE_URL = "https://api.chat.bron.live"; //import.meta.env.APP_PUBLIC_API_URL;
 
     async function sendMessage(message) {
         try {
@@ -94,7 +94,7 @@
                 });
                 console.log('Sending message with session ID:', sessionId);
             }
-            
+
             const url = `${API_BASE_URL}/chat?${params}`;
             console.log('Connecting to EventSource URL:', url);
             

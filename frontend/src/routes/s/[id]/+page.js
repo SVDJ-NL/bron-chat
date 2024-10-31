@@ -2,10 +2,10 @@ import { error } from '@sveltejs/kit';
 
 export async function load({ params, fetch }) {
     const sessionId = params.id;
-    // const API_BASE_URL = import.meta.env.APP_PUBLIC_API_URL;
+    const API_BASE_URL = "https://api.chat.bron.live"; //import.meta.env.APP_PUBLIC_API_URL;
 
     try {
-        const response = await fetch(`https://api.chat.bron.live/sessions/${sessionId}`);
+        const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`);
 
         if (response.ok) {
             const sessionData = await response.json();
