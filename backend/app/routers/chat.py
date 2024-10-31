@@ -11,6 +11,7 @@ from ..services.cohere_service import CohereService
 from ..services.qdrant_service import QdrantService
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
 from datetime import datetime
+from ..config import config
 
 router = APIRouter()
 
@@ -18,7 +19,13 @@ router = APIRouter()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@router.get("/api/chat")
+ENVIRONMENT = config.ENVIRONMENT
+
+base_api_url = "/"
+if ENVIRONMENT == "development":
+    base_api_url = "/api/"
+
+@router.get(base_api_url + "chat")
 async def chat_endpoint(
     query: str = Query(..., description="The chat message content"),
     session_id: str = Query(None, description="The session ID"),

@@ -6,13 +6,20 @@ from ..database import get_db
 from ..services.qdrant_service import QdrantService
 import logging
 from datetime import datetime
+from ..config import config
 
 router = APIRouter()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@router.get("/api/sessions/{session_id}")
+ENVIRONMENT = config.ENVIRONMENT
+
+base_api_url = "/"
+if ENVIRONMENT == "development":
+    base_api_url = "/api/"
+
+@router.get(base_api_url + "sessions/{session_id}")
 async def get_session(session_id: str, db: Session = Depends(get_db)):
     logger.debug(f"Getting session with id: {session_id}")
     session_service = SessionService(db)
@@ -42,17 +49,17 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     
     return response
 
-@router.put("/api/sessions/{session_id}")
+@router.put(base_api_url + "sessions/{session_id}")
 async def update_session(session_id: str, session: SessionUpdate, db: Session = Depends(get_db)):
     session_service = SessionService(db)
     return session_service.update_session(session_id, session)
 
-@router.post("/api/generate_session_name")
+@router.post(base_api_url + "generate_session_name")
 async def generate_session_name(request: ChatRequest, db: Session = Depends(get_db)):
     session_service = SessionService(db)
     return session_service.generate_session_name(request.content)
 
-@router.post("/api/new_session")
+@router.post(base_api_url + "new_session")
 async def create_session(db: Session = Depends(get_db)):
     now = datetime.now()
     session_service = SessionService(db)
