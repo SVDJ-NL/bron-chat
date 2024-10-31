@@ -15,5 +15,5 @@ class Settings(BaseSettings):
     QDRANT_HYBRID_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_HYBRID_RETRIEVE_LIMIT"))
     RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
-    
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT")
 settings = Settings()
