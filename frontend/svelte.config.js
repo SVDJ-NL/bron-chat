@@ -7,6 +7,7 @@ const config = {
 			out: 'build',
 			precompress: false,
 			env: {
+				dir: '.',
 				publicPrefix: 'PUBLIC_'
 			}
 		}),
@@ -14,6 +15,7 @@ const config = {
 			$lib: 'src/lib'
 		},
 		env: {
+			dir: '.',
 			publicPrefix: 'PUBLIC_'
 		}
 	}
