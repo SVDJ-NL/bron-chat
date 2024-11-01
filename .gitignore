@@ -22,26 +22,20 @@ env/
 
 # Environment variables
 .env
-.env.production
-.env.development
-.env.staging
 
-# Frontend
+# SvelteKit specific
+.svelte-kit/
+frontend/build/
+.env.*
+!.env.example
 frontend/node_modules
 frontend/dist
-frontend/build
-frontend/public/
-frontend/tailwind.config.js
 frontend/.npmrc
+
+# Frontend
 
 # Backend
 backend/app/__pycache__/
-backend/app/main.pyc
-backend/app/main.pyo
-backend/app/main.pyc
-backend/app/main.pyo
-backend/app/main.pyc
-backend/app/main.pyo
 backend/app/main.pyc
 backend/app/main.pyo
 
