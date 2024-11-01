@@ -10,7 +10,7 @@
                     <img class="hidden sm:block h-8 w-auto ml-1" src="/bron-logo.svg" alt="Bron Logo" />
                     <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo.svg" alt="Bron Logo" />
                 </a>
-                <span class="text-[#2260FF] text-2xl md:text-3xl font-semibold ml-2 uppercase mt-1 -ml-2 pl-2">Chat</span>
+                <span class="text-[#2260FF] text-2xl md:text-3xl font-semibold ml-2 uppercase mt-1">Chat</span>
             </div>
             <div class="flex-shrink-0 flex items-center ml-auto">
                 <a href="https://svdj.nl" target="_blank">
