@@ -30,7 +30,7 @@ services:
     stdin_open: true
     tty: true
     environment:
-      - VITE_PUBLIC_API_URL=${VITE_PUBLIC_API_URL}
+      - PUBLIC_API_URL=${PUBLIC_API_URL}
     volumes:
       - ./frontend:/app
       - /app/node_modules

@@ -7,11 +7,14 @@ const config = {
 			out: 'build',
 			precompress: false,
 			env: {
-				prefix: 'APP_'
+				publicPrefix: 'PUBLIC_'
 			}
 		}),
 		alias: {
 			$lib: 'src/lib'
+		},
+		env: {
+			publicPrefix: 'PUBLIC_'
 		}
 	}
 };

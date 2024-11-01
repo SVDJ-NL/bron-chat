@@ -75,7 +75,7 @@
         }
     }
 
-    export const API_BASE_URL = "https://api.chat.bron.live"; //import.meta.env.APP_PUBLIC_API_URL;
+    export const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
     async function sendMessage(message) {
         try {

@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
 
-    const API_BASE_URL = "https://api.chat.bron.live"; //import.meta.env.APP_PUBLIC_API_URL;
+    const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
     onMount(async () => {
         const response = await fetch(`${API_BASE_URL}/new_session`, { method: 'POST' });

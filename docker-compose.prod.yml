@@ -53,7 +53,7 @@ services:
     expose:
       - "3000"
     environment:
-      - APP_PUBLIC_API_URL=${APP_PUBLIC_API_URL}
+      - PUBLIC_API_URL=${PUBLIC_API_URL}
     depends_on:
       - backend
     restart: unless-stopped
