@@ -4,6 +4,7 @@
     import Chat from './Chat.svelte';
     import Documents from './Documents.svelte';
     import { goto } from '$app/navigation';
+    import { API_BASE_URL } from '$lib/config';
 
     export let sessionId = null;
     export let sessionName = '';
@@ -74,8 +75,6 @@
             console.debug('Window object not available, skipping URL update');
         }
     }
-
-    export const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
     async function sendMessage(message) {
         try {

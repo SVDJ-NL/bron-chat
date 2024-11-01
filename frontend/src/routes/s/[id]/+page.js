@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
+import { API_BASE_URL } from '$lib/config';
 
 export async function load({ params, fetch }) {
     const sessionId = params.id;
-    const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
     try {
         const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`);
