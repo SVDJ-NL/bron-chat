@@ -23,3 +23,7 @@ fast_api_app.include_router(sessions.router)
 async def startup_event():
     # await asyncio.sleep(10)
     init_db()
+
+@fast_api_app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

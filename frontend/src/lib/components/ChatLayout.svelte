@@ -62,16 +62,16 @@
 
     function setSessionId(id) {
         sessionId = id;
-        console.log('Session ID set to:', sessionId);
+        console.debug('Session ID set to:', sessionId);
         if (typeof window !== 'undefined') {
             try {
                 goto(`/s/${sessionId}`, { replaceState: true });
-                console.log('URL updated successfully');
+                console.debug('URL updated successfully');
             } catch (error) {
                 console.error('Error updating URL:', error);
             }
         } else {
-            console.log('Window object not available, skipping URL update');
+            console.debug('Window object not available, skipping URL update');
         }
     }
 
@@ -86,17 +86,17 @@
                 params = new URLSearchParams({ 
                     query: message.content
                 });
-                console.log('Sending message without session ID');
+                console.debug('Sending message without session ID');
             } else {
                 params = new URLSearchParams({ 
                     query: message.content,
                     session_id: sessionId
                 });
-                console.log('Sending message with session ID:', sessionId);
+                console.debug('Sending message with session ID:', sessionId);
             }
 
             const url = `${API_BASE_URL}/chat?${params}`;
-            console.log('Connecting to EventSource URL:', url);
+            console.debug('Connecting to EventSource URL:', url);
             
             const eventSource = new EventSource(url);
             
@@ -110,9 +110,9 @@
             };
             
             eventSource.onerror = (error) => {
-                console.log('EventSource error:', error);
+                console.error('EventSource error:', error);
                 if (eventSource.readyState === EventSource.CLOSED) {
-                    console.log('EventSource connection closed');
+                    console.debug('EventSource connection closed');
                 } else {
                     console.error('Unexpected EventSource error:', error);
                     updateCurrentMessage({ role: 'assistant', content: 'An unexpected error occurred while processing your request.' });
@@ -121,11 +121,11 @@
             };
             
             eventSource.onopen = () => {
-                console.log('EventSource connection opened');
+                console.debug('EventSource connection opened');
             };
             
             eventSource.addEventListener('close', () => {
-                console.log('EventSource connection closed by server');
+                console.debug('EventSource connection closed by server');
                 eventSource.close();
                 currentMessage = null;
                 currentStatusMessage = null;
@@ -139,7 +139,7 @@
     function handleStreamedResponse(data) {
         switch (data.type) {
             case 'session':
-                console.log('Received session event:', data);
+                console.debug('Received session event:', data);
                 setSessionId(data.session_id);
                 break;
             case 'status':
@@ -182,7 +182,7 @@
                 sessionName = data.content;
                 break;
             case 'end':   
-                console.log('Received end event');
+                console.debug('Received end event');
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
@@ -204,7 +204,7 @@
                 method: 'POST',
             });
             const session = await response.json();
-            console.log('New session created:', session);
+            console.debug('New session created:', session);
             if (session.id) {
                 setSessionId(session.id);
                 sessionName = session.name;
