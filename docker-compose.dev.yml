@@ -2,7 +2,9 @@ services:
   backend:
     env_file:
       - .env
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
     environment:
@@ -24,7 +26,9 @@ services:
   frontend:
     env_file:
       - .env
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     ports:
       - "5173:5173"
     stdin_open: true

@@ -1,15 +1,21 @@
 <script>
   import "../app.css";
+  import Header from '$lib/components/Header.svelte';
+  import { page } from '$app/stores';
+
+  $: showHeader = $page.url.pathname !== '/';
 </script>
 
-<nav>
-    <!-- Navigation menu items -->
-  </nav>
-  
+{#if showHeader}
+  <Header />
+{/if}
+
 <main>
-    <slot />
+  <slot />
 </main>
 
-<footer>
-<!-- Footer content -->
-</footer>
+<style>
+  main {
+    min-height: 100vh;
+  }
+</style>
