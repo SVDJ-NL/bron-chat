@@ -9,7 +9,10 @@ const config = {
 			env: {
 				prefix: 'APP_'
 			}
-		})
+		}),
+		alias: {
+			$lib: 'src/lib'
+		}
 	}
 };
 
