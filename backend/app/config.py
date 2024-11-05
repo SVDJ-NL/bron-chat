@@ -16,4 +16,8 @@ class Settings(BaseSettings):
     RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
+    # Qdrant settings
+    QDRANT_POOL_SIZE: int = 20
+    QDRANT_POOL_TIMEOUT: int = 30
+    QDRANT_TIMEOUT: int = 10
 settings = Settings()

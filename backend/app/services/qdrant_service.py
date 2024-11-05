@@ -11,6 +11,14 @@ from ..text_utils import format_content
 from fastembed.sparse import SparseTextEmbedding
 from qdrant_client.http import models
 from ..schemas import ChatDocument
+import threading
+import queue
+from contextlib import contextmanager
+from datetime import datetime
+import time
+from typing import Optional
+from .qdrant_pool import QdrantConnectionPool
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,21 +27,47 @@ class QdrantService:
     DENSE_VECTORS_NAME = "text-dense"
     SPARSE_VECTORS_NAME = "text-sparse"
     
+    _sparse_document_embedder = None
+    _embedder_lock = threading.Lock()
+    # Adjust semaphore based on available CPU cores and workers
+    # Using (CPU cores * 2) as a good balance for concurrent embeddings
+    _query_semaphore = threading.BoundedSemaphore(16)  
+    
+    # Add batch size control for optimal memory usage
+    BATCH_SIZE = 32  # Process embeddings in batches
+    
+    @classmethod
+    def get_sparse_embedder(cls):
+        if cls._sparse_document_embedder is None:
+            with cls._embedder_lock:
+                if cls._sparse_document_embedder is None:
+                    models_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models')
+                    try:
+                        # Set num_threads based on CPU cores while leaving room for other operations
+                        cls._sparse_document_embedder = SparseTextEmbedding(
+                            cache_dir=models_dir,
+                            model_name=settings.SPARSE_EMBED_MODEL,
+                            num_threads=4  # Half of CPU cores for embedding
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to initialize sparse embedder: {e}")
+                        raise
+        return cls._sparse_document_embedder
+    
     def __init__(self):
         self.dense_model_name = settings.COHERE_EMBED_MODEL
         self.sparse_model_name = settings.SPARSE_EMBED_MODEL
-        
-        self.models_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models')
-        self.qdrant_client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
-        self.cohere_service = CohereService()        
-        self.sparse_document_embedder = SparseTextEmbedding(
-            cache_dir=self.models_dir,
-            model_name=self.sparse_model_name,
-        )
+        self.pool = QdrantConnectionPool.get_instance()
+        self.cohere_service = CohereService()
 
     def generate_sparse_embedding(self, query: str):
-        sparse_vectors = self.sparse_document_embedder.query_embed(query)
-        return next(iter(sparse_vectors), None)
+        try:
+            with self._query_semaphore:
+                sparse_vectors = self.get_sparse_embedder().query_embed(query)
+                return next(iter(sparse_vectors), None)
+        except Exception as e:
+            logger.error(f"Error generating sparse embedding: {e}")
+            return None
 
     def get_documents_by_ids(self, documents: List[ChatDocument]):
         document_ids = []
@@ -45,7 +79,7 @@ class QdrantService:
             return []
         
         try:
-            qdrant_documents = self.qdrant_client.retrieve(
+            qdrant_documents = self.pool.get_client().retrieve(
                 collection_name=settings.QDRANT_COLLECTION,
                 ids=document_ids,
             )
@@ -62,33 +96,33 @@ class QdrantService:
         dense_vector = self.cohere_service.generate_dense_embedding(query)        
         
         try:            
-            qdrant_documents = self.qdrant_client.query_points(
-                collection_name=settings.QDRANT_COLLECTION,
-                prefetch=[
-                    models.Prefetch(
-                        query=models.SparseVector(
-                            indices=sparse_vector.indices,
-                            values=sparse_vector.values,
+            with self.pool.get_client() as client:
+                qdrant_documents = client.query_points(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    prefetch=[
+                        models.Prefetch(
+                            query=models.SparseVector(
+                                indices=sparse_vector.indices,
+                                values=sparse_vector.values,
+                            ),
+                            using=self.SPARSE_VECTORS_NAME,
+                            filter=None,
+                            limit=settings.QDRANT_SPARSE_RETRIEVE_LIMIT
                         ),
-                        using=self.SPARSE_VECTORS_NAME,
-                        filter=None,
-                        limit=settings.QDRANT_SPARSE_RETRIEVE_LIMIT
-                    ),
-                    models.Prefetch(
-                        query=dense_vector,
-                        using=self.DENSE_VECTORS_NAME,
-                        filter=None,
-                        limit=settings.QDRANT_DENSE_RETRIEVE_LIMIT
-                    ),
-                ],
-                query=models.FusionQuery(fusion=models.Fusion.RRF),
-                limit=settings.QDRANT_HYBRID_RETRIEVE_LIMIT,
-                score_threshold=None,
-                with_payload=True,
-                with_vectors=False,
-            ).points
-            
-            
+                        models.Prefetch(
+                            query=dense_vector,
+                            using=self.DENSE_VECTORS_NAME,
+                            filter=None,
+                            limit=settings.QDRANT_DENSE_RETRIEVE_LIMIT
+                        ),
+                    ],
+                    query=models.FusionQuery(fusion=models.Fusion.RRF),
+                    limit=settings.QDRANT_HYBRID_RETRIEVE_LIMIT,
+                    score_threshold=None,
+                    with_payload=True,
+                    with_vectors=False,
+                ).points
+                
         except Exception as e:
             logger.error(f"Error retrieving documents from Qdrant: {e}")   
             return None
@@ -109,7 +143,7 @@ class QdrantService:
             return None
 
         try:
-            qdrant_documents = self.qdrant_client.search(
+            qdrant_documents = self.pool.get_client().search(
                 query_vector=(self.DENSE_VECTORS_NAME, dense_vector),
                 collection_name=settings.QDRANT_COLLECTION,            
                 limit=settings.QDRANT_DENSE_RETRIEVE_LIMIT   
