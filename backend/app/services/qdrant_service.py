@@ -79,15 +79,15 @@ class QdrantService:
             return []
         
         try:
-            qdrant_documents = self.pool.get_client().retrieve(
-                collection_name=settings.QDRANT_COLLECTION,
-                ids=document_ids,
-            )
+            with self.pool.get_client() as client:
+                qdrant_documents = client.retrieve(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    ids=document_ids,
+                )
+                return self.prepare_documents_with_scores(qdrant_documents, documents)
         except Exception as e:
             logger.error(f"Error retrieving documents from Qdrant: {e}")
             return []
-                
-        return self.prepare_documents_with_scores(qdrant_documents, documents)        
 
     def hybrid_search(self, query):
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
@@ -185,54 +185,43 @@ class QdrantService:
         
         return self.prepare_documents(qdrant_documents)
     
+    def _get_best_url(self, doc):
+        url = ""
+        if doc.payload['meta']['doc_url']:
+            url = doc.payload['meta']['doc_url']
+        elif doc.payload['meta']['url']:
+            url = doc.payload['meta']['url'] 
+        return url
+    
+    def _prepare_document_dict(self, doc, score=None):
+        """Helper method to prepare a single document dictionary"""
+        return {
+            'id': f'{doc.id}',  
+            'score': score if score is not None else doc.score,
+            'data': {
+                'source_id': doc.payload['meta']['source_id'],
+                'url': self._get_best_url(doc),
+                'title': doc.payload['meta']['title'],
+                'location': doc.payload['meta']['location'],
+                'location_name': doc.payload['meta']['location_name'],
+                # 'modified': doc.payload['meta']['modified'],
+                'published': doc.payload['meta']['published'],
+                'type': doc.payload['meta']['type'],
+                'source': doc.payload['meta']['source'],
+                # 'page_number': doc.payload['meta']['page_number'],
+                # 'page_count': doc.payload['meta']['page_count'],
+                'content': format_content(doc.payload['content'])
+            }
+        }
+
     def prepare_documents(self, qdrant_documents):
-        return [ 
-            { 
-                'id': f'{doc.id}',                
-                'score': doc.score,  
-                'data': { 
-                    'source_id': doc.payload['meta']['source_id'],
-                    'url': doc.payload['meta']['url'],
-                    'title': doc.payload['meta']['title'],
-                    'location': doc.payload['meta']['location'],
-                    'location_name': doc.payload['meta']['location_name'],
-                    'modified': doc.payload['meta']['modified'],
-                    'published': doc.payload['meta']['published'],
-                    'type': doc.payload['meta']['type'],
-                    'identifier': doc.payload['meta']['identifier'],
-                    'source': doc.payload['meta']['source'],                
-                    'page_number': doc.payload['meta']['page_number'],                
-                    'page_count': doc.payload['meta']['page_count'],                
-                    'content': format_content(doc.payload['content'])
-                } 
-            } for doc in qdrant_documents 
-        ]
+        return [self._prepare_document_dict(doc) for doc in qdrant_documents]
 
     def prepare_documents_with_scores(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
         score_map = {str(doc.id): doc.score for doc in documents}
-        
-        return [
-            {
-                'id': f'{doc.id}',  
-                'score': score_map.get(doc.id, 0),
-                'data': {
-                    'source_id': doc.payload['meta']['source_id'],
-                    'url': doc.payload['meta']['url'],
-                    'title': doc.payload['meta']['title'],
-                    'location': doc.payload['meta']['location'],
-                    'location_name': doc.payload['meta']['location_name'],
-                    'modified': doc.payload['meta']['modified'],
-                    'published': doc.payload['meta']['published'],
-                    'type': doc.payload['meta']['type'],
-                    'identifier': doc.payload['meta']['identifier'],
-                    'source': doc.payload['meta']['source'],
-                    'page_number': doc.payload['meta']['page_number'],
-                    'page_count': doc.payload['meta']['page_count'],
-                    'content': format_content(doc.payload['content'])
-                }
-            } for doc in qdrant_documents 
-        ]
+        return [self._prepare_document_dict(doc, score_map.get(doc.id, 0)) 
+                for doc in qdrant_documents]
 
     def reorder_documents_by_publication_date(self, documents: List[Dict]):
         # Filter out ChatDocument instances and convert them to the expected format

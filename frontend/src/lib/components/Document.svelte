@@ -49,6 +49,19 @@
         }
     }
 
+    function formatSource(source) {
+        const human_readable_sources = {
+            "openbesluitvorming": "Open Besluitvorming",
+            "poliflw": "Berichtgeving politieke partijen",
+            "openspending": "Open Spending - Lokale financiën",
+            "woogle": "Woo verzoek",
+            "obk": "Officiële bekendmaking",
+            "oor": "Open Overheid Rapport",
+            "cvdr": "Lokale wet- en regelgeving",
+        }
+        return human_readable_sources[source] || source;
+    }
+
     function formatDate(dateString) {
         if (!dateString) return 'Onbekend';
         return new Date(dateString).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -88,10 +101,10 @@
             </div>
             <span class="hidden sm:inline mx-2">•</span>
             <div class="flex items-center mb-1 sm:mb-0">
-                <svg class="h-4 w-4 mr-2 text-gray-500" viewBox="0 0 9 11" fill="none" xmlns="http://www.w3.org/2000/svg" >
+                <svg class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 9 11" fill="none" xmlns="http://www.w3.org/2000/svg" >
                     <path d="M9 1.96432V2.92861C9 3.81655 6.98504 4.53575 4.5 4.53575C2.01496 4.53575 0 3.81655 0 2.92861V1.96432C0 1.07678 2.01496 0.357178 4.5 0.357178C6.98504 0.357178 9 1.07678 9 1.96432ZM7.89911 4.67035C8.29888 4.52169 8.70067 4.33084 9 4.09579V6.14289C9 7.03084 6.98504 7.75004 4.5 7.75004C2.01496 7.75004 0 7.03084 0 6.14289V4.09579C0.299933 4.33084 0.683437 4.52169 1.1019 4.67035C2.0021 4.99178 3.20424 5.17861 4.5 5.17861C5.79576 5.17861 6.9971 4.99178 7.89911 4.67035ZM1.1019 7.88463C2.0021 8.20606 3.20424 8.39289 4.5 8.39289C5.79576 8.39289 6.9971 8.20606 7.89911 7.88463C8.29888 7.73597 8.70067 7.54513 9 7.31008V9.03575C9 9.9237 6.98504 10.6429 4.5 10.6429C2.01496 10.6429 0 9.9237 0 9.03575V7.31008C0.299933 7.54513 0.683437 7.73597 1.1019 7.88463Z" fill="#858585"/>
                 </svg>                                        
-                {doc.data.source || 'Onbekend'}       
+                {formatSource(doc.data.source)}       
             </div>
             <!-- <span class="hidden sm:inline mx-2">•</span>   
             <div class="flex items-center">
