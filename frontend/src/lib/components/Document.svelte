@@ -52,7 +52,7 @@
     function formatSource(source) {
         const human_readable_sources = {
             "openbesluitvorming": "Open Besluitvorming",
-            "poliflw": "Berichtgeving politieke partijen",
+            "poliflw": "Nieuwsbericht politieke partij",
             "openspending": "Open Spending - Lokale financiën",
             "woogle": "Woo verzoek",
             "obk": "Officiële bekendmaking",
