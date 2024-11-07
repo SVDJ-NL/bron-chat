@@ -19,11 +19,13 @@
     let citationText = '';
     let citationWords = [];
     let streamedContent = '';
-    let eventSource = null; // Store the EventSource instance
+    let eventSource = null; // Store the EventSource instance  
+    let autoScroll = true;
 
     function handleNewMessage(event) {
         addMessage(event.detail);
         if (event.detail.role === 'user') {
+            autoScroll = true;
             sendMessage(event.detail);
         }
     }
@@ -44,6 +46,7 @@
         selectedDocuments = documents.filter(doc => documentIds.includes(doc.id));
         citationText = event.detail.citationText;        
         citationWords = removeStopwords(event.detail.citationText.split(' '), nld);
+        autoScroll = false;
     }
 
     function addStatusMessage(statusMessage) {
@@ -89,6 +92,7 @@
             }
             currentMessage = null;
             currentStatusMessage = null;
+            autoScroll = false;
         }
     }
 
@@ -177,6 +181,7 @@
                 });
                 break;
             case 'citation':
+                autoScroll = false;
                 updateCurrentMessage({
                     role: 'assistant',
                     content: data.content,
@@ -192,6 +197,7 @@
                     citations: data.citations
                 });
                 currentMessage = null;
+                // autoScroll = true;
                 break;
             case 'session_name':
                 sessionName = data.content;
@@ -211,6 +217,7 @@
         citationText = '';
         citationWords = [];
         window.resetAllCitations();
+        autoScroll = true;
     }
 
     async function createNewSession() {
@@ -259,6 +266,7 @@
             messages={messages} 
             currentMessage={currentMessage} 
             currentStatusMessage={currentStatusMessage} 
+            autoScroll={autoScroll}
             on:newMessage={handleNewMessage} 
             on:citationClick={handleCitationClick} 
             on:stopMessageFlow={handleStopMessageFlow}
