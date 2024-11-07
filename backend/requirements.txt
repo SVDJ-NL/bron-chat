@@ -13,3 +13,4 @@ mysqlclient
 uuid
 pydantic
 pydantic-settings
+psycopg2-binary

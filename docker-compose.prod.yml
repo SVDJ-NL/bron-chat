@@ -84,12 +84,13 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PORT: ${MYSQL_PORT}
     volumes:
       - /var/lib/mysql:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:${MYSQL_PORT}"
     expose:
-      - "3306"
+      - "${MYSQL_PORT}"
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
