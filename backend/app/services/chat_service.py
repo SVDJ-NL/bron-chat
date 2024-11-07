@@ -57,35 +57,42 @@ class ChatService:
         
         current_citation = None
         first_citation = True
-        for event in self.cohere_service.chat_stream(messages, formatted_docs):
-            if event:
-                if event.type == "content-delta":
-                    yield {
-                        "type": "text",
-                        "content": event.delta.message.content.text
-                    }
-                elif event.type == 'citation-start':       
-                    if first_citation:
+        try:
+            for event in self.cohere_service.chat_stream(messages, formatted_docs):
+                if event:
+                    if event.type == "content-delta":
                         yield {
-                            "type": "status",
-                            "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
+                            "type": "text",
+                            "content": event.delta.message.content.text
                         }
-                        first_citation = False
+                    elif event.type == 'citation-start':       
+                        if first_citation:
+                            yield {
+                                "type": "status",
+                                "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
+                            }
+                            first_citation = False
+                            
+                        current_citation = {
+                            'start': event.delta.message.citations.start,
+                            'end': event.delta.message.citations.end,
+                            'text': event.delta.message.citations.text,
+                            'document_ids': [source.document['id'] for source in event.delta.message.citations.sources]
+                        }
                         
-                    current_citation = {
-                        'start': event.delta.message.citations.start,
-                        'end': event.delta.message.citations.end,
-                        'text': event.delta.message.citations.text,
-                        'document_ids': [source.document['id'] for source in event.delta.message.citations.sources]
-                    }
-                    
-                elif event.type == 'citation-end':
-                    if current_citation:
-                        yield {
-                            "type": "citation",
-                            "content": current_citation
-                        }
-                        current_citation = None
+                    elif event.type == 'citation-end':
+                        if current_citation:
+                            yield {
+                                "type": "citation",
+                                "content": current_citation
+                            }
+                            current_citation = None
+        except GeneratorExit:
+            logger.info("Generator closed due to GeneratorExit")
+            # Handle any cleanup if necessary
+        finally:
+            # Perform any necessary cleanup here
+            logger.info("Exiting generate_response")
 
     async def generate_full_response(self, session_messages: List[ChatMessage], relevant_docs: List[Dict]):
         logger.debug(f"Generating full response for query: {session_messages[-1].content}")

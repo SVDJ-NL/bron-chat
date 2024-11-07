@@ -19,6 +19,7 @@
     let citationText = '';
     let citationWords = [];
     let streamedContent = '';
+    let eventSource = null; // Store the EventSource instance
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -76,6 +77,21 @@
         }
     }
 
+    function handleStopMessageFlow() {
+        if (eventSource) {
+            eventSource.close();
+            console.debug('EventSource connection closed by user');
+            if (streamedContent) {
+                updateCurrentMessage({
+                    role: 'assistant',
+                    content: streamedContent
+                });
+            }
+            currentMessage = null;
+            currentStatusMessage = null;
+        }
+    }
+
     async function sendMessage(message) {
         try {
             streamedContent = '';
@@ -97,7 +113,7 @@
             const url = `${API_BASE_URL}/chat?${params}`;
             console.debug('Connecting to EventSource URL:', url);
             
-            const eventSource = new EventSource(url);
+            eventSource = new EventSource(url);
             
             eventSource.onmessage = (event) => {
                 try {
@@ -126,8 +142,8 @@
             eventSource.addEventListener('close', () => {
                 console.debug('EventSource connection closed by server');
                 eventSource.close();
-                currentMessage = null;
-                currentStatusMessage = null;
+                // currentMessage = null;
+                // currentStatusMessage = null;
             });
         } catch (error) {
             console.error('Error sending message:', error);
@@ -245,6 +261,7 @@
             currentStatusMessage={currentStatusMessage} 
             on:newMessage={handleNewMessage} 
             on:citationClick={handleCitationClick} 
+            on:stopMessageFlow={handleStopMessageFlow}
         />
     </div>
 </main>
