@@ -3,6 +3,7 @@
     export let currentMessage = null;
     export let currentStatusMessage = null;
     export let autoScroll = true; 
+    export let isFlowActive = false;
 
     import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
     const dispatch = createEventDispatcher();
@@ -12,7 +13,6 @@
     let isLoading = false;
     let streamedContent = '';
     let streamedStatusContent = '';
-    let isFlowActive = false;
 
     $: if (currentMessage && currentMessage.content !== streamedContent) {
         streamedContent = currentMessage.content;

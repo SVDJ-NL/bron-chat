@@ -21,7 +21,7 @@
     let streamedContent = '';
     let eventSource = null; // Store the EventSource instance  
     let autoScroll = true;
-
+    let isFlowActive = false;
     function handleNewMessage(event) {
         addMessage(event.detail);
         if (event.detail.role === 'user') {
@@ -125,6 +125,7 @@
                     handleStreamedResponse(data);
                 } catch (error) {
                     console.error('Error parsing event data:', error);
+                    isFlowActive = false;
                 }
             };
             
@@ -137,6 +138,7 @@
                     updateCurrentMessage({ role: 'assistant', content: 'An unexpected error occurred while processing your request.' });
                 }
                 eventSource.close();
+                isFlowActive = false;
             };
             
             eventSource.onopen = () => {
@@ -146,12 +148,14 @@
             eventSource.addEventListener('close', () => {
                 console.debug('EventSource connection closed by server');
                 eventSource.close();
+                isFlowActive = false;
                 // currentMessage = null;
                 // currentStatusMessage = null;
             });
         } catch (error) {
             console.error('Error sending message:', error);
             updateCurrentMessage({ role: 'assistant', content: 'An error occurred while processing your request.' });
+            isFlowActive = false;
         }
     }
 
@@ -204,10 +208,12 @@
                 break;
             case 'end':   
                 console.debug('Received end event');
+                isFlowActive = false;
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
                 updateCurrentMessage({ role: 'assistant', content: `An error occurred: ${data.content}` });
+                isFlowActive = false;
                 break;
         }
     }
@@ -267,6 +273,7 @@
             currentMessage={currentMessage} 
             currentStatusMessage={currentStatusMessage} 
             autoScroll={autoScroll}
+            isFlowActive={isFlowActive}
             on:newMessage={handleNewMessage} 
             on:citationClick={handleCitationClick} 
             on:stopMessageFlow={handleStopMessageFlow}
