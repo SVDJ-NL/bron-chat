@@ -22,6 +22,8 @@
     let eventSource = null; // Store the EventSource instance  
     let autoScroll = true;
     let isFlowActive = false;
+    let isDocumentsPanelOpen = false;
+
     function handleNewMessage(event) {
         addMessage(event.detail);
         if (event.detail.role === 'user') {
@@ -47,6 +49,14 @@
         citationText = event.detail.citationText;        
         citationWords = removeStopwords(event.detail.citationText.split(' '), nld);
         autoScroll = false;
+        isDocumentsPanelOpen = true;
+    }
+
+    function handleClickOutside(event) {
+        const documentsPanel = document.querySelector('.documents-panel');
+        if (documentsPanel && !documentsPanel.contains(event.target)) {
+            isDocumentsPanelOpen = false;
+        }
     }
 
     function addStatusMessage(statusMessage) {
@@ -244,10 +254,15 @@
         }
     }
 
-    onMount(async () => {
+    onMount(() => {
         if (!sessionId) {
-            await createNewSession();
+            createNewSession();
         }
+        // Add click outside listener
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
     });
 </script>
 
@@ -255,10 +270,10 @@
     <title>{sessionName}</title>
 </svelte:head>
 
-<main class="flex flex-col md:flex-row min-h-screen pt-16 bg-gray-100 justify-center items-center">
+<main class="flex flex-col md:flex-row min-h-screen pt-16 bg-gray-100 justify-center items-start">
     <!-- Chat Panel Container -->
-    <div class="w-full max-w-[768px] {messages.length === 0 ? '' : 'h-[80vh]'} px-4 transition-all duration-300 ease-in-out">
-        <div class="order-2 md:order-1 h-full flex flex-col overflow-hidden transition-all duration-300">
+    <div class="overflow-y-auto w-full max-w-[768px] {messages.length === 0 ? '' : 'h-[90vh]'} md:px-8 transition-all duration-300 ease-in-out md:mr-[50px]">
+        <div class="order-2 md:order-1 h-full flex flex-col overflow-hidden transition-all duration-300 pt-5">
             <Chat 
                 messages={messages} 
                 currentMessage={currentMessage} 
@@ -274,14 +289,17 @@
 
     <!-- Documents Panel -->
     {#if documents.length > 0}
-        <div class="fixed right-0 top-16 bottom-0 w-1/3 bg-white shadow-lg transform transition-transform duration-300 overflow-hidden">
-            <div class="h-full px-4 md:py-2">
+        <div class="documents-panel fixed right-0 top-16 bottom-0 h-[80vh] w-full bg-white shadow-lg transform transition-transform duration-300
+            {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-[100vw]'}">
+            <div class="h-full">
                 <Documents 
-                    documents={documents}
-                    selectedDocuments={selectedDocuments}
-                    citationText={citationText}
-                    citationWords={citationWords}
-                    on:showAllDocuments={handleShowAllDocuments} 
+                    {documents}
+                    {selectedDocuments}
+                    {citationText}
+                    {citationWords}
+                    {isDocumentsPanelOpen}
+                    on:showAllDocuments={handleShowAllDocuments}
+                    on:togglePanel={() => isDocumentsPanelOpen = !isDocumentsPanelOpen}
                 />
             </div>
         </div>
@@ -298,7 +316,7 @@
     }
 
     /* Make both panels scrollable */
-    main > div {
+    /* main > div {
         @apply overflow-y-auto;
-    }
+    } */
 </style>

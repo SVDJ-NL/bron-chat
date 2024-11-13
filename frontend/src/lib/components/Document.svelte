@@ -116,9 +116,9 @@
         </div>
     </header>
     
-    <p class="text-gray-600 text-sm" bind:this={contentElement}>
+    <div class="text-gray-600 text-sm break-words" bind:this={contentElement}>
         <!-- Content will be inserted here by the updateContent function -->
-    </p>
+    </div>
     
     <div class="flex mt-3">
         {#if doc.data.url}

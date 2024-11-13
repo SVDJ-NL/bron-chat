@@ -130,9 +130,10 @@
     }
 
     function initTyped() {
-            // Start of Selection
-            let typedSubtitle;
+        // Start of Selection`
+        let typedSubtitle;
 
+        if (document.querySelector('#typed-title')) {
             const typedTitle = new Typed('#typed-title', {
                 strings: ["Vraag alles over Overijssel"],
                 typeSpeed: 50,
@@ -153,6 +154,7 @@
                     typedSubtitle.destroy();
                 }
             };
+        }
     }
 </script>
 

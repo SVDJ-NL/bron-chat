@@ -2,6 +2,7 @@ from datetime import datetime
 import locale
 import markdown
 import logging
+import re
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -55,5 +56,6 @@ def to_markdown(text):
 
 def format_content(content):
     # Remove leading and trailing whitespace
+    content = re.sub(r'</?(?!span\b)\w+[^>]*>', '', content)
     content = f'[...] {content} [...]'
     return to_markdown(content)

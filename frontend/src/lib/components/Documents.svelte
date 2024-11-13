@@ -7,11 +7,17 @@
     export let selectedDocuments = null;
     export let citationText = '';
     export let citationWords = [];
+    export let isDocumentsPanelOpen = false;
 
     const dispatch = createEventDispatcher();
 
     function handleShowAllDocuments() {
         dispatch('showAllDocuments');
+    }
+
+    function togglePanel(event) {
+        event.stopPropagation(); // Prevent click from bubbling to document
+        dispatch('togglePanel');
     }
 
     function sortDocuments(docs) {
@@ -28,11 +34,33 @@
 
 </script>
 
-<div class="bg-white rounded-lg shadow py-4 md:py-6 pl-4 md:pl-6 md:pr-2 flex flex-col h-full">
+<div class="bg-white rounded-lg shadow pt-6 pb-6 md:py-6 pl-4 md:pl-6 md:pr-2 flex flex-col h-full relative">
+    <button
+        class="absolute top-0 bg-white p-2 md:p-3 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'right-0 mt-1' : 'shadow-lg -left-16 md:-left-12'}"
+        on:click={togglePanel}
+    >
+        {#if isDocumentsPanelOpen}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mt-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        {:else}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 md:mt-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+            </svg>  
+        {/if}
+    </button>
+
     <div class="flex justify-between items-center mb-4 align-middle md:px-2">
-        <h2 class="text-lg leading-tight">
+        <h2 class="text-lg leading-tight flex items-center justify-center ">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+            </svg>  
             {#if citationText}
-                <span class="font-bold">Documenten:</span> "{citationText}" 
+                <span class="font-bold">
+                    Documenten:</span> "{citationText}" 
             {:else}
                 <span class="font-bold">Documenten</span>
             {/if}
@@ -54,7 +82,7 @@
         {/if}
     </div>
     
-    <div class="overflow-y-auto flex-grow pr-4">
+    <div class="flex-grow pr-4 overflow-y-auto overflow-x-hidden">
         <div class="space-y-6">
             {#if sortedSelectedDocuments && sortedSelectedDocuments.length > 0}
                 {#each sortedSelectedDocuments as doc, index}
@@ -79,3 +107,13 @@
         </div>
     </div>
 </div>
+
+<style>
+    button {
+        transition: transform 0.3s ease;
+    }
+    
+    button:hover {
+        transform: scale(1.1);
+    }
+</style>
