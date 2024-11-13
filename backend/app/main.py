@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import chat, sessions
+from .routers import chat, sessions, feedback
 from .config import settings
 from .database import init_db
 import asyncio
@@ -18,6 +18,7 @@ fast_api_app.add_middleware(
 # Include routers
 fast_api_app.include_router(chat.router)
 fast_api_app.include_router(sessions.router)
+fast_api_app.include_router(feedback.router)
 
 @fast_api_app.on_event("startup")
 async def startup_event():

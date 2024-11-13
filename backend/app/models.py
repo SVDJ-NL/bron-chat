@@ -1,9 +1,23 @@
-from sqlalchemy import Column, String, JSON, DateTime
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from typing import List
 from .database import Base
 from .schemas import ChatMessage, ChatDocument
+from sqlalchemy.orm import relationship
+import uuid
+from datetime import datetime
 
+class Feedback(Base):
+    __tablename__ = "feedback"
+    
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String(36), ForeignKey('sessions.id'), nullable=True)
+    question = Column(String(2048))
+    name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    session = relationship("Session", back_populates="feedback")
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -14,6 +28,8 @@ class Session(Base):
     documents = Column(JSON)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    feedback = relationship("Feedback", back_populates="session")
 
     def get_messages(self):
         return [ChatMessage(**msg) for msg in self.messages]

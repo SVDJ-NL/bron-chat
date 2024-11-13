@@ -11,5 +11,5 @@ markdown
 sqlalchemy
 mysqlclient
 uuid
-pydantic
+pydantic[email,timezone]
 pydantic-settings
