@@ -195,7 +195,10 @@
             case 'documents':
                 if (Array.isArray(data.documents)) {
                     handleNewDocuments({ detail: data.documents });
-                    isDocumentsPanelOpen = true;
+                    // Start of Selection
+                    if (window.matchMedia('(min-width: 1024px)').matches) {
+                        isDocumentsPanelOpen = true;
+                    }
                 } 
                 break;
             case 'partial':
@@ -301,7 +304,7 @@
 
     <!-- Documents Panel -->
     {#if documents.length > 0}
-        <div class="max-w-[768px] documents-panel fixed lg:block bottom-[91px] lg:right-0 lg:top-16 lg:bottom-0 h-[calc(100vh-10rem)] lg:h-[90vh] w-full lg:w-1/2 bg-gray-100 transform transition-transform duration-300
+        <div class="documents-panel fixed lg:block bottom-[91px] lg:right-0 lg:top-16 lg:bottom-0 h-[calc(100vh-10rem)] lg:h-[90vh] w-full lg:w-1/2 bg-gray-100 transform transition-transform duration-300
             {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
             <div class="h-full">
                 <Documents 

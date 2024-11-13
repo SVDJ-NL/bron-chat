@@ -297,7 +297,6 @@
                 {/if}
             </div>
         {/if}
-
         <div class="input-container p-4 ml-4 mr-4 lg:mr-8 mb-3 lg:ml-4 lg:mx-0 rounded-lg border border-gray-300">
             <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
                 <textarea
@@ -305,7 +304,13 @@
                     placeholder="Chat met Bron..." 
                     class="flex-1 p-2 bg-gray-100 text-gray-900 focus:outline-none focus:ring-0"
                     autofocus
-                    rows="1"        
+                    rows="1"
+                    on:keydown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSubmit(e);
+                        }
+                    }}
                 ></textarea>
                 {#if currentMessage != null}
                     <button 
