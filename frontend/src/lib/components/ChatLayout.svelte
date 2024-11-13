@@ -255,30 +255,37 @@
     <title>{sessionName}</title>
 </svelte:head>
 
-<main class="flex flex-col md:flex-row h-screen pt-16 bg-gray-100 ">
-    <div class="order-1 md:order-2 {documents.length > 0 ? 'h-2/5 md:w-1/2' : 'h-1/12 md:hidden'} md:h-[calc(100vh-5rem)] flex flex-col overflow-hidden transition-all duration-300">
-        <div class="flex-1 px-4 md:py-2">
-            <Documents 
-                documents={documents}
-                selectedDocuments={selectedDocuments}
-                citationText={citationText}
-                citationWords={citationWords}
-                on:showAllDocuments={handleShowAllDocuments} 
+<main class="flex flex-col md:flex-row min-h-screen pt-16 bg-gray-100 justify-center items-center">
+    <!-- Chat Panel Container -->
+    <div class="w-full max-w-[768px] {messages.length === 0 ? '' : 'h-[80vh]'} px-4 transition-all duration-300 ease-in-out">
+        <div class="order-2 md:order-1 h-full flex flex-col overflow-hidden transition-all duration-300">
+            <Chat 
+                messages={messages} 
+                currentMessage={currentMessage} 
+                currentStatusMessage={currentStatusMessage} 
+                autoScroll={autoScroll}
+                isFlowActive={isFlowActive}
+                on:newMessage={handleNewMessage} 
+                on:citationClick={handleCitationClick} 
+                on:stopMessageFlow={handleStopMessageFlow}
             />
         </div>
     </div>
-    <div class="order-2 md:order-1 {documents.length > 0 ? 'h-3/5 md:w-1/2' : 'h-full md:w-full'} md:h-[calc(100vh-5rem)] px-4 py-2 md:py-4flex flex-col overflow-hidden mb-14 md:mb-0 transition-all duration-300">
-        <Chat 
-            messages={messages} 
-            currentMessage={currentMessage} 
-            currentStatusMessage={currentStatusMessage} 
-            autoScroll={autoScroll}
-            isFlowActive={isFlowActive}
-            on:newMessage={handleNewMessage} 
-            on:citationClick={handleCitationClick} 
-            on:stopMessageFlow={handleStopMessageFlow}
-        />
-    </div>
+
+    <!-- Documents Panel -->
+    {#if documents.length > 0}
+        <div class="fixed right-0 top-16 bottom-0 w-1/3 bg-white shadow-lg transform transition-transform duration-300 overflow-hidden">
+            <div class="h-full px-4 md:py-2">
+                <Documents 
+                    documents={documents}
+                    selectedDocuments={selectedDocuments}
+                    citationText={citationText}
+                    citationWords={citationWords}
+                    on:showAllDocuments={handleShowAllDocuments} 
+                />
+            </div>
+        </div>
+    {/if}
 </main>
 
 <style lang="postcss">    

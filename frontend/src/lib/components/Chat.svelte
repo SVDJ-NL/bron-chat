@@ -6,6 +6,7 @@
     export let isFlowActive = false;
 
     import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
+    import Typed from 'typed.js';
     const dispatch = createEventDispatcher();
 
     let newMessageContent = '';
@@ -103,6 +104,7 @@
 
     onMount(() => {
         scrollToBottom();
+        initTyped();
     });
 
     afterUpdate(() => {
@@ -125,6 +127,32 @@
                 console.error('Could not copy text: ', err);
             });
         }
+    }
+
+    function initTyped() {
+            // Start of Selection
+            let typedSubtitle;
+
+            const typedTitle = new Typed('#typed-title', {
+                strings: ["Vraag alles over Overijssel"],
+                typeSpeed: 50,
+                showCursor: false,
+                onComplete: () => {
+                    typedSubtitle = new Typed('#typed-subtitle', {
+                        strings: ["en binnenkort over heel Nederland"],
+                        typeSpeed: 25,
+                        showCursor: false,
+                        startDelay: 500,
+                    });
+                },
+            });
+
+            return () => {
+                typedTitle.destroy();
+                if (typedSubtitle) {
+                    typedSubtitle.destroy();
+                }
+            };
     }
 </script>
 
@@ -194,7 +222,7 @@
     }
 
     .chat-container {
-        @apply flex flex-col h-full bg-white rounded-lg shadow-md overflow-hidden;
+        @apply flex flex-col h-full overflow-hidden;
     }
 
     .messages-container {
@@ -202,7 +230,7 @@
     }
 
     .input-container {
-        @apply p-4 bg-white border-t;
+        @apply p-4;
     }
 
     :global(.message-content.status) {
@@ -216,74 +244,88 @@
     :global(.message-content.status p:last-child) {
         @apply mb-0;
     }
+
+    :global(.chat-wrapper) {
+        @apply flex flex-col h-full transition-all duration-300 ease-in-out;
+    }
 </style>
-<div class="chat-container md:py-2 md:px-2">
-    <div bind:this={chatContainer} class="messages-container">
+
+<div class="chat-wrapper">
+    {#if messages.length === 0 }
+        <div class="p-4 md:p-6 h-20 md:h-24">
+            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-xl md:text-2xl pb-0.5"></h2>
+            <h3 id="typed-subtitle" class="text-gray-600 text-center text-sm md:text-base"></h3>
+        </div>
+    {/if}
+    <div class="chat-container">
         {#if messages && messages.length > 0}
-            {#each messages.filter(message => message.role !== 'system') as message}
-                <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                    <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
-                        {#if message.role === 'user'}
-                            <p>{message.content}</p>
-                        {:else if message.role === 'assistant'}
-                            {@html insertClickableCitations(message.content, message.type)}
-                            <button on:click={() => copyToClipboard(message.content_original)} class="ml-0 text-sm text-blue-800 hover:text-blue-900" >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
-                                </svg>                              
-                            </button>
-                        {/if}
+            <div bind:this={chatContainer} class="messages-container">
+                {#each messages.filter(message => message.role !== 'system') as message}
+                    <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
+                        <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
+                            {#if message.role === 'user'}
+                                <p>{message.content}</p>
+                            {:else if message.role === 'assistant'}
+                                {@html insertClickableCitations(message.content, message.type)}
+                                <button on:click={() => copyToClipboard(message.content_original)} class="ml-0 text-sm text-blue-800 hover:text-blue-900" >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                                    </svg>                              
+                                </button>
+                            {/if}
+                        </div>
                     </div>
-                </div>
-            {/each}
-        {/if}
-        
-        {#if currentStatusMessage }
-            <div class="flex justify-start">
-                <div class="message-content max-w-3/4 p-3 rounded-lg status">
-                    <div class="flex items-start">
-                        {@html (streamedStatusContent)}
+                {/each}
+                
+                {#if currentStatusMessage }
+                    <div class="flex justify-start">
+                        <div class="message-content max-w-3/4 p-3 rounded-lg status">
+                            <div class="flex items-start">
+                                {@html (streamedStatusContent)}
+                            </div>
+                        </div>
                     </div>
-                </div>
+                {/if}
+
+                {#if currentMessage}
+                    <div class="flex justify-start">
+                        <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
+                            {@html insertClickableCitations(streamedContent)}
+                        </div>
+                    </div>
+                {/if}
             </div>
         {/if}
 
-        {#if currentMessage}
-            <div class="flex justify-start">
-                <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
-                    {@html insertClickableCitations(streamedContent)}
-                </div>
-            </div>
-        {/if}
-    </div>
-
-    <div class="input-container">
-        <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
-            <input 
-                bind:value={newMessageContent} 
-                placeholder="Chat met Bron..." 
-                class="flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-            {#if isFlowActive}
-                <button 
-                    type="button" 
-                    on:click={handleStop}
-                    class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-800"
+        <div class="input-container  rounded-lg border border-gray-300">
+            <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
+                <input
+                    bind:value={newMessageContent} 
+                    placeholder="Chat met Bron..." 
+                    class="flex-1 p-2 bg-gray-100 text-gray-900 focus:outline-none focus:ring-0"
+                    autofocus
                 >
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
-                        <rect x="8" y="8" width="16" height="16" fill="currentColor"></rect>
-                    </svg>
-                </button>
-            {:else}
-                <button 
-                    type="submit" 
-                    class="px-1 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z" fill="currentColor"></path>
-                    </svg>
-                </button>
-            {/if}
-        </form>
+                {#if isFlowActive}
+                    <button 
+                        type="button" 
+                        on:click={handleStop}
+                        class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-800"
+                    >
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
+                            <rect x="8" y="8" width="16" height="16" fill="currentColor"></rect>
+                        </svg>
+                    </button>
+                {:else}
+                    <button 
+                        type="submit" 
+                        class="px-1 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z" fill="currentColor"></path>
+                        </svg>
+                    </button>
+                {/if}
+            </form>
+        </div>
     </div>
 </div>
