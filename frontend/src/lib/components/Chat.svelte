@@ -298,14 +298,15 @@
             </div>
         {/if}
 
-        <div class="input-container p-4 ml-4 mr-8 lg:ml-4 lg:mx-0 rounded-lg border border-gray-300">
+        <div class="input-container p-4 ml-4 mr-4 lg:mr-8 mb-3 lg:ml-4 lg:mx-0 rounded-lg border border-gray-300">
             <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
-                <input
+                <textarea
                     bind:value={newMessageContent} 
                     placeholder="Chat met Bron..." 
                     class="flex-1 p-2 bg-gray-100 text-gray-900 focus:outline-none focus:ring-0"
                     autofocus
-                >
+                    rows="1"        
+                ></textarea>
                 {#if currentMessage != null}
                     <button 
                         type="button" 
