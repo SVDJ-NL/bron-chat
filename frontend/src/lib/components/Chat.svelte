@@ -123,10 +123,12 @@
 
     function copyToClipboard(text) {
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(text).then(() => {
+            // Strip HTML tags from text
+            const strippedText = text.replace(/<[^>]*>/g, '');
+            navigator.clipboard.writeText(strippedText).then(() => {
                 copiedMessage = true;
                 setTimeout(() => copiedMessage = false, 2000);
-                console.log(`Text ${text} copied to clipboard`);
+                console.log(`Text ${strippedText} copied to clipboard`);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
             });
@@ -284,7 +286,7 @@
                                 <p>{message.content}</p>
                             {:else if message.role === 'assistant'}
                                 {@html insertClickableCitations(message.content, message.type)}
-                                <button on:click={() => copyToClipboard(message.content_original)} class="ml-0 text-sm text-blue-800 hover:text-blue-900" >
+                                <button on:click={() => copyToClipboard(message.content)} class="ml-0 text-sm text-blue-800 hover:text-blue-900" >
                                     {#if copiedMessage}
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />

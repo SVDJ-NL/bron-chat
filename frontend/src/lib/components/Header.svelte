@@ -64,23 +64,29 @@
                     <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo-small.svg" alt="Bron Logo" />
                 </a>
                 <img
-                    class="absolute top-5 -right-14 lg:top-4 lg:-right-16 h-4 w-auto sm:h-5"
+                    class="absolute top-5 -right-[3.3rem] sm:top-4 sm:-right-16 h-4 w-auto sm:h-5"
                     src="/beta-badge.svg" 
                     alt="Beta"
                 />
-                <a href="https://chat.bron.live" target="_blank" class="ml-2 lg:ml-0 lg:mt-1">
-                    <span class="text-black text-2xl lg:text-3xl font-semibold uppercase">Chat</span>
+                <a href="https://chat.bron.live" target="_blank" class="ml-2 sm:ml-0 sm:mt-1">
+                    <span class="text-black text-2xl sm:text-3xl font-semibold uppercase">Chat</span>
                     <!-- <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg> -->
                 </a>
             </div>
-            <div class="hidden lg:flex items-center ml-auto pr-4">
+            <div class="flex items-center ml-auto pr-4 pl-8">
                 <button
                     on:click={() => showModal = true}
-                    class="text-blue-600 hover:underline font-medium"
+                    class="text-blue-600 hover:underline"
                 >
-                    Hebben wij vandaag je vraag kunnen beantwoorden?
+                    <div class="flex items-center flex-wrap flex-col lg:flex-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 lg:h-5 lg:w-5 mr-1 mb-0 lg:mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span class="hidden lg:inline font-medium">Hebben wij vandaag je vraag kunnen beantwoorden?</span>
+                        <span class="block lg:hidden font-medium text-sm leading-0">Feedback</span>
+                </div>
                 </button>
             </div>
             <div class="flex-shrink-0 flex items-center">
