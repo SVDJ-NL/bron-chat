@@ -134,6 +134,8 @@
         let typedSubtitle;
 
         if (document.querySelector('#typed-title')) {
+            typedSubtitle = null;
+
             const typedTitle = new Typed('#typed-title', {
                 strings: ["Vraag alles over Overijssel"],
                 typeSpeed: 50,
@@ -224,18 +226,15 @@
     }
 
     .chat-container {
-        @apply flex flex-col h-full overflow-hidden;
+        @apply flex flex-col h-full;
     }
 
     .messages-container {
         @apply flex-1 overflow-y-auto p-4 space-y-4;
     }
 
-    .input-container {
-        @apply p-4;
-    }
-
-    :global(.message-content.status) {
+    :global(.message-content.status),
+    :global(.message-content.current-message) {
         @apply bg-gray-100 text-gray-600 border border-gray-300;
     }
 
@@ -254,9 +253,9 @@
 
 <div class="chat-wrapper">
     {#if messages.length === 0 }
-        <div class="p-4 md:p-6 h-20 md:h-24">
-            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-xl md:text-2xl pb-0.5"></h2>
-            <h3 id="typed-subtitle" class="text-gray-600 text-center text-sm md:text-base"></h3>
+        <div class="p-4 lg:p-6 h-20 lg:h-24 w-full">
+            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-xl lg:text-2xl pb-0.5"></h2>
+            <h3 id="typed-subtitle" class="text-gray-600 text-center text-sm lg:text-base"></h3>
         </div>
     {/if}
     <div class="chat-container">
@@ -264,7 +263,7 @@
             <div bind:this={chatContainer} class="messages-container">
                 {#each messages.filter(message => message.role !== 'system') as message}
                     <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                        <div class="message-content max-w-3/4 p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
+                        <div class="message-content p-3 rounded-lg {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
                             {#if message.role === 'user'}
                                 <p>{message.content}</p>
                             {:else if message.role === 'assistant'}
@@ -281,7 +280,7 @@
                 
                 {#if currentStatusMessage }
                     <div class="flex justify-start">
-                        <div class="message-content max-w-3/4 p-3 rounded-lg status">
+                        <div class="message-content p-3 rounded-lg status">
                             <div class="flex items-start">
                                 {@html (streamedStatusContent)}
                             </div>
@@ -291,7 +290,7 @@
 
                 {#if currentMessage}
                     <div class="flex justify-start">
-                        <div class="message-content max-w-3/4 p-3 rounded-lg bg-gray-100 text-gray-600">
+                        <div class="message-content current-message p-3 rounded-lg bg-gray-200 text-gray-800">
                             {@html insertClickableCitations(streamedContent)}
                         </div>
                     </div>
@@ -299,7 +298,7 @@
             </div>
         {/if}
 
-        <div class="input-container  rounded-lg border border-gray-300">
+        <div class="input-container p-4 ml-4 mr-8 lg:ml-4 lg:mx-0 rounded-lg border border-gray-300">
             <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
                 <input
                     bind:value={newMessageContent} 
@@ -307,11 +306,11 @@
                     class="flex-1 p-2 bg-gray-100 text-gray-900 focus:outline-none focus:ring-0"
                     autofocus
                 >
-                {#if isFlowActive}
+                {#if currentMessage != null}
                     <button 
                         type="button" 
                         on:click={handleStop}
-                        class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-800"
+                        class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
                     >
                         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
                             <rect x="8" y="8" width="16" height="16" fill="currentColor"></rect>

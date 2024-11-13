@@ -73,7 +73,7 @@
     }
 </style>
 
-<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-100" data-doc-id="{doc.id}">
+<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50" data-doc-id="{doc.id}">
     <header class="mb-4">
         <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal" bind:this={titleElement}>
             <!-- Content will be inserted here by the updateTitle function -->

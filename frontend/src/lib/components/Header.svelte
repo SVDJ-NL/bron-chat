@@ -8,15 +8,15 @@
             <div class="flex-shrink-0 flex items-center relative">
                 <a href="https://chat.bron.live">
                     <img class="hidden sm:block h-8 w-auto ml-1" src="/bron-logo.svg" alt="Bron Logo" />
-                    <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo.svg" alt="Bron Logo" />
+                    <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo-small.svg" alt="Bron Logo" />
                 </a>
                 <img
-                    class="absolute top-5 -right-14 md:top-4 md:-right-16 h-4 w-auto sm:h-5"
+                    class="absolute top-5 -right-14 lg:top-4 lg:-right-16 h-4 w-auto sm:h-5"
                     src="/beta-badge.svg" 
                     alt="Beta"
                 />
-                <a href="https://chat.bron.live" target="_blank" class="ml-0 mt-1">
-                    <span class="text-black text-2xl md:text-3xl font-semibold uppercase">Chat</span>
+                <a href="https://chat.bron.live" target="_blank" class="ml-2 lg:ml-0 lg:mt-1">
+                    <span class="text-black text-2xl lg:text-3xl font-semibold uppercase">Chat</span>
                     <!-- <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg> -->
@@ -24,12 +24,12 @@
             </div>
             <div class="flex-shrink-0 flex items-center ml-auto">
                 <a href="https://svdj.nl" target="_blank">
-                    <img class="hidden sm:block h-7 md:h-12 w-auto" src="/incubator.png" alt="SvdJ Incubator Logo" />
-                    <img class="block sm:hidden h-6 md:h-10 w-auto" src="/incubator.png" alt="SvdJ Incubator Logo" />
+                    <img class="hidden sm:block h-7 lg:h-12 w-auto" src="/incubator.png" alt="SvdJ Incubator Logo" />
+                    <img class="block sm:hidden h-6 lg:h-10 w-auto" src="/incubator.png" alt="SvdJ Incubator Logo" />
                 </a>
                 <a href="https://openstate.eu" target="_blank">
-                    <img class="hidden sm:block h-7 md:h-11 w-auto" src="/open-state-foundation-logo.svg" alt="Open State Foundation Logo" />
-                    <img class="block sm:hidden h-6 md:h-9 w-auto" src="/open-state-foundation-logo.svg" alt="Open State Foundation Logo" />
+                    <img class="hidden sm:block h-7 lg:h-11 w-auto" src="/open-state-foundation-logo.svg" alt="Open State Foundation Logo" />
+                    <img class="block sm:hidden h-6 lg:h-9 w-auto ml-1" src="/open-state-foundation-logo-small.svg" alt="Open State Foundation Logo" />
                 </a>
             </div>
         </div>

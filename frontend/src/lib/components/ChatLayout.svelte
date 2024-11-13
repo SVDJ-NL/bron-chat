@@ -53,6 +53,16 @@
     }
 
     function handleClickOutside(event) {
+        // Check if the click target is a citation link
+        // Start of Selection
+        if (
+            window.matchMedia('(min-width: 1024px)').matches ||
+            event.target.classList.contains('citation-link') || 
+            event.target.parentElement.classList.contains('show-all-documents-btn')
+        ) {
+            return; // Don't close the panel if clicking on a citation
+        }
+
         const documentsPanel = document.querySelector('.documents-panel');
         if (documentsPanel && !documentsPanel.contains(event.target)) {
             isDocumentsPanelOpen = false;
@@ -185,6 +195,7 @@
             case 'documents':
                 if (Array.isArray(data.documents)) {
                     handleNewDocuments({ detail: data.documents });
+                    isDocumentsPanelOpen = true;
                 } 
                 break;
             case 'partial':
@@ -270,10 +281,11 @@
     <title>{sessionName}</title>
 </svelte:head>
 
-<main class="flex flex-col md:flex-row min-h-screen pt-16 bg-gray-100 justify-center items-start">
+<div class="flex flex-col lg:flex-row min-h-screen {messages.length === 0 ? '' : 'pt-16' } bg-gray-100 justify-center items-center overflow-x-hidden">
     <!-- Chat Panel Container -->
-    <div class="overflow-y-auto w-full max-w-[768px] {messages.length === 0 ? '' : 'h-[90vh]'} md:px-8 transition-all duration-300 ease-in-out md:mr-[50px]">
-        <div class="order-2 md:order-1 h-full flex flex-col overflow-hidden transition-all duration-300 pt-5">
+    <div class="max-w-[768px] {messages.length === 0 ? '' : 'h-[90vh]'} lg:px-4 transition-all duration-300 ease-in-out w-full
+            {isDocumentsPanelOpen ? 'lg:-translate-x-[calc(50%)] lg:w-1/2' : 'translate-x-0'}">
+        <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 pt-5">
             <Chat 
                 messages={messages} 
                 currentMessage={currentMessage} 
@@ -289,8 +301,8 @@
 
     <!-- Documents Panel -->
     {#if documents.length > 0}
-        <div class="documents-panel fixed right-0 top-16 bottom-0 h-[80vh] w-full bg-white shadow-lg transform transition-transform duration-300
-            {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-[100vw]'}">
+        <div class="documents-panel fixed bottom-[91px] lg:right-0 lg:top-16 lg:bottom-0 h-[calc(100vh-10rem)] lg:h-[90vh] w-full lg:w-1/2 bg-gray-100 transform transition-transform duration-300
+            {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
             <div class="h-full">
                 <Documents 
                     {documents}
@@ -304,7 +316,7 @@
             </div>
         </div>
     {/if}
-</main>
+</div>
 
 <style lang="postcss">    
     @tailwind base;

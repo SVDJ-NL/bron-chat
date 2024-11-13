@@ -34,52 +34,67 @@
 
 </script>
 
-<div class="bg-white rounded-lg shadow pt-6 pb-6 md:py-6 pl-4 md:pl-6 md:pr-2 flex flex-col h-full relative">
+<div class="pt-5 pb-6 lg:pt-6 lg:pb-0 pl-4 lg:pl-6 lg:pr-2 flex flex-col h-full relative">
     <button
-        class="absolute top-0 bg-white p-2 md:p-3 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'right-0 mt-1' : 'shadow-lg -left-16 md:-left-12'}"
+        class="absolute top-0 p-2 lg:p-3 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'hidden' : ''}"
         on:click={togglePanel}
     >
-        {#if isDocumentsPanelOpen}
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mt-2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-        {:else}
+        {#if !isDocumentsPanelOpen}
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 md:mt-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 lg:mt-2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
             </svg>  
         {/if}
     </button>
 
-    <div class="flex justify-between items-center mb-4 align-middle md:px-2">
-        <h2 class="text-lg leading-tight flex items-center justify-center ">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
-            </svg>  
+    <div class="flex justify-between items-center mb-4 align-middle lg:px-2">
+        <div class="flex items-center justify-center w-full">
+            
             {#if citationText}
-                <span class="font-bold">
-                    Documenten:</span> "{citationText}" 
+                <div class="flex items-center flex-wrap pr-2">
+                    <button
+                        class="py-2 lg:pr-2 lg:pl-0 flex items-center show-all-documents-btn"
+                        on:click={handleShowAllDocuments}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                        </svg>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                        </svg>  
+                    
+                    </button>
+                </div>
             {:else}
-                <span class="font-bold">Documenten</span>
-            {/if}
-        </h2>
-        {#if citationText}
-            <div class="flex items-center pr-2">
-                <button
-                    class="bg-blue-500 hover:bg-blue-600 text-white py-2 pr-4 pl-3 rounded flex items-center"
-                    on:click={handleShowAllDocuments}
-                >
+                <div class="flex items-center justify-center ">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
-                    </svg>
-                 
-                    <span class="md:hidden">Alle docus</span>
-                    <span class="hidden md:inline">Alle documenten</span>
-                </button>
-            </div>
-        {/if}
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" />
+                    </svg>  
+                </div>
+            {/if}  
+
+            {#if citationText}
+                <div class="text-sm lg:text-base leading-tight w-full mr-auto">"{citationText}"</div>
+            {:else}
+                <div class="text-lg font-semibold w-full mr-auto">Documenten</div>
+            {/if}
+
+            {#if isDocumentsPanelOpen}
+                <div class="flex items-center justify-center mr-2">
+                    <button
+                        class="transition-colors duration-200"
+                        on:click={togglePanel}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg> 
+                    </button>
+                </div>
+            {/if}
+        </div>
     </div>
     
     <div class="flex-grow pr-4 overflow-y-auto overflow-x-hidden">
@@ -97,7 +112,7 @@
                     </div>
                 {/each}      
             {:else}
-                <div class="space-y-6 hidden md:block">
+                <div class="space-y-6 hidden lg:block">
                     {#each Array(3) as _, i}
                         <div class="shadow rounded-lg p-4 border border-gray-400 border-dashed bg-gray-50 h-8 flex items-center justify-center opacity-50">
                         </div>

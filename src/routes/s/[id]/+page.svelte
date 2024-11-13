@@ -16,7 +16,7 @@
     <title>{sessionName}</title>
 </svelte:head>
 
-<main class="flex flex-col md:flex-row h-screen bg-gray-100">
+<main class="flex flex-col lg:flex-row h-screen bg-gray-100">
     <!-- ... existing layout ... -->
 </main>
 
