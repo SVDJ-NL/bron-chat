@@ -13,3 +13,4 @@ mysqlclient
 uuid
 pydantic[email,timezone]
 pydantic-settings
+sentry-sdk[fastapi]

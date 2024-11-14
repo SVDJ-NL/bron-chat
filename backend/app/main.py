@@ -4,6 +4,22 @@ from .routers import chat, sessions, feedback
 from .config import settings
 from .database import init_db
 import asyncio
+import sentry_sdk
+
+
+sentry_sdk.init(
+    dsn=settings.SENTRY_DSN,
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    traces_sample_rate=1.0,
+    _experiments={
+        # Set continuous_profiling_auto_start to True
+        # to automatically start the profiler on when
+        # possible.
+        "continuous_profiling_auto_start": True,
+    },
+)
+
 fast_api_app = FastAPI()
 
 # Configure CORS

@@ -20,4 +20,5 @@ class Settings(BaseSettings):
     QDRANT_POOL_SIZE: int = 20
     QDRANT_POOL_TIMEOUT: int = 30
     QDRANT_TIMEOUT: int = 10
+    SENTRY_DSN: str = os.getenv("SENTRY_DSN")
 settings = Settings()
