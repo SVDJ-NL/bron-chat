@@ -7,30 +7,29 @@ export async function load({ params, fetch }) {
     try {
         const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}`);
 
-        if (response.ok) {
-            const sessionData = await response.json();
-            return {
-                sessionId,
-                messages: sessionData.messages || [],
-                documents: sessionData.documents || [],
-                sessionName: sessionData.name || ''
-            };
-        } else {
-            console.error('Failed to fetch session data');
-            return {
-                sessionId,
-                messages: [],
-                documents: [],
-                sessionName: ''
-            };
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw error(404, {
+                    message: 'Chat sessie niet gevonden'
+                });
+            }
+            throw error(response.status || 500, {
+                message: 'Er is iets fout gegaan bij het ophalen van de chat sessie'
+            });
         }
-    } catch (err) {
-        console.error('Error fetching session data:', err);
+
+        const sessionData = await response.json();
         return {
             sessionId,
-            messages: [],
-            documents: [],
-            sessionName: ''
+            messages: sessionData.messages || [],
+            documents: sessionData.documents || [],
+            sessionName: sessionData.name || ''
         };
+    } catch (err) {
+        if (err.status) throw err;
+        
+        throw error(500, {
+            message: 'Er is iets fout gegaan bij het ophalen van de chat sessie'
+        });
     }
 }

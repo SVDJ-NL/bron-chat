@@ -48,3 +48,12 @@ async def root():
 @fast_api_app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+base_api_url = "/"
+if settings.ENVIRONMENT == "development":
+    base_api_url = "/api/"
+
+@fast_api_app.get(base_api_url + "sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0

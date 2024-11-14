@@ -24,10 +24,6 @@ base_api_url = "/"
 if ENVIRONMENT == "development":
     base_api_url = "/api/"
 
-@router.get(base_api_url + "sentry-debug")
-async def trigger_error():
-    division_by_zero = 1 / 0
-
 @router.get(base_api_url + "chat")
 async def chat_endpoint(
     query: str = Query(..., description="The chat message content"),
