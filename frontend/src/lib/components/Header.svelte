@@ -58,21 +58,27 @@
 <header class="fixed w-full top-0 z-10">
     <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex h-16">
-            <div class="flex-shrink-0 flex items-center relative">
-                <a href="https://chat.bron.live">
+            <div class="flex-shrink-0 flex items-center">
+                <a href="/" class="">
                     <img class="hidden sm:block h-8 w-auto ml-1" src="/bron-logo.svg" alt="Bron Logo" />
                     <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo-small.svg" alt="Bron Logo" />
                 </a>
-                <img
-                    class="absolute top-5 -right-[3.3rem] sm:top-4 sm:-right-16 h-4 w-auto sm:h-5"
-                    src="/beta-badge.svg" 
-                    alt="Beta"
-                />
-                <a href="https://chat.bron.live" target="_blank" class="ml-2 sm:ml-0 sm:mt-1">
+                <a href="/" class="ml-2 sm:ml-0 sm:mt-1">
                     <span class="text-black text-2xl sm:text-3xl font-semibold uppercase">Chat</span>
                     <!-- <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg> -->
+                </a>
+                <img
+                    class="h-4 sm:h-5 -mt-2 sm:-mt-1 ml-1"
+                    src="/beta-badge.svg" 
+                    alt="Beta"
+                />
+                <a href="/" target="_blank" class="flex ml-2 font-medium text-sm sm:text-base items-center mt-1 sm:mt-2">                      
+                    <span class="pr-1">Nieuwe chat</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 sm:w-4 h-3 sm:h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                      </svg>
                 </a>
             </div>
             <div class="flex items-center ml-auto pr-4 pl-8">
@@ -80,11 +86,11 @@
                     on:click={() => showModal = true}
                     class="text-blue-600 hover:underline"
                 >
-                    <div class="flex items-center flex-wrap flex-col lg:flex-row">
+                    <div class="flex items-center flex-wrap flex-col md:flex-row">
                         <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 lg:h-5 lg:w-5 mr-1 mb-0 lg:mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        <span class="hidden lg:inline font-medium">Hebben wij vandaag je vraag kunnen beantwoorden?</span>
+                        <span class="hidden lg:inline font-medium">Hebben wij je vraag kunnen beantwoorden?</span>
                         <span class="block lg:hidden font-medium text-sm leading-0">Feedback</span>
                 </div>
                 </button>
@@ -95,8 +101,8 @@
                     <img class="block sm:hidden h-6 lg:h-10 w-auto" src="/incubator.png" alt="SvdJ Incubator Logo" />
                 </a>
                 <a href="https://openstate.eu" target="_blank">
-                    <img class="hidden sm:block h-7 lg:h-11 w-auto" src="/open-state-foundation-logo.svg" alt="Open State Foundation Logo" />
-                    <img class="block sm:hidden h-6 lg:h-9 w-auto ml-1" src="/open-state-foundation-logo-small.svg" alt="Open State Foundation Logo" />
+                    <img class="hidden lg:block h-7 lg:h-11 w-auto" src="/open-state-foundation-logo.svg" alt="Open State Foundation Logo" />
+                    <img class="block lg:hidden h-6 lg:h-9 w-auto ml-1" src="/open-state-foundation-logo-small.svg" alt="Open State Foundation Logo" />
                 </a>
             </div>
         </div>
@@ -125,14 +131,19 @@
                     <h2 class="text-2xl font-bold mb-4">Bedankt voor je feedback!</h2>
                     <p>We waarderen je input.</p>
 
-                    <h3 class="text-lg font-bold mt-4">Contact</h3>
+                    <p class="mt-4">
+                        Wil je een verhaal maken met behulp van Bron CHAT, of
+                        heb je meer vragen over deze tool?
+                    </p>
+
+                    <h3 class="text-lg font-bold mt-4">Neem dan contact met ons op</h3>
                     <p>Joost van de Loo</p>
                     <p>tel: 06-50733904</p>
-                    <p><a href="mailto:joostvandeloo@svdjincubator.nl">joostvandeloo@svdjincubator.nl</a></p>
+                    <p><a href="mailto:joostvandeloo@svdjincubator.nl" class="text-blue-600 hover:underline">joostvandeloo@svdjincubator.nl</a></p>
                 </div>
             {:else}
                 <div class="flex justify-between items-start mb-4">
-                    <h2 class="text-xl font-bold">Feedback</h2>
+                    <h2 class="text-xl font-bold">Hebben wij je vraag kunnen beantwoorden?</h2>
                     <button 
                         on:click={closeModal}
                         class="text-gray-500 hover:text-gray-700"
@@ -144,9 +155,6 @@
                 </div>
                 <form on:submit|preventDefault={handleSubmit} class="space-y-4">
                     <div>
-                        <label for="question" class="block text-sm font-medium text-gray-700 mb-1">
-                            Wat was je vraag/opmerking? *
-                        </label>
                         <textarea
                             id="question"
                             name="question"
@@ -154,6 +162,7 @@
                             required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                             rows="3"
+                            placeholder="Vraag, opmerking, suggestie"
                         ></textarea>
                     </div>
                     <div>
