@@ -1,13 +1,17 @@
 <script>
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
 
     const API_BASE_URL = import.meta.env.PUBLIC_API_URL;
 
     onMount(async () => {
-        const response = await fetch(`${API_BASE_URL}/new_session`, { method: 'POST' });
-        const data = await response.json();
-        goto(`/s/${data.id}`);
+        // Only create a new session if we're on the root path
+        if ($page.url.pathname === '/') {
+            const response = await fetch(`${API_BASE_URL}/new_session`, { method: 'POST' });
+            const data = await response.json();
+            goto(`/s/${data.id}`);
+        }
     }); 
 </script>
 
