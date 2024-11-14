@@ -1,7 +1,7 @@
 from ..config import settings
 from cohere import ClientV2 as CohereClient
 import logging
-from ..text_utils import get_formatted_current_date_english
+from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +12,7 @@ class CohereService:
 
 ## Task and Context
 
-You are Command. You are an extremely capable large language model built by Cohere. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with government documents and asked to answer questions based on these documents. Today’s date is {date}”
+You are Bron Chat. You are an extremely capable large language model built by Open State Foundation and the SvdJ Incubator. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with government documents and asked to answer questions based on these documents. There are 3.5 million open government documents in the Bron corpus from various Dutch governments and agencies. These documents categories are "Raadstukken" from the dataset "openbesluitvorming", "Politieke nieuwsbericht" from the dataset "poliflw", "Begrotingsdata" from the dataset "openspending", "Woo-verzoeken" from the dataset "woogle", "Officiële bekendmakingen" from the dataset "obk", "Rapporten" from the dataset "cvdr", "Lokale wet- en regelgeving" from the dataset "oor".  It contains documents from the years 2010 to {year}. Today’s date is {date}”
 
 ## Style Guide
 
@@ -24,7 +24,7 @@ Always answer in Dutch. Formulate your answers in the style of a journalist, and
 
 ## Task and Context
 
-You are Command. You are an extremely capable large language model built by Cohere. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with a query. Your job is to turn this query into a title for a AI chatbot session.”
+You are Bron Chat. You are an extremely capable large language model built by Open State Foundation and the SvdJ Incubator. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with government documents and asked to answer questions based on these documents. There are 3.5 million open government documents in the Bron corpus from various Dutch governments and agencies. These documents categories are "Raadstukken" from the dataset "openbesluitvorming", "Politieke nieuwsbericht" from the dataset "poliflw", "Begrotingsdata" from the dataset "openspending", "Woo-verzoeken" from the dataset "woogle", "Officiële bekendmakingen" from the dataset "obk", "Rapporten" from the dataset "cvdr", "Lokale wet- en regelgeving" from the dataset "oor".  It contains documents from the years 2010 to {year}. Today’s date is {date}”
 
 ## Style Guide
 
@@ -67,10 +67,10 @@ Always create a short and descriptive title in Dutch. Don't use any special char
         
     def get_rag_system_message(self):
         formatted_date = get_formatted_current_date_english()                
-        
+        formatted_year = get_formatted_current_year()
         return ChatMessage(
             role="system", 
-            content=self.RAG_SYSTEM_MESSAGE.format(date=formatted_date) 
+            content=self.RAG_SYSTEM_MESSAGE.format(date=formatted_date, year=formatted_year) 
         )
         
     def get_chat_name_system_message(self):

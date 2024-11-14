@@ -33,6 +33,9 @@ def get_formatted_date_english(date):
     
     return date.strftime('%A, %d %B %Y')
 
+def get_formatted_current_year():
+    return datetime.now().year
+
 def get_formatted_date_dutch(date):
     logger.debug(f"Formatting date NL: {date}")
     
