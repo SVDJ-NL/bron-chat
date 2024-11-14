@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import logging
 from sqlalchemy.orm import Session
 from ..config import settings
-from ..schemas import FeedbackModel
+from ..schemas import FeedbackCreate, FeedbackModel
 from ..database import get_db
 from ..services.feedback_service import FeedbackService
 
@@ -31,7 +31,7 @@ async def submit_feedback(
     try:
         feedback_service = FeedbackService(db)
         feedback_record = feedback_service.create_feedback(
-            FeedbackModel(
+            FeedbackCreate(
                 question=question, 
                 name=name, 
                 email=email, 
@@ -43,4 +43,20 @@ async def submit_feedback(
         return {"status": "success", "message": "Feedback received", "id": feedback_record.id}
     except Exception as e:
         logger.error(f"Error submitting feedback: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)) 
+
+@router.get(base_api_url + "feedback", response_model=List[FeedbackModel])
+async def get_feedback(
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve all feedback records with their associated sessions
+    """
+    try:
+        feedback_service = FeedbackService(db)
+        feedback_records = feedback_service.get_all_feedback()
+        logger.info(f"Retrieved {len(feedback_records)} feedback records")
+        return feedback_records
+    except Exception as e:
+        logger.error(f"Error retrieving feedback: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e)) 

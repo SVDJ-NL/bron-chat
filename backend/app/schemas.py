@@ -31,12 +31,6 @@ class SessionBase(BaseModel):
     documents: List[ChatDocument] = []
     
     
-class SessionBase(BaseModel):
-    name: Optional[str] = None
-    messages: List[ChatMessage] = []
-    documents: List[ChatDocument] = []
-
-
 class SessionCreate(SessionBase):
     pass
 
@@ -54,11 +48,21 @@ class Session(SessionBase):
         from_attributes = True
 
 
-class FeedbackModel(BaseModel):
+class FeedbackBase(BaseModel):
     question: str
     name: Optional[str] = None
     email: Optional[str] = None
     session_id: Optional[str] = None
+
+
+class FeedbackCreate(FeedbackBase):
+    pass
+
+
+class FeedbackModel(FeedbackBase):
+    id: str
+    created_at: datetime
+    session: Optional[Session] = None
 
     class Config:
         from_attributes = True

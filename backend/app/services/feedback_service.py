@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Session
-from ..models import Feedback
+from sqlalchemy.orm import Session, joinedload
+from ..models import Feedback, Session
 from ..schemas import FeedbackModel
 import logging
 
@@ -27,3 +27,15 @@ class FeedbackService:
             logger.error(f"Error creating feedback: {str(e)}")
             self.db.rollback()
             raise 
+
+    def get_all_feedback(self):
+        """
+        Retrieve all feedback records from the database with their associated sessions
+        """
+        try:
+            return self.db.query(Feedback)\
+                .options(joinedload(Feedback.session))\
+                .all()
+        except Exception as e:
+            logger.error(f"Database error while retrieving feedback: {str(e)}")
+            raise Exception("Failed to retrieve feedback records")
