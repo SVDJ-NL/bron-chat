@@ -36,7 +36,7 @@
 
 <div class="pt-5 pb-6 lg:pt-6 lg:pb-0 pl-4 lg:pl-6 lg:pr-2 flex flex-col h-full relative">
     <button
-        class="absolute -top-4 -left-16 bg-gray-50 border border-gray-300 rounded-l-xl p-2 lg:p-2 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'hidden' : ''}"
+        class="absolute -top-2 lg:top-4 -left-16 bg-gray-50 border border-gray-300 rounded-l-xl p-2 lg:p-2 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'hidden' : ''}"
         on:click={togglePanel}
     >
         {#if !isDocumentsPanelOpen}
@@ -88,9 +88,9 @@
                         class="transition-colors duration-200"
                         on:click={togglePanel}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg> 
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
             {/if}

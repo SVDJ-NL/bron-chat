@@ -35,29 +35,32 @@ async def chat_endpoint(
     cohere_service = CohereService()
     session_service = SessionService(db)
     
-    session = session_service.get_session(session_id)        
-    user_message = cohere_service.get_user_message(query)    
-    session_messages = session.get_messages()
+    # Get session and store necessary data
+    session = session_service.get_session(session_id)
+    current_session_id = session.id  # Store session ID
+    session_messages = session.get_messages()  # Get messages
     
     is_new_session = not session_messages or len(session_messages) == 0
     
     if is_new_session:        
         system_message_rag = cohere_service.get_rag_system_message()
+        user_message = cohere_service.get_user_message(query)
         
         session = session_service.update_session(
-            session.id, 
+            current_session_id,  # Use stored session ID
             SessionUpdate(
                 messages=[system_message_rag, user_message],
             )
         )        
     else:
+        user_message = cohere_service.get_user_message(query)
         session = session_service.update_session(
-            session.id, 
+            current_session_id,  # Use stored session ID
             SessionUpdate(
                 messages=session_messages + [user_message]
             )
         )
-        logger.info(f"Using existing session: {session.id}")
+        logger.info(f"Using existing session: {current_session_id}")
 
     async def event_generator():
         full_formatted_content = ""
@@ -66,7 +69,7 @@ async def chat_endpoint(
         try:
             yield 'data: ' + json.dumps({
                 "type": "session",
-                "session_id": session.id
+                "session_id": current_session_id  # Use stored session ID
             }) + "\n\n"
             await sleep(0)
             
@@ -149,7 +152,7 @@ async def chat_endpoint(
                         chat_name = session.name
                                         
                     session_service.update_session(
-                        session_id=session.id,                        
+                        session_id=current_session_id,                        
                         session_update=SessionUpdate(
                             name=chat_name,
                             messages = session.get_messages() + [

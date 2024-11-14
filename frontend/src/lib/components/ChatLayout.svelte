@@ -301,9 +301,9 @@
 
 <div class="flex flex-col lg:flex-row min-h-screen {messages.length === 0 ? '' : 'pt-16' } bg-gray-100 justify-center items-center overflow-x-hidden">
     <!-- Chat Panel Container -->
-    <div class="max-w-[768px] {messages.length === 0 ? '' : 'h-[90vh]'} lg:px-4 transition-all duration-300 ease-in-out w-full
+    <div class="max-w-[768px] {messages.length === 0 ? '' : 'h-[95vh]'} lg:px-4 transition-all duration-300 ease-in-out w-full
             {isDocumentsPanelOpen ? 'lg:-translate-x-[calc(50%)] lg:w-1/2' : 'translate-x-0'}">
-        <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 pt-5">
+        <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 lg:pt-5">
             <Chat 
                 messages={messages} 
                 currentMessage={currentMessage} 
@@ -319,7 +319,7 @@
 
     <!-- Documents Panel -->
     {#if documents.length > 0}
-        <div class="documents-panel fixed lg:block bottom-[91px] lg:right-0 lg:top-16 lg:bottom-0 h-[calc(100vh-10rem)] lg:h-[90vh] w-full lg:w-1/2 bg-gray-100 transform transition-transform duration-300
+        <div class="documents-panel fixed lg:block bottom-[71px] lg:right-0 lg:top-16 lg:bottom-0 h-[calc(100vh-8rem)] lg:h-[90vh] w-full lg:w-1/2 bg-gray-100 transform transition-transform duration-300
             {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
             <div class="h-full">
                 <Documents 
