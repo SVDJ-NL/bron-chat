@@ -51,13 +51,13 @@
 
     function formatSource(source) {
         const human_readable_sources = {
-            "openbesluitvorming": "Open Besluitvorming",
-            "poliflw": "Nieuwsbericht politieke partij",
-            "openspending": "Open Spending - Lokale financiën",
-            "woogle": "Woo verzoek",
+            "openbesluitvorming": "Raadstuk",
+            "poliflw": "Politiek nieuwsbericht",
+            "openspending": "Begrotingsdata",
+            "woogle": "Woo-verzoek",
             "obk": "Officiële bekendmaking",
-            "oor": "Open Overheid Rapport",
-            "cvdr": "Lokale wet- en regelgeving",
+            "cvdr": "Rapport",
+            "oor": "Lokale wet- en regelgeving",
         }
         return human_readable_sources[source] || source;
     }
