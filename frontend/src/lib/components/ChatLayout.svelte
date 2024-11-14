@@ -52,7 +52,7 @@
         isDocumentsPanelOpen = true;
     }
 
-    function handleClickOutside(event) {
+    function closeDocumentsPanel(event) {
         // Check if the click target is a citation link
         // Start of Selection
         if (
@@ -268,7 +268,7 @@
         }
     }
 
-    function handleVisibilityChange() {
+    function openDocumentsPanel() {
         if (document.visibilityState === 'visible' && 
             documents.length > 0 && 
             window.matchMedia('(min-width: 1024px)').matches) {
@@ -277,17 +277,20 @@
     }
 
     onMount(() => {
-        if (!sessionId) {
+        // Only create a new session if sessionId is null, undefined, or empty string
+        if (!sessionId || sessionId.trim() === '') {
             createNewSession();
+        } else {
+            openDocumentsPanel();
         }
-        // Add click outside listener
-        document.addEventListener('click', handleClickOutside);
-        // Add visibility change listener
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Rest of the onMount code...
+        document.addEventListener('click', closeDocumentsPanel);
+        document.addEventListener('visibilitychange', openDocumentsPanel);
 
         return () => {
-            document.removeEventListener('click', handleClickOutside);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            document.removeEventListener('click', closeDocumentsPanel);
+            document.removeEventListener('visibilitychange', openDocumentsPanel);
         };
     });
 </script>
