@@ -268,14 +268,26 @@
         }
     }
 
+    function handleVisibilityChange() {
+        if (document.visibilityState === 'visible' && 
+            documents.length > 0 && 
+            window.matchMedia('(min-width: 1024px)').matches) {
+            isDocumentsPanelOpen = true;
+        }
+    }
+
     onMount(() => {
         if (!sessionId) {
             createNewSession();
         }
         // Add click outside listener
         document.addEventListener('click', handleClickOutside);
+        // Add visibility change listener
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     });
 </script>
