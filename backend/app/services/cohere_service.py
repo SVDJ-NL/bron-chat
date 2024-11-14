@@ -24,7 +24,7 @@ Always answer in Dutch. Formulate your answers in the style of a journalist, and
 
 ## Task and Context
 
-You are Bron Chat. You are an extremely capable large language model built by Open State Foundation and the SvdJ Incubator. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with government documents and asked to answer questions based on these documents. There are 3.5 million open government documents in the Bron corpus from various Dutch governments and agencies. These documents categories are "Raadstukken" from the dataset "openbesluitvorming", "Politieke nieuwsbericht" from the dataset "poliflw", "Begrotingsdata" from the dataset "openspending", "Woo-verzoeken" from the dataset "woogle", "Officiële bekendmakingen" from the dataset "obk", "Rapporten" from the dataset "cvdr", "Lokale wet- en regelgeving" from the dataset "oor".  It contains documents from the years 2010 to {year}. Today’s date is {date}”
+You are Bron Chat. You are an extremely capable large language model built by Open State Foundation and the SvdJ Incubator. You are given instructions programmatically via an API that you follow to the best of your ability. Your users are journalists and researchers based in the Netherlands. You will be provided with a query. Your job is to turn this query into a concise and descriptive title for a AI chatbot session.”
 
 ## Style Guide
 
@@ -98,4 +98,26 @@ Always create a short and descriptive title in Dutch. Don't use any special char
             ],
         )
         
-        return response.message.content[0].text
+        name = response.message.content[0].text
+        return self.truncate_chat_name(name)
+
+    def truncate_chat_name(self, name: str, max_length: int = 250) -> str:
+        """
+        Truncate chat name to ensure it fits within database limits.
+        Leaves some buffer below the 255 character limit.
+        """
+        if len(name) <= max_length:
+            return name
+        
+        # Try to truncate at a natural break point
+        truncated = name[:max_length]
+        last_break = max(
+            truncated.rfind('.'),
+            truncated.rfind('?'),
+            truncated.rfind('!'),
+            truncated.rfind('\n')
+        )
+        
+        if last_break > max_length // 2:
+            return truncated[:last_break + 1].strip()
+        return truncated.strip()
