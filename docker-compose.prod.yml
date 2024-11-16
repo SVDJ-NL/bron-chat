@@ -67,15 +67,15 @@ services:
     ports:
       - 6333:6333
       - 6334:6334
-    expose:
-      - 6333
-      - 6334
-      - 6335
+    # expose:
+    #   - 6333
+    #   - 6334
+    #   - 6335
     configs:
       - source: qdrant_config
         target: /qdrant/config/production.yaml
     volumes:
-      - /var/lib/qdrant_nl/storage:/qdrant/storage
+      - /var/lib/qdrant/storage:/qdrant/storage
 
   mysql:
     image: mysql:8.0
