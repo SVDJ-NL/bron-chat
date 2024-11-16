@@ -301,9 +301,9 @@
 
 <div class="flex flex-col lg:flex-row min-h-screen {messages.length === 0 ? '' : 'pt-16' } bg-gray-100 justify-center items-center overflow-x-hidden">
     <!-- Chat Panel Container -->
-    <div class="max-w-[768px] {messages.length === 0 ? '' : 'h-[95vh]'} lg:px-4 transition-all duration-300 ease-in-out w-full
+    <div class="max-w-[768px] {messages.length === 0 ? '' : 'h-[93vh]'} lg:px-4 transition-all duration-300 ease-in-out w-full
             {isDocumentsPanelOpen ? 'lg:-translate-x-[calc(50%)] lg:w-1/2' : 'translate-x-0'}">
-        <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 lg:pt-5">
+        <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 pt-4 sm:pt-8 md:pt-5">
             <Chat 
                 messages={messages} 
                 currentMessage={currentMessage} 
