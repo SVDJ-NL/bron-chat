@@ -75,7 +75,7 @@ services:
       - source: qdrant_config
         target: /qdrant/config/production.yaml
     volumes:
-      - /var/lib/qdrant/storage:/qdrant/storage
+      - /var/lib/qdrant_nl/storage:/qdrant/storage
 
   mysql:
     image: mysql:8.0

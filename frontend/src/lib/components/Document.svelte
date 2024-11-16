@@ -45,7 +45,7 @@
         parsedContent = DOMPurify.sanitize(content);
         
         if (contentElement) {
-            contentElement.innerHTML = parsedContent;
+            contentElement.innerHTML = marked.parse(parsedContent);
         }
     }
 

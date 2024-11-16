@@ -7,6 +7,7 @@ from typing import List, Dict, AsyncGenerator, Tuple
 from markdown import markdown 
 import os
 from ..services.cohere_service import CohereService
+from ..services.litellm_service import LiteLLMService
 from ..text_utils import format_content
 from fastembed.sparse import SparseTextEmbedding
 from qdrant_client.http import models
@@ -18,6 +19,7 @@ from datetime import datetime
 import time
 from typing import Optional
 from .qdrant_pool import QdrantConnectionPool
+from .base_llm_service import BaseLLMService
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -54,12 +56,13 @@ class QdrantService:
                         raise
         return cls._sparse_document_embedder
     
-    def __init__(self):
+    def __init__(self, llm_service: BaseLLMService):
+        self.llm_service = llm_service
         self.dense_model_name = settings.COHERE_EMBED_MODEL
         self.sparse_model_name = settings.SPARSE_EMBED_MODEL
         self.pool = QdrantConnectionPool.get_instance()
-        self.cohere_service = CohereService()
-
+        
+        
     def generate_sparse_embedding(self, query: str):
         try:
             with self._query_semaphore:
@@ -93,7 +96,7 @@ class QdrantService:
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
-        dense_vector = self.cohere_service.generate_dense_embedding(query)        
+        dense_vector = self.llm_service.generate_dense_embedding(query)        
         
         try:            
             with self.pool.get_client() as client:
@@ -136,8 +139,8 @@ class QdrantService:
         logger.debug(f"Retrieving documents from Qdrant for query: {query}")
 
         try:
-            # Generate dense embedding using CohereService
-            dense_vector = self.cohere_service.generate_dense_embedding(query)
+            # Generate dense embeddings
+            dense_vector = self.llm_service.generate_dense_embedding(query)
         except Exception as e:
             logger.error(f"Error creating dense vector from query using Cohere: {e}")
             return None
@@ -159,11 +162,7 @@ class QdrantService:
 
     def retrieve_relevant_documents(self, query: str) -> List[Dict]:          
         logger.debug(f"Retrieving relevant documents for query: {query}")
-        # Get documents from Qdrant
-        # qdrant_documents = self.dense_vector_search(
-        #     query=query
-        # )
-
+        
         qdrant_documents = self.hybrid_search(query)
         
         # Check if qdrant_documents is None or empty
@@ -171,16 +170,17 @@ class QdrantService:
             logger.warning("No documents retrieved from Qdrant")
             return []
 
-        # Rerank documents using Cohere
+        # Rerank documents using LiteLLM
         logger.debug(f"Documents: {qdrant_documents[0]}")
-        # convert Qdrant ScoredPoint to Cohere RerankDocument
         document_texts = [document.payload['content'] for document in qdrant_documents]
-        reranked_documents = self.cohere_service.rerank_documents(
+        reranked_documents = self.llm_service.rerank_documents(
             query = query,
             documents = document_texts,
         )
         
-        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]        
+        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]
+        # Response contains results list with document, index, and relevance_score
+        # qdrant_documents = [qdrant_documents[result['index']] for result in reranked_response.results]
         logger.debug(f"Reranked documents: {qdrant_documents[0]}")  
         
         return self.prepare_documents(qdrant_documents)

@@ -7,6 +7,8 @@ from ..services.qdrant_service import QdrantService
 import logging
 from datetime import datetime
 from ..config import settings
+from ..services.cohere_service import CohereService
+from ..services.litellm_service import LiteLLMService
 
 router = APIRouter()
 
@@ -23,7 +25,15 @@ if ENVIRONMENT == "development":
 async def get_session(session_id: str, db: Session = Depends(get_db)):
     logger.debug(f"Getting session with id: {session_id}")
     session_service = SessionService(db)
-    qdrant_service = QdrantService()
+
+    llm_service = None
+    # Use the configured LLM service
+    if settings.LLM_SERVICE.lower() == "litellm":
+        llm_service = LiteLLMService()
+    else:
+        llm_service = CohereService()
+        
+    qdrant_service = QdrantService(llm_service)
     
     session = session_service.get_session(session_id)
     

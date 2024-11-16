@@ -8,6 +8,7 @@ from ..database import get_db
 from ..services.chat_service import ChatService
 from ..services.session_service import SessionService
 from ..services.cohere_service import CohereService
+from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
 from datetime import datetime
@@ -30,9 +31,15 @@ async def chat_endpoint(
     session_id: str = Query(None, description="The session ID"),
     db: Session = Depends(get_db)
 ):
-    chat_service = ChatService()
-    qdrant_service = QdrantService()
-    cohere_service = CohereService()
+    llm_service = None
+    # Use the configured LLM service
+    if settings.LLM_SERVICE.lower() == "litellm":
+        llm_service = LiteLLMService()
+    else:
+        llm_service = CohereService()
+        
+    chat_service = ChatService(llm_service)
+    qdrant_service = QdrantService(llm_service)    
     session_service = SessionService(db)
     
     # Get session and store necessary data
@@ -43,17 +50,15 @@ async def chat_endpoint(
     is_new_session = not session_messages or len(session_messages) == 0
     
     if is_new_session:        
-        system_message_rag = cohere_service.get_rag_system_message()
-        user_message = cohere_service.get_user_message(query)
-        
+        initial_messages = llm_service.get_initial_messages(query)
         session = session_service.update_session(
             current_session_id,  # Use stored session ID
             SessionUpdate(
-                messages=[system_message_rag, user_message],
+                messages=initial_messages,
             )
         )        
     else:
-        user_message = cohere_service.get_user_message(query)
+        user_message = llm_service.get_user_message(query)
         session = session_service.update_session(
             current_session_id,  # Use stored session ID
             SessionUpdate(
@@ -144,7 +149,7 @@ async def chat_endpoint(
             if full_original_content:
                 try:
                     if is_new_session:
-                        chat_name = cohere_service.create_chat_session_name(user_message)
+                        chat_name = llm_service.create_chat_session_name(query)
                         # Always send end and close events
                         yield 'data: ' + json.dumps({"type": "session_name", "content": chat_name}) + "\n\n"
                         await sleep(0)

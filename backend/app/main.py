@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import chat, sessions, feedback
@@ -5,7 +6,8 @@ from .config import settings
 from .database import init_db
 import asyncio
 import sentry_sdk
-
+from phoenix.otel import register
+from openinference.instrumentation.litellm import LiteLLMInstrumentor
 
 sentry_sdk.init(
     dsn=settings.SENTRY_DSN,
@@ -19,6 +21,13 @@ sentry_sdk.init(
         "continuous_profiling_auto_start": True,
     },
 )
+
+tracer_provider = register(
+  project_name=settings.PHOENIX_PROJECT_NAME,
+  endpoint=settings.PHOENIX_TRACER_ENDPOINT
+)
+
+LiteLLMInstrumentor().instrument(tracer_provider=tracer_provider)
 
 fast_api_app = FastAPI()
 

@@ -6,17 +6,18 @@ import logging
 from datetime import datetime
 from ..services.qdrant_service import QdrantService
 from ..services.cohere_service import CohereService
+from ..services.litellm_service import LiteLLMService
 from ..text_utils import to_markdown, format_content, get_formatted_date_english, get_formatted_current_date_dutch
-
+from .base_llm_service import BaseLLMService
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ChatService:
-    def __init__(self):
-        self.qdrant_service = QdrantService()
-        self.cohere_service = CohereService()  # Initialize the new service
-
+    def __init__(self, llm_service: BaseLLMService):        
+        self.llm_service = llm_service
+        self.qdrant_service = QdrantService(self.llm_service)
+        
     def add_citations_to_text(self, text, citations):
         citations_list = sorted(citations, key=lambda x: x['start'])
         
@@ -58,7 +59,7 @@ class ChatService:
         current_citation = None
         first_citation = True
         try:
-            for event in self.cohere_service.chat_stream(messages, formatted_docs):
+            for event in self.llm_service.chat_stream(messages, formatted_docs):
                 if event:
                     if event.type == "content-delta":
                         yield {

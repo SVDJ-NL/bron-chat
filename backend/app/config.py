@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     QDRANT_SPARSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_SPARSE_RETRIEVE_LIMIT"))
     QDRANT_DENSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_DENSE_RETRIEVE_LIMIT"))
     QDRANT_HYBRID_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_HYBRID_RETRIEVE_LIMIT"))
+    EMBEDDING_QUANTIZATION: str = os.getenv("EMBEDDING_QUANTIZATION")
     RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
@@ -21,4 +22,12 @@ class Settings(BaseSettings):
     QDRANT_POOL_TIMEOUT: int = 30
     QDRANT_TIMEOUT: int = 10
     SENTRY_DSN: str = os.getenv("SENTRY_DSN")
+
+    OTEL_EXPORTER_OTLP_HEADER: str = os.getenv("OTEL_EXPORTER_OTLP_HEADER")
+    PHOENIX_CLIENT_HEADERS: str = os.getenv("PHOENIX_CLIENT_HEADERS")
+    PHOENIX_COLLECTOR_ENDPOINT: str = os.getenv("PHOENIX_COLLECTOR_ENDPOINT")
+    PHOENIX_TRACER_ENDPOINT: str = os.getenv("PHOENIX_TRACER_ENDPOINT")
+    PHOENIX_PROJECT_NAME: str = os.getenv("PHOENIX_PROJECT_NAME")
+    LLM_SERVICE: str = os.getenv("LLM_SERVICE", "cohere")
+    
 settings = Settings()

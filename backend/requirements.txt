@@ -14,3 +14,9 @@ uuid
 pydantic[email,timezone]
 pydantic-settings
 sentry-sdk[fastapi]
+arize-phoenix
+litellm
+openinference-semantic-conventions
+openinference-instrumentation-litellm
+arize-phoenix-otel
+arize-phoenix-evals
