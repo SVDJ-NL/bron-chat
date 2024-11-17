@@ -9,11 +9,11 @@ logger = logging.getLogger(__name__)
 # Configure the connection pool
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_size=20,  # Increase from default of 5
-    max_overflow=30,  # Increase from default of 10
+    pool_size=10,  # Increase from default of 5
+    max_overflow=20,  # Increase from default of 10
     pool_timeout=60,  # Increase timeout
     pool_pre_ping=True,  # Enable connection health checks
-    pool_recycle=3600  # Recycle connections after 1 hour
+    pool_recycle=28000  # Recycle connections after 1 hour
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -47,7 +47,14 @@ def get_db():
     try:
         yield db
     except Exception:
-        db.rollback()
+        try:
+            db.rollback()
+        except Exception:
+            pass  # Ignore rollback errors
         raise
     finally:
-        db.close()
+        try:
+            db.close()
+        except Exception:
+            pass  # Ignore close errors
+

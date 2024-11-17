@@ -94,13 +94,14 @@ services:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --default-authentication-plugin=caching_sha2_password
-      --max-connections=2000
-      --innodb-buffer-pool-size=4G
-      --innodb-thread-concurrency=16
-      --innodb-read-io-threads=8
-      --innodb-write-io-threads=8
-      --wait_timeout=300
-      --interactive_timeout=300
+      --max-connections=100
+      --innodb-buffer-pool-size=2G
+      --innodb-thread-concurrency=8
+      --innodb-read-io-threads=4
+      --innodb-write-io-threads=4
+      --wait_timeout=28800
+      --interactive_timeout=28800
+      --max_allowed_packet=256M
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
