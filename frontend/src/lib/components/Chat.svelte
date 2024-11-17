@@ -155,17 +155,9 @@
             typedSubtitle = null;
 
             const typedTitle = new Typed('#typed-title', {
-                strings: ["Vraag alles over Overijssel"],
+                strings: ["Vraag alles over 3.5 miljoen open overheidsdocumenten"],
                 typeSpeed: 50,
                 showCursor: false,
-                onComplete: () => {
-                    typedSubtitle = new Typed('#typed-subtitle', {
-                        strings: ["en binnenkort over heel Nederland"],
-                        typeSpeed: 25,
-                        showCursor: false,
-                        startDelay: 500,
-                    });
-                },
             });
 
             return () => {
@@ -272,8 +264,7 @@
 <div class="chat-wrapper">
     {#if messages.length === 0 }
         <div class="p-4 lg:p-6 h-20 lg:h-24 w-full">
-            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-xl lg:text-2xl pb-0.5"></h2>
-            <h3 id="typed-subtitle" class="text-gray-600 text-center text-sm lg:text-base"></h3>
+            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-lg lg:text-xl pb-0.5"></h2>
         </div>
     {/if}
     <div class="chat-container">
