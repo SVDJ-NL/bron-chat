@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from ..models import Feedback, Session
 from ..schemas import FeedbackModel
+from app.models.feedback import MessageFeedback, FeedbackType
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,3 +40,22 @@ class FeedbackService:
         except Exception as e:
             logger.error(f"Database error while retrieving feedback: {str(e)}")
             raise Exception("Failed to retrieve feedback records")
+
+    def add_feedback(self, message_id: str, session_id: str, feedback_type: FeedbackType):
+        # Remove any existing feedback for this message
+        existing_feedback = self.db.query(MessageFeedback).filter(
+            MessageFeedback.message_id == message_id,
+            MessageFeedback.session_id == session_id
+        ).first()
+        
+        if existing_feedback:
+            self.db.delete(existing_feedback)
+            
+        feedback = MessageFeedback(
+            message_id=message_id,
+            session_id=session_id,
+            feedback_type=feedback_type
+        )
+        self.db.add(feedback)
+        self.db.commit()
+        return feedback

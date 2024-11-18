@@ -6,8 +6,7 @@ import logging
 from typing import List, Dict, AsyncGenerator, Tuple
 from markdown import markdown 
 import os
-from ..services.cohere_service import CohereService
-from ..services.litellm_service import LiteLLMService
+from ..services.base_llm_service import BaseLLMService
 from ..text_utils import format_content
 from fastembed.sparse import SparseTextEmbedding
 from qdrant_client.http import models
@@ -19,7 +18,6 @@ from datetime import datetime
 import time
 from typing import Optional
 from .qdrant_pool import QdrantConnectionPool
-from .base_llm_service import BaseLLMService
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +36,13 @@ class QdrantService:
     # Add batch size control for optimal memory usage
     BATCH_SIZE = 32  # Process embeddings in batches
     
+    
+    def __init__(self, llm_service: BaseLLMService):
+        self.llm_service = llm_service
+        self.dense_model_name = settings.COHERE_EMBED_MODEL
+        self.sparse_model_name = settings.SPARSE_EMBED_MODEL
+        self.pool = QdrantConnectionPool.get_instance()
+        
     @classmethod
     def get_sparse_embedder(cls):
         if cls._sparse_document_embedder is None:
@@ -55,12 +60,6 @@ class QdrantService:
                         logger.error(f"Failed to initialize sparse embedder: {e}")
                         raise
         return cls._sparse_document_embedder
-    
-    def __init__(self, llm_service: BaseLLMService):
-        self.llm_service = llm_service
-        self.dense_model_name = settings.COHERE_EMBED_MODEL
-        self.sparse_model_name = settings.SPARSE_EMBED_MODEL
-        self.pool = QdrantConnectionPool.get_instance()
         
         
     def generate_sparse_embedding(self, query: str):
