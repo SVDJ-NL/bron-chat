@@ -36,16 +36,11 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     qdrant_service = QdrantService(llm_service)
     
     session = session_service.get_session(session_id)
+    messages = session_service.get_messages(session)
+    documents = session_service.get_documents(session)
+    qdrant_documents = qdrant_service.get_documents_by_ids(documents)    
     
-    qdrant_documents = []
-    if session.documents:
-        qdrant_documents = qdrant_service.get_documents_by_ids(session.get_documents())    
-    
-    messages = []
-    if session.messages:
-        messages = session.get_messages()
-        logger.debug(f"Session messages: {session.messages}")
-    
+    # TODO: Remove this once the frontend is updated to use the formatted_content
     for message in messages:
         if message.formatted_content:
             message.content = message.formatted_content

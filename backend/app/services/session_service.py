@@ -1,4 +1,6 @@
 from .database_service import DatabaseService
+from ..models import Session, Message, Document, FeedbackType, MessageDocument
+from ..schemas import ChatMessage, ChatDocument
 from ..models import Session as SessionModel
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
 from fastapi import HTTPException
@@ -21,7 +23,6 @@ class SessionService(DatabaseService):
             id=str(uuid.uuid4()),
             name=session_create.name,
             messages=[msg.dict() for msg in session_create.messages],
-            documents=[doc.dict() for doc in session_create.documents],
             created_at=now,
             updated_at=now,
         )
@@ -42,22 +43,57 @@ class SessionService(DatabaseService):
             db_session.name = session_update.name
                     
         if session_update.messages:
-            db_session.set_messages(session_update.messages)
+            # Clear existing messages
+            db_session.messages = []
+            self.db.commit()
             
-        if session_update.documents:
-            db_session.set_documents(session_update.documents)
-            
+            # Add new messages as proper Message model instances
+            for idx, msg in enumerate(session_update.messages):
+                new_message = Message(
+                    id=str(uuid.uuid4()),
+                    session_id=session_id,
+                    sequence=idx,
+                    role=msg.role,
+                    content=msg.content,
+                    formatted_content=msg.formatted_content,
+                    feedback_type=msg.feedback_type.value if msg.feedback_type else None,
+                    feedback_notes=msg.feedback_notes
+                )
+                self.db.add(new_message)
+                
+                # Handle documents if present
+                if msg.documents:
+                    for doc_data in msg.documents:
+                        # Check if document already exists
+                        existing_doc = self.db.query(Document).filter(Document.id == doc_data.id).first()
+                        if existing_doc:
+                            doc = existing_doc
+                        else:
+                            doc = Document(
+                                id=doc_data.id,
+                                content=doc_data.content,
+                                score=doc_data.score,
+                                title=doc_data.title,
+                                url=doc_data.url,
+                                feedback_type=doc_data.feedback_type.value if doc_data.feedback_type else None,
+                                feedback_notes=doc_data.feedback_notes
+                            )
+                            self.db.add(doc)
+                        
+                        new_message.documents.append(doc)
+                        
         db_session.updated_at = datetime.now()
-        
         self.db.commit()
         self.db.refresh(db_session)
                 
         return db_session
-
+    
     def get_session(self, session_id: str) -> SessionModel:
         db_session = self.db.query(SessionModel).filter(SessionModel.id == session_id).first()
         if db_session is None:
-            raise HTTPException(status_code=404, detail="Session not found")                
+            raise HTTPException(status_code=404, detail="Session not found")
+        # Ensure the session is attached to the current db session
+        self.db.refresh(db_session)
         return db_session
 
     def delete_session(self, session_id: str):
@@ -65,4 +101,77 @@ class SessionService(DatabaseService):
         if db_session is None:
             raise HTTPException(status_code=404, detail="Session not found")
         self.db.delete(db_session)
+    
+    def get_messages(self, session: Session) -> List[ChatMessage]:
+        # Query messages directly instead of accessing relationship
+        messages = self.db.query(Message)\
+            .filter(Message.session_id == session.id)\
+            .order_by(Message.sequence)\
+            .all()
+        
+        return [
+            ChatMessage(
+                role=msg.role,
+                content=msg.content,
+                formatted_content=msg.formatted_content,
+                documents=[
+                    ChatDocument(
+                        id=doc.id,
+                        content=doc.content,
+                        score=doc.score,
+                        title=doc.title,
+                        url=doc.url
+                    ) for doc in msg.documents
+                ] if msg.documents else []
+            ) for msg in messages
+        ]
+        
+    def get_documents(self, session: Session) -> List[ChatDocument]:
+        # Query documents directly through message_documents relationship
+        documents = self.db.query(Document)\
+            .join(MessageDocument)\
+            .join(Message)\
+            .filter(Message.session_id == session.id)\
+            .distinct()\
+            .all()
+        
+        return [
+            ChatDocument(
+                id=doc.id,
+                content=doc.content,
+                score=doc.score,
+                title=doc.title,
+                url=doc.url
+            ) for doc in documents
+        ]
+    
+    def add_message(self, session: Session, message: ChatMessage):
+        new_message = Message(
+            session_id=session.id,
+            sequence=len(session.messages),
+            role=message.role,
+            content=message.content,
+            feedback_type=FeedbackType[message.feedback_type.upper()] if message.feedback_type else None,
+            feedback_notes=message.feedback_notes
+        )
+        self.db.add(new_message)
+        
+        if message.documents:
+            for doc_data in message.documents:
+                existing_doc = self.db.query(Document).filter(Document.id == doc_data.id).first()
+                if existing_doc:
+                    doc = existing_doc
+                else:
+                    doc = Document(
+                        id=doc_data.id,
+                        content=doc_data.content,
+                        score=doc_data.score,
+                        title=doc_data.title,
+                        url=doc_data.url,
+                        meta=doc_data.dict(exclude={'id', 'content', 'score', 'title', 'url', 'feedback_type', 'feedback_notes'})
+                    )
+                    self.db.add(doc)
+                
+                new_message.documents.append(doc)
+        
         self.db.commit()

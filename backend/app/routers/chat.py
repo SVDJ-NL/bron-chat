@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 import logging
 import json
 from asyncio import sleep
+from datetime import datetime
 from ..database import get_db
 from ..services.chat_service import ChatService
 from ..services.session_service import SessionService
@@ -11,10 +12,9 @@ from ..services.cohere_service import CohereService
 from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
-from datetime import datetime
 from ..config import settings
-from app.models.feedback import FeedbackType
-from app.services.feedback_service import FeedbackService
+from ..models import FeedbackType
+from ..services.feedback_service import FeedbackService
 router = APIRouter()
 
 # Set up logging
@@ -46,15 +46,13 @@ async def chat_endpoint(
     
     # Get session and store necessary data
     session = session_service.get_session(session_id)
-    current_session_id = session.id  # Store session ID
-    session_messages = session.get_messages()  # Get messages
-    
+    session_messages = session_service.get_messages(session)  # Get messages    
     is_new_session = not session_messages or len(session_messages) == 0
     
     if is_new_session:        
         initial_messages = llm_service.get_initial_messages(query)
         session = session_service.update_session(
-            current_session_id,  # Use stored session ID
+            session.id,  # Use stored session ID
             SessionUpdate(
                 messages=initial_messages,
             )
@@ -62,12 +60,12 @@ async def chat_endpoint(
     else:
         user_message = llm_service.get_user_message(query)
         session = session_service.update_session(
-            current_session_id,  # Use stored session ID
+            session.id,  # Use stored session ID
             SessionUpdate(
                 messages=session_messages + [user_message]
             )
         )
-        logger.info(f"Using existing session: {current_session_id}")
+        logger.info(f"Using existing session: {session.id}")
 
     async def event_generator():
         full_formatted_content = ""
@@ -76,7 +74,7 @@ async def chat_endpoint(
         try:
             yield 'data: ' + json.dumps({
                 "type": "session",
-                "session_id": current_session_id  # Use stored session ID
+                "session_id": session.id  # Use stored session ID
             }) + "\n\n"
             await sleep(0)
             
@@ -101,7 +99,7 @@ async def chat_endpoint(
                 logger.error(f"Error retrieving relevant documents: {e}")
                 raise e
             
-            session_documents = session.get_documents()
+            session_documents = session_service.get_documents(session)
             if not session_documents:
                 combined_relevant_docs = relevant_docs
             else:
@@ -133,7 +131,7 @@ async def chat_endpoint(
             }) + "\n\n"
             await sleep(0)
             
-            async for response in chat_service.generate_full_response(session.get_messages(), relevant_docs):
+            async for response in chat_service.generate_full_response(session_service.get_messages(session), relevant_docs):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
 
@@ -159,23 +157,26 @@ async def chat_endpoint(
                         chat_name = session.name
                                         
                     session_service.update_session(
-                        session_id=current_session_id,                        
+                        session_id=session.id,                        
                         session_update=SessionUpdate(
                             name=chat_name,
-                            messages = session.get_messages() + [
+                            messages = session_service.get_messages(session) + [
                                 ChatMessage(
                                     role="assistant",
                                     content=full_original_content,
-                                    formatted_content=full_formatted_content
+                                    formatted_content=full_formatted_content,                                    
+                                    documents = session_service.get_documents(session) + [
+                                        ChatDocument(
+                                            id=doc.get('id'),
+                                            score=doc.get('score'),
+                                            content=doc.get('content', ''),
+                                            title=doc.get('title', ''),
+                                            url=doc.get('url', '')
+                                        )
+                                        for doc in reordered_relevant_docs
+                                    ]   
                                 )
                             ],
-                            documents = session.get_documents() + [
-                                ChatDocument(
-                                    id=doc['id'],
-                                    score=doc['score']
-                                )
-                                for doc in reordered_relevant_docs
-                            ]   
                         )
                     )
                     

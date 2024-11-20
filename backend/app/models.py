@@ -1,11 +1,15 @@
-from sqlalchemy import Column, String, JSON, DateTime, ForeignKey
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Integer, Text, Enum, Float
+import enum
 from sqlalchemy.sql import func
 from typing import List
 from .database import Base
-from .schemas import ChatMessage, ChatDocument
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
+
+class FeedbackType(enum.Enum):
+    LIKE = "like"
+    DISLIKE = "dislike"
 
 class Feedback(Base):
     __tablename__ = "feedback"
@@ -24,32 +28,56 @@ class Session(Base):
 
     id = Column(String(36), primary_key=True)
     name = Column(String(255))
-    messages = Column(JSON)
-    documents = Column(JSON)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    messages = relationship("Message", back_populates="session", order_by="Message.sequence")
     feedback = relationship("Feedback", back_populates="session")
 
-    def get_messages(self):
-        return [ChatMessage(**msg) for msg in self.messages]
-    
-    def get_documents(self):
-        return [ChatDocument(**doc) for doc in self.documents]
+class Message(Base):
+    __tablename__ = "messages"
 
-    def set_messages(self, messages: List[ChatMessage]):
-        self.messages = [msg.dict() for msg in messages]
+    id = Column(String(100), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String(36), ForeignKey('sessions.id'))
+    sequence = Column(Integer)
+    role = Column(String(50))
+    content = Column(Text)
+    formatted_content = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    feedback_type = Column(String(10), nullable=True, default=None)
+    feedback_notes = Column(Text, nullable=True)
 
-    def set_documents(self, documents: List[ChatDocument]):        
-        self.documents = [doc.dict() for doc in deduplicate_documents(documents)]
+    session = relationship("Session", back_populates="messages")
+    documents = relationship(
+        "Document",
+        secondary="message_documents",
+        back_populates="messages",
+        overlaps="documents,messages"
+    )
 
-def deduplicate_documents(documents: List[ChatDocument]):
-    seen_ids = set()
-    unique_documents = []
-    
-    for doc in documents:
-        if doc.id not in seen_ids:
-            seen_ids.add(doc.id)
-            unique_documents.append(doc)
-            
-    return unique_documents
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(String(36), primary_key=True)
+    content = Column(Text)
+    meta = Column(JSON)
+    score = Column(Float)
+    title = Column(String(255), nullable=True)
+    url = Column(String(1024), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    feedback_type = Column(String(10), nullable=True, default=None)
+    feedback_notes = Column(Text, nullable=True)
+
+    messages = relationship(
+        "Message", 
+        secondary="message_documents",
+        back_populates="documents",
+        overlaps="documents,messages"
+    )
+
+class MessageDocument(Base):
+    __tablename__ = "message_documents"
+
+    message_id = Column(String(100), ForeignKey('messages.id'), primary_key=True)
+    document_id = Column(String(36), ForeignKey('documents.id'), primary_key=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
