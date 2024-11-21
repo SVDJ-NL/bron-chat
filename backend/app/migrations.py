@@ -4,6 +4,8 @@ from .database import SessionLocal
 from .models import Base, Session, Message, Document, MessageDocument
 import json
 import logging
+from app.database import database
+from app.schemas import FeedbackType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

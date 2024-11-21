@@ -1,5 +1,5 @@
 from .database_service import DatabaseService
-from ..models import Session, Message, Document, FeedbackType, MessageDocument
+from ..models import Session, Message, Document, MessageFeedback, MessageDocument
 from ..schemas import ChatMessage, ChatDocument
 from ..models import Session as SessionModel
 from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
@@ -56,8 +56,6 @@ class SessionService(DatabaseService):
                     role=msg.role,
                     content=msg.content,
                     formatted_content=msg.formatted_content,
-                    feedback_type=msg.feedback_type.value if msg.feedback_type else None,
-                    feedback_notes=msg.feedback_notes
                 )
                 self.db.add(new_message)
                 
@@ -75,8 +73,6 @@ class SessionService(DatabaseService):
                                 score=doc_data.score,
                                 title=doc_data.title,
                                 url=doc_data.url,
-                                feedback_type=doc_data.feedback_type.value if doc_data.feedback_type else None,
-                                feedback_notes=doc_data.feedback_notes
                             )
                             self.db.add(doc)
                         
@@ -106,23 +102,17 @@ class SessionService(DatabaseService):
         # Query messages directly instead of accessing relationship
         messages = self.db.query(Message)\
             .filter(Message.session_id == session.id)\
+            .outerjoin(MessageFeedback)\
             .order_by(Message.sequence)\
             .all()
         
         return [
             ChatMessage(
+                id=msg.id,
                 role=msg.role,
                 content=msg.content,
                 formatted_content=msg.formatted_content,
-                documents=[
-                    ChatDocument(
-                        id=doc.id,
-                        content=doc.content,
-                        score=doc.score,
-                        title=doc.title,
-                        url=doc.url
-                    ) for doc in msg.documents
-                ] if msg.documents else []
+                feedback=msg.feedback
             ) for msg in messages
         ]
         
@@ -144,15 +134,15 @@ class SessionService(DatabaseService):
                 url=doc.url
             ) for doc in documents
         ]
+        
+        
     
     def add_message(self, session: Session, message: ChatMessage):
         new_message = Message(
             session_id=session.id,
             sequence=len(session.messages),
             role=message.role,
-            content=message.content,
-            feedback_type=FeedbackType[message.feedback_type.upper()] if message.feedback_type else None,
-            feedback_notes=message.feedback_notes
+            content=message.content
         )
         self.db.add(new_message)
         

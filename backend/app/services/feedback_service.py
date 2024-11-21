@@ -1,38 +1,68 @@
-from .database_service import DatabaseService
-from ..models import Message, Document, FeedbackType
-from fastapi import HTTPException
+from uuid import UUID
 from typing import Optional
+from sqlalchemy import select, update, insert
+from app.models import MessageFeedback, Feedback
+from app.schemas import MessageFeedbackCreate, MessageFeedbackUpdate, FeedbackCreate
+from .database_service import DatabaseService
+from fastapi import HTTPException
+
 
 class FeedbackService(DatabaseService):
     def __init__(self, db):
         super().__init__(db)
 
-    def set_message_feedback(
-        self, 
-        message_id: str, 
-        feedback_type: FeedbackType, 
-        notes: Optional[str] = None
-    ):
-        message = self.db.query(Message).filter(Message.id == message_id).first()
-        if not message:
-            raise HTTPException(status_code=404, detail="Message not found")
+    def create_message_feedback(self, feedback: MessageFeedbackCreate) -> dict:
+        new_message_feedback = MessageFeedback(
+            message_id=feedback.message_id,
+            feedback_type=feedback.feedback_type
+        )
         
-        message.feedback_type = feedback_type
-        message.feedback_notes = notes
-        self.db.commit()
-        return message
+        self.db.add(new_message_feedback)        
+        self.db.commit()        
+        self.db.refresh(new_message_feedback)
+        
+        return new_message_feedback
 
-    def set_document_feedback(
-        self, 
-        document_id: str, 
-        feedback_type: FeedbackType, 
-        notes: Optional[str] = None
-    ):
-        document = self.db.query(Document).filter(Document.id == document_id).first()
-        if not document:
-            raise HTTPException(status_code=404, detail="Document not found")
+    def update_message_feedback(
+        self,
+        feedback: MessageFeedbackUpdate
+    ) -> dict:
+        db_message_feedback = self.get_message_feedback(feedback.message_id)
         
-        document.feedback_type = feedback_type
-        document.feedback_notes = notes
+        if db_message_feedback is None:
+            raise HTTPException(status_code=404, detail="Message feedback not found")
+
+        if feedback.feedback_type is not None:
+            db_message_feedback.feedback_type = feedback.feedback_type
+            
+        if feedback.notes is not None:
+            db_message_feedback.notes = feedback.notes
+
         self.db.commit()
-        return document
+        self.db.refresh(db_message_feedback)
+        
+        return db_message_feedback
+    
+    def get_message_feedback(self, message_id: UUID) -> dict:        
+        return self.db.query(MessageFeedback).filter(MessageFeedback.message_id == message_id).first()
+
+    def get_session_feedback(self, session_id: UUID) -> dict:
+        return self.db.query(Feedback).filter(Feedback.session_id == session_id).first()
+    
+    def create_session_feedback(self, feedback: FeedbackCreate) -> dict:
+        session = self.get_session_feedback(feedback.session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        new_session_feedback = Feedback(
+            session_id=session.id,
+            question=feedback.question,
+            name=feedback.name,
+            email=feedback.email
+        )
+        
+        self.db.add(new_session_feedback)        
+        self.db.commit()        
+        self.db.refresh(new_session_feedback)
+        
+        return new_session_feedback

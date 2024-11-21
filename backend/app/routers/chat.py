@@ -198,14 +198,3 @@ async def chat_endpoint(
             "X-Accel-Buffering": "no",
         }
     )
-
-@router.post("/feedback/{message_id}")
-def add_feedback(
-    message_id: str,
-    feedback_type: FeedbackType,
-    session_id: str,
-    db: Session = Depends(get_db)
-):
-    feedback_service = FeedbackService(db)
-    feedback = feedback_service.add_feedback(message_id, session_id, feedback_type)
-    return {"status": "success"}

@@ -21,7 +21,15 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def init_db():
-    from .models import Session, Feedback
+    # Import all models explicitly to ensure they're registered with SQLAlchemy
+    from .models import (
+        Session,
+        Feedback,
+        Message,
+        Document,
+        MessageFeedback,
+        # Add any other models here
+    )
     
     def table_exists(table_name):
         try:
@@ -31,16 +39,16 @@ def init_db():
             return False
     
     try:
-        # Only create tables that don't exist
-        tables_to_create = [table for table in Base.metadata.tables.values()
-                          if not table_exists(table.name)]
-        if tables_to_create:
-            Base.metadata.create_all(bind=engine, tables=tables_to_create)
-            logger.info(f"Created tables: {[t.name for t in tables_to_create]}")
-        else:
-            logger.info("All tables already exist")
+        # Create all tables that don't exist
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables initialized")
+        
+        # Log which tables exist for debugging
+        existing_tables = [name for name in Base.metadata.tables.keys()]
+        logger.info(f"Existing tables: {existing_tables}")
+        
     except Exception as e:
-        logger.warning(f"Error during database initialization: {str(e)}")
+        logger.error(f"Error during database initialization: {str(e)}", exc_info=True)
 
 def get_db():
     db = SessionLocal()

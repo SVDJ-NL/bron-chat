@@ -23,25 +23,22 @@
     function closeModal() {
         showModal = false;
         showThankYou = false;
-        formData = { question: '', name: '', email: '', session_id: $page.params.id };
+        formData = { question: '', name: '', email: '' };
     }
 
     async function handleSubmit() {
         isSubmitting = true;
         try {
-            // Convert form data to URL search params
-            const params = new URLSearchParams({
-                question: formData.question,
-                name: formData.name || '',
-                email: formData.email || '',
-                session_id: formData.session_id || ''
-            });
-
-            const response = await fetch(`${API_BASE_URL}/feedback?${params.toString()}`, {
+            const response = await fetch(`${API_BASE_URL}/feedback/${formData.session_id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                }
+                },
+                body: JSON.stringify({
+                    question: formData.question,
+                    name: formData.name || '',
+                    email: formData.email || '',
+                })
             });
 
             if (response.ok) {
