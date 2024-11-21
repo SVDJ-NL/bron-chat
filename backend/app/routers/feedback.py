@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import logging
 from ..database import get_db
 from ..services.feedback_service import FeedbackService
-from ..schemas import MessageFeedbackTypeRequest, MessageFeedbackNotesRequest, SessionFeedbackCreateRequest
+from ..schemas import MessageFeedbackTypeRequest, MessageFeedbackNotesRequest, SessionFeedbackCreateRequest, DocumentFeedbackTypeRequest, DocumentFeedbackNotesRequest
 from ..models import FeedbackType
 from ..config import settings
 from uuid import UUID
@@ -13,7 +13,11 @@ from app.schemas import (
     MessageFeedbackCreate,
     MessageFeedbackUpdate,
     SessionFeedbackCreateRequest,
-    FeedbackCreate
+    FeedbackCreate,
+    DocumentFeedbackTypeRequest,
+    DocumentFeedbackNotesRequest,
+    DocumentFeedbackCreate,
+    DocumentFeedbackUpdate
 )
 
 router = APIRouter()
@@ -100,4 +104,39 @@ def create_session_feedback(
             email=feedback.email,
             session_id=session_id
         )
+    )
+
+@router.post(base_api_url + "feedback/documents/type/{document_id}")
+async def submit_document_feedback_type(
+    document_id: str,
+    feedback: DocumentFeedbackTypeRequest,
+    feedback_service: FeedbackService = Depends(get_feedback_service)
+):
+    existing_feedback = feedback_service.get_document_feedback(document_id)
+    
+    if existing_feedback:
+        return feedback_service.update_document_feedback(
+            DocumentFeedbackUpdate(
+                document_id=document_id,
+                feedback_type=feedback.feedback_type,
+                notes=""
+            )
+        )
+    else:
+        return feedback_service.create_document_feedback(
+            DocumentFeedbackCreate(
+                document_id=document_id,
+                feedback_type=feedback.feedback_type
+            )
+        )
+
+@router.post(base_api_url + "feedback/documents/notes/{document_id}")
+async def submit_document_feedback_notes(
+    document_id: str,
+    feedback: DocumentFeedbackNotesRequest,
+    feedback_service: FeedbackService = Depends(get_feedback_service)
+):
+    return feedback_service.update_document_feedback(
+        document_id=document_id,
+        notes=feedback.notes
     )

@@ -4,10 +4,13 @@ from .database import Base
 from sqlalchemy.orm import relationship
 import uuid
 from datetime import datetime
+from enum import Enum
 
 class FeedbackType(Enum):
     POSITIVE = "positive"
     NEGATIVE = "negative"
+    RELEVANT = "relevant"
+    IRRELEVANT = "irrelevant"
 
 
 class MessageFeedback(Base):
@@ -75,8 +78,6 @@ class Document(Base):
     title = Column(String(255), nullable=True)
     url = Column(String(1024), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    feedback_type = Column(String(10), nullable=True, default=None)
-    feedback_notes = Column(Text, nullable=True)
 
     messages = relationship(
         "Message", 
@@ -84,6 +85,7 @@ class Document(Base):
         back_populates="documents",
         overlaps="documents,messages"
     )
+    feedback = relationship("DocumentFeedback", back_populates="document", uselist=False)
 
 class MessageDocument(Base):
     __tablename__ = "message_documents"
@@ -91,3 +93,15 @@ class MessageDocument(Base):
     message_id = Column(String(36), ForeignKey('messages.id'), primary_key=True)
     document_id = Column(String(36), ForeignKey('documents.id'), primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class DocumentFeedback(Base):
+    __tablename__ = "documents_feedback"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    document_id = Column(String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, unique=True)
+    feedback_type = Column(String(10), nullable=True, default=None)
+    notes = Column(String(2048), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    document = relationship("Document", back_populates="feedback")

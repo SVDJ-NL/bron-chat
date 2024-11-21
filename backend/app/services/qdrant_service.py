@@ -86,7 +86,7 @@ class QdrantService:
                     collection_name=settings.QDRANT_COLLECTION,
                     ids=document_ids,
                 )
-                return self.prepare_documents_with_scores(qdrant_documents, documents)
+                return self.prepare_documents_with_scores_and_feedback(qdrant_documents, documents)
         except Exception as e:
             logger.error(f"Error retrieving documents from Qdrant: {e}")
             return []
@@ -192,11 +192,13 @@ class QdrantService:
             url = doc.payload['meta']['url'] 
         return url
     
-    def _prepare_document_dict(self, doc, score=None):
+    def _prepare_document_dict(self, doc, score=None, feedback=None):
         """Helper method to prepare a single document dictionary"""
+        
         return {
             'id': f'{doc.id}',  
             'score': score if score is not None else doc.score,
+            'feedback': feedback,
             'data': {
                 'source_id': doc.payload['meta']['source_id'],
                 'url': self._get_best_url(doc),
@@ -216,10 +218,13 @@ class QdrantService:
     def prepare_documents(self, qdrant_documents):
         return [self._prepare_document_dict(doc) for doc in qdrant_documents]
 
-    def prepare_documents_with_scores(self, qdrant_documents, documents: List[ChatDocument]):
+    def prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
         score_map = {str(doc.id): doc.score for doc in documents}
-        return [self._prepare_document_dict(doc, score_map.get(doc.id, 0)) 
+        feedback_map = {str(doc.id): doc.feedback for doc in documents}
+        
+        logger.info(f"Feedback map: {feedback_map}")
+        return [self._prepare_document_dict(doc, score_map.get(doc.id, 0), feedback_map.get(doc.id, None)) 
                 for doc in qdrant_documents]
 
     def reorder_documents_by_publication_date(self, documents: List[Dict]):

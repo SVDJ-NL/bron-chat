@@ -2,6 +2,7 @@
     import { onMount, afterUpdate } from 'svelte';
     import { marked } from 'marked';
     import DOMPurify from 'dompurify';
+    import { API_BASE_URL } from '$lib/config';
 
     export let doc;
     export let citationWords = [];
@@ -10,6 +11,11 @@
     let contentElement;
     let parsedTitle = '';
     let titleElement;
+
+    let feedbackPopupVisible = false;
+    let feedbackNotes = '';
+
+    $: feedbackType = doc.feedback?.feedback_type;
 
     onMount(() => {
         updateContent();
@@ -66,6 +72,62 @@
         if (!dateString) return 'Onbekend';
         return new Date(dateString).toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
+
+    async function submitFeedbackType(documentId, feedbackType) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/feedback/documents/type/${documentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    feedback_type: feedbackType,
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Feedback submission error:', error);
+                throw new Error(error.detail || 'Failed to submit feedback');
+            }
+
+            doc.feedback = {
+                ...doc.feedback,
+                feedback_type: feedbackType,
+            }            
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    }
+
+    async function submitFeedbackNotes(documentId, notes = '') {
+        try {
+            const response = await fetch(`${API_BASE_URL}/feedback/documents/notes/${documentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notes: notes || ''
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Feedback submission error:', error);
+                throw new Error(error.detail || 'Failed to submit feedback');
+            }
+
+            if (doc.feedback) {
+                doc.feedback.notes = notes;
+            }
+            feedbackPopupVisible = false;
+            feedbackNotes = '';
+
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    }
 </script>
 <style lang="postcss">
     :global(mark) {
@@ -73,9 +135,9 @@
     }
 </style>
 
-<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50" data-doc-id="{doc.id}">
+<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50 {doc.feedback != null && doc.feedback.feedback_type === 'irrelevant' ? 'opacity-50' : ''}" data-doc-id="{doc.id}">
     <header class="mb-4">
-        <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal" bind:this={titleElement}>
+        <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal {doc.feedback && doc.feedback.feedback_type === 'irrelevant' ? 'line-through': ''}" bind:this={titleElement}>
             <!-- Content will be inserted here by the updateTitle function -->
         </h3>
         <div class="flex flex-col sm:flex-row items-start sm:items-center text-gray-500 text-sm mt-1 flex-wrap space-y-2 sm:space-y-0">
@@ -120,18 +182,90 @@
         <!-- Content will be inserted here by the updateContent function -->
     </div>
     
-    <div class="flex mt-3">
-        {#if doc.data.url}
-            <a class="ml-auto border border-black text-black px-4 py-1 rounded-md flex items-center" 
-                href={doc.data.url} 
-                target="_blank" 
-                rel="noopener noreferrer">
-                <span>{doc.data.type || 'Onbekend'}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                </svg>
-            </a>
+    <div class="flex items-end mt-3 justify-between">
+        <div class="flex items-end mt-2">
+            <button 
+                class="text-sm text-blue-800 hover:text-blue-900 cursor-pointer transition-colors duration-200 {doc.feedback && doc.feedback.feedback_type === 'relevant' ? 'selected' : ''}"
+                on:click={() => {
+                    submitFeedbackType(doc.id, 'relevant');
+                }}
+            >
+                {#if doc.feedback != null && doc.feedback.feedback_type === 'relevant'}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H14.23c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23h-.777ZM2.331 10.727a11.969 11.969 0 0 0-.831 4.398 12 12 0 0 0 .52 3.507C2.28 19.482 3.105 20 3.994 20H4.9c.445 0 .72-.498.523-.898a8.963 8.963 0 0 1-.924-3.977c0-1.708.476-3.305 1.302-4.666.245-.403-.028-.959-.5-.959H4.25c-.832 0-1.612.453-1.918 1.227Z" />
+                    </svg>    
+                {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+                    </svg>
+                {/if}
+            </button>
+            <button 
+                class="ml-2 text-sm text-blue-800 hover:text-blue-900 cursor-pointer transition-colors duration-200 {doc.feedback && doc.feedback.feedback_type === 'irrelevant' ? 'selected' : ''}"
+                on:click={() => {
+                    submitFeedbackType(doc.id, 'irrelevant');
+                }}
+            >
+                {#if doc.feedback != null  && doc.feedback.feedback_type === 'irrelevant'}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M15.73 5.5h1.035A7.465 7.465 0 0 1 18 9.625a7.465 7.465 0 0 1-1.235 4.125h-.148c-.806 0-1.534.446-2.031 1.08a9.04 9.04 0 0 1-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.499 4.499 0 0 0-.322 1.672v.633A.75.75 0 0 1 9 22a2.25 2.25 0 0 1-2.25-2.25c0-1.152.26-2.243.723-3.218.266-.558-.107-1.282-.725-1.282H3.622c-1.026 0-1.945-.694-2.054-1.715A12.137 12.137 0 0 1 1.5 12.25c0-2.848.992-5.464 2.649-7.521C4.537 4.247 5.136 4 5.754 4H9.77a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23ZM21.669 14.023c.536-1.362.831-2.845.831-4.398 0-1.22-.182-2.398-.52-3.507-.26-.85-1.084-1.368-1.973-1.368H19.1c-.445 0-.72.498-.523.898.591 1.2.924 2.55.924 3.977a8.958 8.958 0 0 1-1.302 4.666c-.245.403.028.959.5.959h1.053c.832 0 1.612-.453 1.918-1.227Z" />
+                    </svg>
+                {:else}
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.498 15.25H4.372c-1.026 0-1.945-.694-2.054-1.715a12.137 12.137 0 0 1-.068-1.285c0-2.848.992-5.464 2.649-7.521C5.287 4.247 5.886 4 6.504 4h4.016a4.5 4.5 0 0 1 1.423.23l3.114 1.04a4.5 4.5 0 0 0 1.423.23h1.294M7.498 15.25c.618 0 .991.724.725 1.282A7.471 7.471 0 0 0 7.5 19.75 2.25 2.25 0 0 0 9.75 22a.75.75 0 0 0 .75-.75v-.633c0-.573.11-1.14.322-1.672.304-.76.93-1.33 1.653-1.715a9.04 9.04 0 0 0 2.86-2.4c.498-.634 1.226-1.08 2.032-1.08h.384m-10.253 1.5H9.7m8.075-9.75c.01.05.027.1.05.148.593 1.2.925 2.55.925 3.977 0 1.487-.36 2.89-.999 4.125m.023-8.25c-.076-.365.183-.75.575-.75h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398-.306.774-1.086 1.227-1.918 1.227h-1.053c-.472 0-.745-.556-.5-.96a8.95 8.95 0 0 0 .303-.54" />
+                    </svg>
+                {/if}
+            </button>
+        </div>
+
+        {#if feedbackPopupVisible}
+            <div class="feedback-popup absolute bg-white rounded-lg shadow-lg p-4 z-50 mt-2">
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="text-sm sm:text-base font-semibold">Bedankt voor je feedback!</h4>
+                    <button 
+                        on:click={() => feedbackPopupVisible = false}
+                        class="text-gray-500 hover:text-gray-700"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-sm mb-2">
+                    {#if feedbackType === 'relevant'}
+                        Wat vond je vooral relevant aan dit document?
+                    {:else}
+                        Waarom vond je dit document niet relevant?
+                    {/if}
+                </p>
+                <textarea
+                    bind:value={feedbackNotes}
+                    placeholder="Jouw toelichting (optioneel)"
+                    class="w-full p-2 border rounded-md text-sm mb-2"
+                    rows="3"
+                ></textarea>
+                <button 
+                    class="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 transition-colors duration-200"
+                    on:click={() => submitFeedbackNotes(doc.id, feedbackNotes)}
+                >
+                    Verstuur feedback
+                </button>
+            </div>
         {/if}
+
+        <div class="flex mt-3">
+            {#if doc.data.url}
+                <a class="ml-auto border border-black text-black px-4 py-1 rounded-md flex items-center" 
+                    href={doc.data.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer">
+                    <span>{doc.data.type || 'Onbekend'}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                    </svg>
+                </a>
+            {/if}
+        </div>
     </div>
 </div>

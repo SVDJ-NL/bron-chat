@@ -6,6 +6,23 @@ from enum import Enum
 class FeedbackType(str, Enum):
     POSITIVE = "positive"
     NEGATIVE = "negative"
+    RELEVANT = "relevant"
+    IRRELEVANT = "irrelevant"
+
+
+class DocumentFeedbackBase(BaseModel):
+    document_id: str
+    feedback_type: Optional[FeedbackType] = None
+    notes: Optional[str] = None
+
+
+class DocumentFeedback(DocumentFeedbackBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
 
     
 class ChatDocument(BaseModel):
@@ -14,8 +31,7 @@ class ChatDocument(BaseModel):
     content: Optional[str] = None
     title: Optional[str] = None
     url: Optional[str] = None
-    feedback_type: Optional[FeedbackType] = None
-    feedback_notes: Optional[str] = None
+    feedback: Optional[DocumentFeedback] = None
     
     def __hash__(self):
         return hash(self.id)
@@ -115,3 +131,19 @@ class MessageFeedbackTypeRequest(BaseModel):
 
 class MessageFeedbackNotesRequest(BaseModel):
     notes: str
+
+
+class DocumentFeedbackTypeRequest(BaseModel):
+    feedback_type: FeedbackType
+
+
+class DocumentFeedbackNotesRequest(BaseModel):
+    notes: str
+
+
+class DocumentFeedbackCreate(DocumentFeedbackBase):
+    pass
+
+
+class DocumentFeedbackUpdate(DocumentFeedbackBase):
+    pass

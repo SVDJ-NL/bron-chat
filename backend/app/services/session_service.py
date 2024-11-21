@@ -1,8 +1,6 @@
 from .database_service import DatabaseService
-from ..models import Session, Message, Document, MessageFeedback, MessageDocument
-from ..schemas import ChatMessage, ChatDocument
-from ..models import Session as SessionModel
-from ..schemas import Session, ChatMessage, ChatDocument, SessionCreate, SessionUpdate
+from ..models import Session as SessionModel, DocumentFeedback, Message, Document, MessageFeedback, MessageDocument
+from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument
 from fastapi import HTTPException
 from datetime import datetime
 import uuid
@@ -98,7 +96,7 @@ class SessionService(DatabaseService):
             raise HTTPException(status_code=404, detail="Session not found")
         self.db.delete(db_session)
     
-    def get_messages(self, session: Session) -> List[ChatMessage]:
+    def get_messages(self, session: SessionModel) -> List[ChatMessage]:
         # Query messages directly instead of accessing relationship
         messages = self.db.query(Message)\
             .filter(Message.session_id == session.id)\
@@ -116,11 +114,12 @@ class SessionService(DatabaseService):
             ) for msg in messages
         ]
         
-    def get_documents(self, session: Session) -> List[ChatDocument]:
+    def get_documents(self, session: SessionModel) -> List[ChatDocument]:
         # Query documents directly through message_documents relationship
         documents = self.db.query(Document)\
             .join(MessageDocument)\
             .join(Message)\
+            .outerjoin(DocumentFeedback)\
             .filter(Message.session_id == session.id)\
             .distinct()\
             .all()
@@ -131,13 +130,14 @@ class SessionService(DatabaseService):
                 content=doc.content,
                 score=doc.score,
                 title=doc.title,
-                url=doc.url
+                url=doc.url,
+                feedback=doc.feedback
             ) for doc in documents
         ]
         
         
     
-    def add_message(self, session: Session, message: ChatMessage):
+    def add_message(self, session: SessionModel, message: ChatMessage):
         new_message = Message(
             session_id=session.id,
             sequence=len(session.messages),
