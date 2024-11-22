@@ -15,7 +15,7 @@
             <button 
                 type="button" 
                 on:click={handleStop}
-                class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                class="p-0.5 bg-blue-800 text-white rounded-full hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
             >
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
                     <rect x="8" y="8" width="16" height="16" fill="currentColor"></rect>
@@ -24,7 +24,7 @@
         {:else}
             <button 
                 type="submit" 
-                class="cursor-pointer px-1 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="cursor-pointer p-0.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={!value.trim()}
             >
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">

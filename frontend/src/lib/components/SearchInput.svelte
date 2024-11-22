@@ -13,7 +13,7 @@
     <div slot="button">
         <button 
             type="submit" 
-            class="cursor-pointer px-2 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 scale-110"
+            class="cursor-pointer p-0.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 scale-110"
             disabled={!value.trim() || isLoading}
         >
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
