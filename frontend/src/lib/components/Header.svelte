@@ -84,11 +84,16 @@
                     on:click={() => showModal = true}
                     class="text-blue-600 hover:underline"
                 >
-                    <div class="flex items-center flex-wrap flex-col md:flex-row">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 lg:h-5 lg:w-5 mr-1 mb-0 lg:mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div class="flex items-center flex-wrap flex-col md:flex-row">                        
+                        <svg xmlns="http://www.w3.org/2000/svg" class="block lg:hidden h-4 w-4 lg:h-5 lg:w-5 mr-1 mb-0 lg:mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
-                        <span class="hidden lg:inline font-medium">Hebben wij je vraag kunnen beantwoorden?</span>
+                        <span class="hidden lg:inline font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 lg:h-5 lg:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Hebben wij je vraag <br>kunnen beantwoorden?
+                        </span>
                         <span class="block lg:hidden font-medium text-sm leading-0">Feedback</span>
                 </div>
                 </button>
