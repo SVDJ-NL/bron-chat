@@ -5,6 +5,7 @@
     import Documents from './Documents.svelte';
     import { goto } from '$app/navigation';
     import { API_BASE_URL } from '$lib/config';
+    import ChatInput from './ChatInput.svelte';
 
     export let sessionId = null;
     export let sessionName = '';
@@ -21,8 +22,9 @@
     let streamedContent = '';
     let eventSource = null; // Store the EventSource instance  
     let autoScroll = true;
-    let isFlowActive = false;
+    let isLoading = false;
     let isDocumentsPanelOpen = false;
+    let initialQuery = null;
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -105,34 +107,31 @@
             eventSource.close();
             console.debug('EventSource connection closed by user');
             if (streamedContent) {
-                updateCurrentMessage({
+                addMessage({
                     role: 'assistant',
                     content: streamedContent
                 });
             }
             currentMessage = null;
             currentStatusMessage = null;
+            streamedContent = '';
             autoScroll = false;
+            isLoading = false;
         }
     }
 
-    async function sendMessage(message) {
+    function handleNewQuestion({ detail }) {
+        isLoading = true;
+        addMessage({
+            role: 'user',
+            content: detail.query
+        });
+
         try {
-            streamedContent = '';
-            
-            let params;
-            if (sessionId === null || sessionId === undefined || sessionId === '') {                
-                params = new URLSearchParams({ 
-                    query: message.content
-                });
-                console.debug('Sending message without session ID');
-            } else {
-                params = new URLSearchParams({ 
-                    query: message.content,
-                    session_id: sessionId
-                });
-                console.debug('Sending message with session ID:', sessionId);
-            }
+            const params = new URLSearchParams({ 
+                query: detail.query,
+                session_id: sessionId
+            });
 
             const url = `${API_BASE_URL}/chat?${params}`;
             console.debug('Connecting to EventSource URL:', url);
@@ -145,20 +144,26 @@
                     handleStreamedResponse(data);
                 } catch (error) {
                     console.error('Error parsing event data:', error);
-                    isFlowActive = false;
+                    isLoading = false;
                 }
             };
             
             eventSource.onerror = (error) => {
-                console.error('EventSource error:', error);
-                if (eventSource.readyState === EventSource.CLOSED) {
+                console.info("States", error.currentTarget.readyState, EventSource.CLOSED);
+                if (error.currentTarget.readyState === EventSource.CLOSED) {
                     console.debug('EventSource connection closed');
+                } else if (error.currentTarget.readyState === EventSource.CONNECTING) {
+                    console.debug('EventSource connection connecting');
                 } else {
-                    console.error('Unexpected EventSource error:', error);
-                    updateCurrentMessage({ role: 'assistant', content: 'An unexpected error occurred while processing your request.' });
+                    console.error('Unexpected EventSource error:', error, eventSource);
+                    updateCurrentMessage({ 
+                        role: 'assistant', 
+                        content: 'An unexpected error occurred while processing your request.' 
+                    });
+
                 }
+                isLoading = false;
                 eventSource.close();
-                isFlowActive = false;
             };
             
             eventSource.onopen = () => {
@@ -168,14 +173,15 @@
             eventSource.addEventListener('close', () => {
                 console.debug('EventSource connection closed by server');
                 eventSource.close();
-                isFlowActive = false;
-                // currentMessage = null;
-                // currentStatusMessage = null;
+                isLoading = false;
             });
         } catch (error) {
             console.error('Error sending message:', error);
-            updateCurrentMessage({ role: 'assistant', content: 'An error occurred while processing your request.' });
-            isFlowActive = false;
+            updateCurrentMessage({ 
+                role: 'assistant', 
+                content: 'An error occurred while processing your request.' 
+            });
+            isLoading = false;
         }
     }
 
@@ -195,7 +201,6 @@
             case 'documents':
                 if (Array.isArray(data.documents)) {
                     handleNewDocuments({ detail: data.documents });
-                    // Start of Selection
                     if (window.matchMedia('(min-width: 1024px)').matches) {
                         isDocumentsPanelOpen = true;
                     }
@@ -203,19 +208,19 @@
                 break;
             case 'partial':
                 streamedContent += data.content;
-                updateCurrentMessage({
+                currentMessage = {
                     role: 'assistant',
                     content: streamedContent
-                });
+                };
                 break;
             case 'citation':
                 autoScroll = false;
-                updateCurrentMessage({
+                currentMessage = {
                     role: 'assistant',
                     content: data.content,
                     content_original: data.content_original,
                     citations: data.citations
-                });
+                };
                 break;
             case 'full':
                 addMessage({
@@ -225,19 +230,25 @@
                     citations: data.citations
                 });
                 currentMessage = null;
-                // autoScroll = true;
+                streamedContent = '';
+                isLoading = false;
                 break;
             case 'session_name':
                 sessionName = data.content;
                 break;
             case 'end':   
-                console.debug('Received end event');
-                isFlowActive = false;
+                console.info('Received end event');
+                isLoading = false;
+                currentMessage = null;
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
-                updateCurrentMessage({ role: 'assistant', content: `An error occurred: ${data.content}` });
-                isFlowActive = false;
+                updateCurrentMessage({ 
+                    role: 'assistant', 
+                    content: `An error occurred: ${data.content}` 
+                });
+                isLoading = false;
+                currentMessage = null;
                 break;
         }
     }
@@ -250,24 +261,6 @@
         autoScroll = true;
     }
 
-    async function createNewSession() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/new_session`, {
-                method: 'POST',
-            });
-            const session = await response.json();
-            console.debug('New session created:', session);
-            if (session.id) {
-                setSessionId(session.id);
-                sessionName = session.name;
-            } else {
-                console.error('Failed to create a new session');
-            }
-        } catch (error) {
-            console.error('Error creating new session:', error);
-        }
-    }
-
     function openDocumentsPanel() {
         if (document.visibilityState === 'visible' && 
             documents.length > 0 && 
@@ -277,18 +270,26 @@
     }
 
     onMount(() => {
-        // Only create a new session if sessionId is null, undefined, or empty string
-        if (!sessionId || sessionId.trim() === '') {
-            createNewSession();
-        } else {
+        if (sessionId) {
             openDocumentsPanel();
         }
         
-        // Rest of the onMount code...
+        // Listen for initial query from the home page
+        const handleInitialQuery = (event) => {
+            const query = event.detail.query;
+            if (query) {
+                handleNewQuestion({
+                    detail: { query }
+                });
+            }
+        };
+
+        window.addEventListener('initialQuery', handleInitialQuery);
         document.addEventListener('click', closeDocumentsPanel);
         document.addEventListener('visibilitychange', openDocumentsPanel);
 
         return () => {
+            window.removeEventListener('initialQuery', handleInitialQuery);
             document.removeEventListener('click', closeDocumentsPanel);
             document.removeEventListener('visibilitychange', openDocumentsPanel);
         };
@@ -305,15 +306,20 @@
             {isDocumentsPanelOpen ? 'lg:-translate-x-[calc(50%)] lg:w-1/2' : 'translate-x-0'}">
         <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 pt-4 sm:pt-8 md:pt-5">
             <Chat 
-                messages={messages} 
-                currentMessage={currentMessage} 
-                currentStatusMessage={currentStatusMessage} 
-                autoScroll={autoScroll}
-                isFlowActive={isFlowActive}
-                on:newMessage={handleNewMessage} 
+                {messages} 
+                {currentMessage} 
+                {currentStatusMessage} 
+                {autoScroll}
+                isLoading={isLoading}
                 on:citationClick={handleCitationClick} 
-                on:stopMessageFlow={handleStopMessageFlow}
             />
+            <div class="mt-4 px-4">
+                <ChatInput
+                    {isLoading}
+                    on:submit={handleNewQuestion}
+                    on:stop={handleStopMessageFlow}
+                />
+            </div>
         </div>
     </div>
 

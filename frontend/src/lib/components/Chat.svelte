@@ -4,16 +4,13 @@
     export let currentMessage = null;
     export let currentStatusMessage = null;
     export let autoScroll = true; 
-    export let isFlowActive = false;
+    export let isLoading = false;
 
-    import { createEventDispatcher, onMount, afterUpdate, tick } from 'svelte';
-    import Typed from 'typed.js';
+    import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
     import { computePosition, flip, shift, offset } from '@floating-ui/dom';
     const dispatch = createEventDispatcher();
 
-    let newMessageContent = '';
     let selectedCitation = null;
-    let isLoading = false;
     let streamedContent = '';
     let streamedStatusContent = '';
     let copiedMessage = false;
@@ -31,24 +28,14 @@
         streamedStatusContent = currentStatusMessage.content;
     }
 
-    function handleSubmit() {
-        if (newMessageContent.trim() && !isLoading) {
-            isLoading = true;
-            isFlowActive = true;
-            dispatch('newMessage', {
-                role: 'user',
-                content: newMessageContent
-            });
-            newMessageContent = '';
-            // Use setTimeout to wait for UI update
-            setTimeout(() => {
-                isLoading = false;
-            }, 100);
-        }
+    function handleSubmit(event) {
+        dispatch('newMessage', {
+            role: 'user',
+            content: event.detail.query
+        });
     }
 
     function handleStop() {
-        isFlowActive = false;
         dispatch('stopMessageFlow');
     }
 
@@ -119,7 +106,6 @@
 
     onMount(() => {
         scrollToBottom();
-        initTyped();
         
         // Add click outside listener
         document.addEventListener('click', handleClickOutside);
@@ -174,28 +160,6 @@
             }).catch(err => {
                 console.error('Could not copy text: ', err);
             });
-        }
-    }
-
-    function initTyped() {
-        // Start of Selection`
-        let typedSubtitle;
-
-        if (document.querySelector('#typed-title')) {
-            typedSubtitle = null;
-
-            const typedTitle = new Typed('#typed-title', {
-                strings: ["Vraag alles over 3.5 miljoen open overheidsdocumenten"],
-                typeSpeed: 50,
-                showCursor: false,
-            });
-
-            return () => {
-                typedTitle.destroy();
-                if (typedSubtitle) {
-                    typedSubtitle.destroy();
-                }
-            };
         }
     }
 
@@ -437,11 +401,6 @@
 </style>
 
 <div class="flex flex-col h-full transition-all duration-300 ease-in-out">
-    {#if messages.length === 0 }
-        <div class="p-4 lg:p-6 h-20 lg:h-24 w-full">
-            <h2 id="typed-title" class="text-gray-600 text-center font-semibold text-lg lg:text-xl pb-0.5"></h2>
-        </div>
-    {/if}
     <div class="flex flex-col h-full">
         {#if messages && messages.length > 0}
             <div bind:this={chatContainer} class="flex-1 overflow-y-auto p-4 space-y-4">
@@ -520,7 +479,7 @@
                                             </button>
                                         </div>
 
-                                        {#if feedbackPopupMessage?.id === message.id}
+                                        {#if feedbackPopupMessage != null && feedbackPopupMessage.id === message.id}
                                             <div 
                                                 bind:this={popupElement}
                                                 class="feedback-popup absolute bg-white rounded-lg shadow-lg p-4 z-50"
@@ -539,7 +498,7 @@
                                                     </button>
                                                 </div>
                                                 <p class="text-sm mb-2">
-                                                    {#if feedbackPopupMessage.feedback.feedback_type === 'positive'}
+                                                    {#if message.feedback.feedback_type === 'positive'}
                                                         Wat vond je vooral goed aan dit antwoord?
                                                     {:else}
                                                         Wat zouden we kunnen verbeteren aan dit antwoord?
@@ -586,42 +545,5 @@
                 {/if}
             </div>
         {/if}
-        <div class="input-container p-4 ml-4 mr-4 lg:mr-8 mb-3 lg:ml-4 lg:mx-0 rounded-lg border border-gray-300">
-            <form on:submit|preventDefault={handleSubmit} class="flex space-x-2">
-                <textarea
-                    bind:value={newMessageContent} 
-                    placeholder="Chat met Bron..." 
-                    class="flex-1 p-2 bg-gray-100 text-gray-900 focus:outline-none focus:ring-0"
-                    autofocus
-                    rows="1"
-                    on:keydown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSubmit(e);
-                        }
-                    }}
-                ></textarea>
-                {#if currentMessage != null}
-                    <button 
-                        type="button" 
-                        on:click={handleStop}
-                        class="px-1 py-1 bg-blue-800 text-white rounded-full hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
-                    >
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
-                            <rect x="8" y="8" width="16" height="16" fill="currentColor"></rect>
-                        </svg>
-                    </button>
-                {:else}
-                    <button 
-                        type="submit" 
-                        class="px-1 py-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon-2xl">
-                            <path fill-rule="evenodd" clip-rule="evenodd" d="M15.1918 8.90615C15.6381 8.45983 16.3618 8.45983 16.8081 8.90615L21.9509 14.049C22.3972 14.4953 22.3972 15.2189 21.9509 15.6652C21.5046 16.1116 20.781 16.1116 20.3347 15.6652L17.1428 12.4734V22.2857C17.1428 22.9169 16.6311 23.4286 15.9999 23.4286C15.3688 23.4286 14.8571 22.9169 14.8571 22.2857V12.4734L11.6652 15.6652C11.2189 16.1116 10.4953 16.1116 10.049 15.6652C9.60265 15.2189 9.60265 14.4953 10.049 14.049L15.1918 8.90615Z" fill="currentColor"></path>
-                        </svg>
-                    </button>
-                {/if}
-            </form>
-        </div>
     </div>
 </div>

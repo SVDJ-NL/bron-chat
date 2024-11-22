@@ -223,7 +223,6 @@ class QdrantService:
         score_map = {str(doc.id): doc.score for doc in documents}
         feedback_map = {str(doc.id): doc.feedback for doc in documents}
         
-        logger.info(f"Feedback map: {feedback_map}")
         return [self._prepare_document_dict(doc, score_map.get(doc.id, 0), feedback_map.get(doc.id, None)) 
                 for doc in qdrant_documents]
 

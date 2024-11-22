@@ -137,6 +137,8 @@ async def submit_document_feedback_notes(
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):
     return feedback_service.update_document_feedback(
-        document_id=document_id,
-        notes=feedback.notes
+        DocumentFeedbackUpdate(
+            document_id=document_id,
+            notes=feedback.notes
+        )
     )

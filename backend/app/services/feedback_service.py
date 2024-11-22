@@ -68,6 +68,7 @@ class FeedbackService(DatabaseService):
         return new_session_feedback
 
     def create_document_feedback(self, document_feedback: DocumentFeedbackCreate) -> dict:
+        """Create new document feedback"""
         new_document_feedback = DocumentFeedback(
             document_id=document_feedback.document_id,
             feedback_type=document_feedback.feedback_type
@@ -83,6 +84,7 @@ class FeedbackService(DatabaseService):
         self,
         feedback: DocumentFeedbackUpdate
     ) -> dict:
+        """Update existing document feedback"""
         document_feedback = self.get_document_feedback(feedback.document_id)
         
         if document_feedback is None:
@@ -100,4 +102,5 @@ class FeedbackService(DatabaseService):
         return document_feedback
 
     def get_document_feedback(self, document_id: str) -> dict:
+        """Get document feedback by document ID"""
         return self.db.query(DocumentFeedback).filter(DocumentFeedback.document_id == document_id).first()

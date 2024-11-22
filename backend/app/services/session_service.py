@@ -16,21 +16,49 @@ class SessionService(DatabaseService):
         super().__init__(db)
 
     def create_session(self, session_create: SessionCreate) -> SessionModel:
-        now = datetime.now()
-        db_session = SessionModel(
+        # Create the session first
+        new_session = SessionModel(
             id=str(uuid.uuid4()),
-            name=session_create.name,
-            messages=[msg.dict() for msg in session_create.messages],
-            created_at=now,
-            updated_at=now,
+            name=session_create.name
         )
-            
-        logger.debug(f"Creating new db session with messages: {db_session.messages}")    
-        self.db.add(db_session)
+        self.db.add(new_session)
         self.db.commit()
-        self.db.refresh(db_session)
         
-        return db_session
+        # Then add messages if any exist
+        if session_create.messages:
+            for idx, msg in enumerate(session_create.messages):
+                new_message = Message(
+                    id=str(uuid.uuid4()),
+                    session_id=new_session.id,
+                    sequence=idx,
+                    role=msg.role,
+                    content=msg.content,
+                    formatted_content=msg.formatted_content
+                )
+                self.db.add(new_message)
+                
+                # Handle documents if present
+                if msg.documents:
+                    for doc_data in msg.documents:
+                        # Check if document already exists
+                        existing_doc = self.db.query(Document).filter(Document.id == doc_data.id).first()
+                        if existing_doc:
+                            doc = existing_doc
+                        else:
+                            doc = Document(
+                                id=doc_data.id,
+                                content=doc_data.content,
+                                score=doc_data.score,
+                                title=doc_data.title,
+                                url=doc_data.url
+                            )
+                            self.db.add(doc)
+                        
+                        new_message.documents.append(doc)
+        
+        self.db.commit()
+        self.db.refresh(new_session)
+        return new_session
 
     def update_session(self, session_id: str, session_update: SessionUpdate) -> SessionModel:
         db_session = self.get_session(session_id)
