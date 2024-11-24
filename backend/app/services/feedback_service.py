@@ -1,7 +1,7 @@
 from uuid import UUID
 from typing import Optional
 from sqlalchemy import select, update, insert
-from app.models import MessageFeedback, Feedback, Document, DocumentFeedback
+from app.models import MessageFeedback, SessionFeedback, Document, DocumentFeedback
 from app.schemas import MessageFeedbackCreate, MessageFeedbackUpdate, FeedbackCreate, DocumentFeedbackCreate, DocumentFeedbackUpdate
 from .database_service import DatabaseService
 from fastapi import HTTPException
@@ -43,18 +43,18 @@ class FeedbackService(DatabaseService):
         
         return db_message_feedback
     
-    def get_message_feedback(self, message_id: UUID) -> dict:        
+    def get_message_feedback(self, message_id: int) -> dict:        
         return self.db.query(MessageFeedback).filter(MessageFeedback.message_id == message_id).first()
 
-    def get_session_feedback(self, session_id: UUID) -> dict:
-        return self.db.query(Feedback).filter(Feedback.session_id == session_id).first()
+    def get_session_feedback(self, session_id: int) -> dict:
+        return self.db.query(SessionFeedback).filter(SessionFeedback.session_id == session_id).first()
     
     def create_session_feedback(self, feedback: FeedbackCreate) -> dict:
         session = self.get_session_feedback(feedback.session_id)
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found")
         
-        new_session_feedback = Feedback(
+        new_session_feedback = SessionFeedback(
             session_id=session.id,
             question=feedback.question,
             name=feedback.name,
@@ -101,6 +101,6 @@ class FeedbackService(DatabaseService):
         
         return document_feedback
 
-    def get_document_feedback(self, document_id: str) -> dict:
+    def get_document_feedback(self, document_id: int) -> dict:
         """Get document feedback by document ID"""
         return self.db.query(DocumentFeedback).filter(DocumentFeedback.document_id == document_id).first()

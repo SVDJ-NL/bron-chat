@@ -28,7 +28,6 @@ class SessionService(DatabaseService):
         if session_create.messages:
             for idx, msg in enumerate(session_create.messages):
                 new_message = Message(
-                    id=str(uuid.uuid4()),
                     session_id=new_session.id,
                     sequence=idx,
                     role=msg.role,
@@ -46,7 +45,7 @@ class SessionService(DatabaseService):
                             doc = existing_doc
                         else:
                             doc = Document(
-                                id=doc_data.id,
+                                chunk_id=doc_data.chunk_id,
                                 content=doc_data.content,
                                 score=doc_data.score,
                                 title=doc_data.title,
@@ -76,7 +75,6 @@ class SessionService(DatabaseService):
             # Add new messages as proper Message model instances
             for idx, msg in enumerate(session_update.messages):
                 new_message = Message(
-                    id=str(uuid.uuid4()),
                     session_id=session_id,
                     sequence=idx,
                     role=msg.role,
@@ -94,7 +92,7 @@ class SessionService(DatabaseService):
                             doc = existing_doc
                         else:
                             doc = Document(
-                                id=doc_data.id,
+                                chunk_id=doc_data.chunk_id,
                                 content=doc_data.content,
                                 score=doc_data.score,
                                 title=doc_data.title,
@@ -155,6 +153,7 @@ class SessionService(DatabaseService):
         return [
             ChatDocument(
                 id=doc.id,
+                chunk_id=doc.chunk_id,
                 content=doc.content,
                 score=doc.score,
                 title=doc.title,
@@ -181,12 +180,12 @@ class SessionService(DatabaseService):
                     doc = existing_doc
                 else:
                     doc = Document(
-                        id=doc_data.id,
+                        chunk_id=doc_data.chunk_id,
                         content=doc_data.content,
                         score=doc_data.score,
                         title=doc_data.title,
                         url=doc_data.url,
-                        meta=doc_data.dict(exclude={'id', 'content', 'score', 'title', 'url', 'feedback_type', 'feedback_notes'})
+                        meta=doc_data.dict(exclude={'id', 'chunk_id', 'content', 'score', 'title', 'url', 'feedback_type', 'feedback_notes'})
                     )
                     self.db.add(doc)
                 

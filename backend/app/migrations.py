@@ -4,8 +4,6 @@ from .database import SessionLocal
 from .models import Base, Session, Message, Document, MessageDocument
 import json
 import logging
-from app.database import database
-from app.schemas import FeedbackType
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -13,9 +11,15 @@ logger = logging.getLogger(__name__)
 def drop_new_tables(db):
     """Drop the new tables if they exist"""
     try:
+        # Disable foreign key checks before dropping tables
+        db.execute(text("SET FOREIGN_KEY_CHECKS=0"))
         db.execute(text("DROP TABLE IF EXISTS message_documents"))
         db.execute(text("DROP TABLE IF EXISTS messages"))
+        db.execute(text("DROP TABLE IF EXISTS messages_feedback"))
         db.execute(text("DROP TABLE IF EXISTS documents"))
+        db.execute(text("DROP TABLE IF EXISTS documents_feedback"))
+        db.execute(text("DROP TABLE IF EXISTS sessions_feedback"))
+        db.execute(text("SET FOREIGN_KEY_CHECKS=1"))
         db.commit()
         logger.info("Dropped existing tables")
     except Exception as e:
@@ -25,25 +29,27 @@ def drop_new_tables(db):
 def migrate_up():
     db = SessionLocal()
     try:
-        # Force drop existing tables first
+        # Drop existing tables first
         drop_new_tables(db)
         
-        # Create new tables
+        # Create new tables with updated schema
         engine = create_engine(settings.DATABASE_URL)
         Base.metadata.create_all(bind=engine)
         db.commit()
         logger.info("Created new tables")
         
-        # Get all existing sessions
+        # Get all existing sessions with filter conditions
         result = db.execute(text("""
             SELECT id, name, messages, documents 
             FROM sessions 
-            WHERE messages IS NOT NULL OR documents IS NOT NULL
+            WHERE (messages IS NOT NULL AND messages != '[]' AND messages != '')
+            AND created_at >= '2023-11-18'
+            AND messages IS NOT NULL
         """))
         sessions_data = [(row.id, row.name, row.messages, row.documents) for row in result]
         db.commit()
         
-        logger.info(f"Found {len(sessions_data)} sessions to migrate")
+        logger.info(f"Found {len(sessions_data)} valid sessions to migrate")
         
         # Process each session
         for session_id, name, messages_json, documents_json in sessions_data:
@@ -57,44 +63,46 @@ def migrate_up():
                 session_docs = {}  # Keep track of processed documents
                 for doc in documents:
                     try:
-                        doc_id = doc.get("id")
-                        if not doc_id:
+                        chunk_id = doc.get("id")
+                        if not chunk_id:
                             logger.warning(f"Skipping document without ID in session {session_id}")
                             continue
                         
-                        # Extract all relevant fields
-                        doc_content = doc.get("content", "")
-                        doc_title = doc.get("title", "")
-                        doc_url = doc.get("url", "")
-                        doc_score = float(doc.get("score", 0.0))
-                        
-                        # Extract metadata
-                        metadata = {k: v for k, v in doc.items() 
-                                 if k not in ["id", "content", "title", "url", "score"]}
-                        
-                        # Insert or update document
-                        db.execute(text("""
-                            INSERT INTO documents (
-                                id, content, meta, score, title, url
-                            ) VALUES (
-                                :id, :content,  :meta, :score, :title, :url
-                            ) ON DUPLICATE KEY UPDATE
-                                content = VALUES(content),
-                                meta = VALUES(meta),    
-                                score = VALUES(score),
-                                title = VALUES(title),
-                                url = VALUES(url)
-                        """), {
-                            "id": doc_id,
-                            "content": doc_content,
-                            "meta": json.dumps(metadata),
-                            "score": doc_score,
-                            "title": doc_title,
-                            "url": doc_url
-                        })
+                        result = db.execute(text("""
+                            SELECT id FROM documents WHERE chunk_id = :chunk_id
+                        """), {"chunk_id": chunk_id})
+                        existing_id = result.scalar()
+
+                        if existing_id:
+                            doc_id = existing_id
+                        else:
+                            # Execute insert
+                            db.execute(text("""
+                                INSERT INTO documents (
+                                    chunk_id, content, meta, score, title, url
+                                ) VALUES (
+                                    :chunk_id, :content, :meta, :score, :title, :url
+                                ) ON DUPLICATE KEY UPDATE
+                                    content = VALUES(content),
+                                    meta = VALUES(meta),    
+                                    score = VALUES(score),
+                                    title = VALUES(title),
+                                    url = VALUES(url)
+                            """), {
+                                "chunk_id": chunk_id,
+                                "content": doc.get("content", ""),
+                                "meta": json.dumps(doc.get("metadata", {})),
+                                "score": float(doc.get("score", 0.0)),
+                                "title": doc.get("title", ""),
+                                "url": doc.get("url", "")
+                            })
+                            
+                            result = db.execute(text("SELECT LAST_INSERT_ID()"))
+                            doc_id = result.scalar()
+
                         db.commit()
-                        session_docs[doc_id] = True
-                        logger.info(f"Processed document {doc_id}")
+                        session_docs[chunk_id] = doc_id  # Store mapping of chunk_id to new numeric id
+                        logger.info(f"Processed document {chunk_id} with new ID {doc_id}")
                     except Exception as e:
                         logger.error(f"Error processing document {doc.get('id', 'unknown')}: {str(e)}")
                         db.rollback()
@@ -102,17 +110,14 @@ def migrate_up():
                 # Process messages
                 for idx, msg in enumerate(messages):
                     try:
-                        message_id = msg.get("id", f"{session_id}-msg-{idx}")
-                        
-                        # Insert message
-                        db.execute(text("""
+                        # Insert message with auto-incrementing ID
+                        result = db.execute(text("""
                             INSERT INTO messages (
-                                id, session_id, sequence, role, content, formatted_content
+                                session_id, sequence, role, content, formatted_content
                             ) VALUES (
-                                :id, :session_id, :sequence, :role, :content, :formatted_content
+                                :session_id, :sequence, :role, :content, :formatted_content
                             )
                         """), {
-                            "id": message_id,
                             "session_id": session_id,
                             "sequence": idx,
                             "role": msg.get("role"),
@@ -120,12 +125,14 @@ def migrate_up():
                             "formatted_content": msg.get("formatted_content", "")
                         })
                         db.commit()
+                        
+                        # Get the auto-generated message ID
+                        message_id = result.lastrowid
                         logger.info(f"Processed message {message_id}")
                         
                         # Link documents to message
                         if msg.get("role") == "assistant" and session_docs:
-                            # For assistant messages, link all session documents
-                            for doc_id in session_docs:
+                            for chunk_id, doc_id in session_docs.items():
                                 try:
                                     db.execute(text("""
                                         INSERT IGNORE INTO message_documents 
@@ -133,15 +140,12 @@ def migrate_up():
                                         VALUES (:message_id, :document_id)
                                     """), {
                                         "message_id": message_id,
-                                        "document_id": doc_id
+                                        "document_id": doc_id  # Using the new numeric ID
                                     })
                                     db.commit()
                                 except Exception as e:
                                     logger.error(f"Error linking document {doc_id} to message {message_id}: {str(e)}")
                                     db.rollback()
-                            
-                            logger.info(f"Linked {len(session_docs)} documents to message {message_id}")
-                        
                     except Exception as e:
                         logger.error(f"Error processing message {idx} for session {session_id}: {str(e)}")
                         db.rollback()
@@ -152,16 +156,66 @@ def migrate_up():
                 logger.error(f"Error processing session {session_id}: {str(e)}")
                 db.rollback()
 
-        # Drop old columns in a final transaction
+        # Drop old columns
         try:
-            db.execute(text("ALTER TABLE sessions DROP COLUMN IF EXISTS messages"))
-            db.execute(text("ALTER TABLE sessions DROP COLUMN IF EXISTS documents"))
-            db.commit()
-            logger.info("Successfully dropped old columns")
+            # Check if columns exist before dropping
+            result = db.execute(text("""
+                SELECT COUNT(*) 
+                FROM information_schema.columns 
+                WHERE table_name = 'sessions' 
+                AND column_name IN ('messages', 'documents')
+                AND table_schema = DATABASE()
+            """))
+            
+            if result.scalar() > 0:
+                db.execute(text("ALTER TABLE sessions DROP COLUMN messages"))
+                db.execute(text("ALTER TABLE sessions DROP COLUMN documents"))
+                db.commit()
+                logger.info("Successfully dropped old columns")
         except Exception as e:
             logger.error(f"Error dropping old columns: {str(e)}")
             db.rollback()
             
+        # Migrate feedback data
+        result = db.execute(text("""
+            SELECT id, session_id, question, name, email, created_at 
+            FROM feedback
+            WHERE id IS NOT NULL
+        """))
+        feedback_data = [(row.id, row.session_id, row.question, row.name, row.email, row.created_at) 
+                        for row in result]
+        
+        # Drop and recreate feedback table with auto-incrementing ID
+        db.execute(text("DROP TABLE IF EXISTS sessions_feedback"))
+        db.execute(text("""
+            CREATE TABLE sessions_feedback (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                session_id VARCHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                question VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                email VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                created_at DATETIME,
+                CONSTRAINT sessions_feedback_ibfk_1 FOREIGN KEY (session_id) REFERENCES sessions (id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """))
+        
+        # Reinsert feedback data without the old IDs
+        for _, session_id, question, name, email, created_at in feedback_data:
+            db.execute(text("""
+                INSERT INTO sessions_feedback (session_id, question, name, email, created_at)
+                VALUES (:session_id, :question, :name, :email, :created_at)
+            """), {
+                "session_id": session_id,
+                "question": question,
+                "name": name,
+                "email": email,
+                "created_at": created_at
+            })
+            
+        db.execute(text("DROP TABLE IF EXISTS feedback"))        
+        db.commit()
+        logger.info(f"Migrated {len(feedback_data)} feedback entries")
+
     except Exception as e:
         logger.error(f"Migration failed: {str(e)}")
         db.rollback()
@@ -202,7 +256,7 @@ def migrate_down():
                 ORDER BY sequence
             """), {"session_id": session_id}).fetchall()
             
-            # Get all documents for this session
+            # Get all documents for this session using new schema
             documents = db.execute(text("""
                 SELECT DISTINCT d.* 
                 FROM documents d
@@ -223,7 +277,7 @@ def migrate_down():
             documents_json = []
             for doc in documents:
                 documents_json.append({
-                    "id": doc.id,
+                    "id": doc.chunk_id,  # Use chunk_id instead of id
                     "content": doc.content,
                     "metadata": json.loads(doc.meta) if doc.meta else {}
                 })
@@ -244,6 +298,23 @@ def migrate_down():
         db.execute(text("DROP TABLE IF EXISTS message_documents"))
         db.execute(text("DROP TABLE IF EXISTS documents"))
         db.execute(text("DROP TABLE IF EXISTS messages"))
+        
+        # For feedback table, we can't restore the original string IDs
+        # Just ensure the table exists with string ID format
+        db.execute(text("DROP TABLE IF EXISTS sessions_feedback"))
+        db.execute(text("""
+            CREATE TABLE sessions_feedback (
+                id VARCHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+                session_id VARCHAR(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                question VARCHAR(2048) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                email VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+                created_at DATETIME,
+                PRIMARY KEY (id),
+                KEY session_id (session_id),
+                CONSTRAINT sessions_feedback_ibfk_1 FOREIGN KEY (session_id) REFERENCES sessions (id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """))
         
         db.commit()
     except Exception as e:

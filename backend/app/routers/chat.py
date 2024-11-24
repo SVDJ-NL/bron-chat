@@ -125,7 +125,7 @@ async def event_generator(session, query, session_service, llm_service, chat_ser
                                 formatted_content=full_formatted_content,                                    
                                 documents = session_service.get_documents(session) + [
                                     ChatDocument(
-                                        id=doc.get('id'),
+                                        chunk_id=doc.get('chunk_id'),
                                         score=doc.get('score'),
                                         content=doc.get('content', ''),
                                         title=doc.get('title', ''),

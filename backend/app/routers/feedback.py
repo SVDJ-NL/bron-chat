@@ -36,16 +36,16 @@ async def get_feedback_service(db: Session = Depends(get_db)) -> FeedbackService
 
 @router.post(base_api_url + "feedback/messages/type/{message_id}")
 async def submit_message_feedback_type(
-    message_id: UUID,
+    message_id: int,
     feedback: MessageFeedbackTypeRequest,
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):
-    existing_feedback = feedback_service.get_message_feedback(str(message_id))
+    existing_feedback = feedback_service.get_message_feedback(message_id)
     
     if existing_feedback:
         return feedback_service.update_message_feedback(
             MessageFeedbackUpdate(
-                message_id=str(message_id),
+                message_id=message_id,
                 feedback_type=feedback.feedback_type,
                 notes=""
             )
@@ -60,13 +60,13 @@ async def submit_message_feedback_type(
 
 @router.post(base_api_url + "feedback/messages/notes/{message_id}")
 async def submit_message_feedback_notes(
-    message_id: UUID,
+    message_id: int,
     feedback: MessageFeedbackNotesRequest,
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):    
     return feedback_service.update_message_feedback(        
         MessageFeedbackUpdate(
-            message_id=str(message_id),
+            message_id=message_id,
             notes=feedback.notes
         )
     )
@@ -108,7 +108,7 @@ def create_session_feedback(
 
 @router.post(base_api_url + "feedback/documents/type/{document_id}")
 async def submit_document_feedback_type(
-    document_id: str,
+    document_id: int,
     feedback: DocumentFeedbackTypeRequest,
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):
@@ -132,7 +132,7 @@ async def submit_document_feedback_type(
 
 @router.post(base_api_url + "feedback/documents/notes/{document_id}")
 async def submit_document_feedback_notes(
-    document_id: str,
+    document_id: int,
     feedback: DocumentFeedbackNotesRequest,
     feedback_service: FeedbackService = Depends(get_feedback_service)
 ):

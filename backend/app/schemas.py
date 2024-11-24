@@ -11,13 +11,13 @@ class FeedbackType(str, Enum):
 
 
 class DocumentFeedbackBase(BaseModel):
-    document_id: str
+    document_id: int
     feedback_type: Optional[FeedbackType] = None
     notes: Optional[str] = None
 
 
 class DocumentFeedback(DocumentFeedbackBase):
-    id: str
+    id: int
     created_at: datetime
     updated_at: datetime
 
@@ -25,8 +25,28 @@ class DocumentFeedback(DocumentFeedbackBase):
         from_attributes = True
 
     
+class DocumentBase(BaseModel):
+    chunk_id: str
+    content: str
+    meta: Optional[Dict] = None
+    score: float
+    title: Optional[str] = None
+    url: Optional[str] = None
+
+class DocumentCreate(DocumentBase):
+    pass
+
+class Document(DocumentBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ChatDocument(BaseModel):
-    id: str
+    id: Optional[int] = None
+    chunk_id: str
     score: float
     content: Optional[str] = None
     title: Optional[str] = None
@@ -43,13 +63,13 @@ class ChatDocument(BaseModel):
     
 
 class MessageFeedbackBase(BaseModel):
-    message_id: str
+    message_id: int
     feedback_type: Optional[FeedbackType] = None
     notes: Optional[str] = None
 
     
 class MessageFeedback(MessageFeedbackBase):
-    id: str
+    id: int
     created_at: datetime
     updated_at: datetime
 
@@ -66,7 +86,7 @@ class MessageFeedbackUpdate(MessageFeedbackBase):
 
        
 class ChatMessage(BaseModel):
-    id: Optional[str] = None
+    id: Optional[int] = None
     role: str
     content: str
     formatted_content: Optional[str] = None
@@ -101,7 +121,7 @@ class Session(SessionBase):
 
 
 class FeedbackBase(BaseModel):
-    id: str
+    id: int
     created_at: datetime
     session: Optional[Session] = None
     question: str

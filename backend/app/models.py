@@ -16,8 +16,8 @@ class FeedbackType(Enum):
 class MessageFeedback(Base):
     __tablename__ = "messages_feedback"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    message_id = Column(String(100), ForeignKey("messages.id", ondelete="CASCADE"), nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    message_id = Column(Integer, ForeignKey("messages.id", ondelete="CASCADE"), nullable=False, unique=True)
     feedback_type = Column(String(10), nullable=True, default=None)
     notes = Column(String(2048), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -25,10 +25,10 @@ class MessageFeedback(Base):
 
     message = relationship("Message", back_populates="feedback")
 
-class Feedback(Base):
-    __tablename__ = "feedback"
+class SessionFeedback(Base):
+    __tablename__ = "sessions_feedback"
     
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(String(36), ForeignKey('sessions.id'), nullable=True)
     question = Column(String(2048))
     name = Column(String(255), nullable=True)
@@ -46,12 +46,12 @@ class Session(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     messages = relationship("Message", back_populates="session", order_by="Message.sequence")
-    feedback = relationship("Feedback", back_populates="session")
+    feedback = relationship("SessionFeedback", back_populates="session")
 
 class Message(Base):
     __tablename__ = "messages"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(String(36), ForeignKey('sessions.id'))
     sequence = Column(Integer)
     role = Column(String(50))
@@ -71,7 +71,8 @@ class Message(Base):
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(String(36), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    chunk_id = Column(String(36), nullable=False)
     content = Column(Text)
     meta = Column(JSON)
     score = Column(Float)
@@ -90,15 +91,15 @@ class Document(Base):
 class MessageDocument(Base):
     __tablename__ = "message_documents"
 
-    message_id = Column(String(36), ForeignKey('messages.id'), primary_key=True)
-    document_id = Column(String(36), ForeignKey('documents.id'), primary_key=True)
+    message_id = Column(Integer, ForeignKey('messages.id'), primary_key=True)
+    document_id = Column(Integer, ForeignKey('documents.id'), primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class DocumentFeedback(Base):
     __tablename__ = "documents_feedback"
 
-    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    document_id = Column(String(36), ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False, unique=True)
     feedback_type = Column(String(10), nullable=True, default=None)
     notes = Column(String(2048), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

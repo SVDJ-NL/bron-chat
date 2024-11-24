@@ -72,11 +72,11 @@ class QdrantService:
             return None
 
     def get_documents_by_ids(self, documents: List[ChatDocument]):
-        document_ids = []
+        qdrant_document_chunk_ids = []
         for doc in documents:
-            document_ids.append(doc.id)
+            qdrant_document_chunk_ids.append(doc.chunk_id)
                     
-        if not document_ids:
+        if not qdrant_document_chunk_ids:
             logger.warning("No valid document IDs found.")
             return []
         
@@ -84,7 +84,7 @@ class QdrantService:
             with self.pool.get_client() as client:
                 qdrant_documents = client.retrieve(
                     collection_name=settings.QDRANT_COLLECTION,
-                    ids=document_ids,
+                    ids=qdrant_document_chunk_ids,
                 )
                 return self.prepare_documents_with_scores_and_feedback(qdrant_documents, documents)
         except Exception as e:
@@ -192,11 +192,12 @@ class QdrantService:
             url = doc.payload['meta']['url'] 
         return url
     
-    def _prepare_document_dict(self, doc, score=None, feedback=None):
+    def _prepare_document_dict(self, doc, id=None, score=None, feedback=None):
         """Helper method to prepare a single document dictionary"""
         
         return {
-            'id': f'{doc.id}',  
+            'id': id if id is not None else doc.id,  
+            'chunk_id': f'{doc.id}',  
             'score': score if score is not None else doc.score,
             'feedback': feedback,
             'data': {
@@ -220,12 +221,13 @@ class QdrantService:
 
     def prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
-        score_map = {str(doc.id): doc.score for doc in documents}
-        feedback_map = {str(doc.id): doc.feedback for doc in documents}
+        id_map = {str(doc.chunk_id): doc.id for doc in documents}
+        score_map = {str(doc.chunk_id): doc.score for doc in documents}
+        feedback_map = {str(doc.chunk_id): doc.feedback for doc in documents}
         
-        return [self._prepare_document_dict(doc, score_map.get(doc.id, 0), feedback_map.get(doc.id, None)) 
+        return [self._prepare_document_dict(doc, id_map.get(str(doc.id), 0), score_map.get(str(doc.id), 0), feedback_map.get(str(doc.id), None)) 
                 for doc in qdrant_documents]
-
+    
     def reorder_documents_by_publication_date(self, documents: List[Dict]):
         # Filter out ChatDocument instances and convert them to the expected format
         formatted_documents = []

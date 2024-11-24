@@ -149,7 +149,6 @@
             };
             
             eventSource.onerror = (error) => {
-                console.info("States", error.currentTarget.readyState, EventSource.CLOSED);
                 if (error.currentTarget.readyState === EventSource.CLOSED) {
                     console.debug('EventSource connection closed');
                 } else if (error.currentTarget.readyState === EventSource.CONNECTING) {
@@ -237,7 +236,7 @@
                 sessionName = data.content;
                 break;
             case 'end':   
-                console.info('Received end event');
+                console.debug('Received end event');
                 isLoading = false;
                 currentMessage = null;
                 break;

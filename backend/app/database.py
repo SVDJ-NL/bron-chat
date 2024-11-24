@@ -24,7 +24,7 @@ def init_db():
     # Import all models explicitly to ensure they're registered with SQLAlchemy
     from .models import (
         Session,
-        Feedback,
+        SessionFeedback,
         Message,
         Document,
         MessageFeedback,

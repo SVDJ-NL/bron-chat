@@ -6,7 +6,7 @@
     export let autoScroll = true; 
     export let isLoading = false;
 
-    import { createEventDispatcher, onMount, afterUpdate } from 'svelte';
+    import { createEventDispatcher, onMount, afterUpdate, tick } from 'svelte';
     import { computePosition, flip, shift, offset } from '@floating-ui/dom';
     const dispatch = createEventDispatcher();
 
