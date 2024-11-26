@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
 import logging
 import json
 from asyncio import sleep
@@ -10,7 +9,7 @@ from ..services.cohere_service import CohereService
 from ..services.base_llm_service import BaseLLMService
 from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
-from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate
+from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session
 from ..config import settings
 from typing import List, Dict, AsyncGenerator
 from ..text_utils import get_formatted_date_english, format_text
@@ -42,37 +41,33 @@ async def chat_endpoint(
         
     qdrant_service = QdrantService(llm_service)    
     session_service = SessionService(db)
-    
-    # Get or create session
-    session = None
-    if session_id:
-        session = session_service.get_session(session_id)
-    
-    is_initial_session = False
-    
-    if not session:
+            
+    session = session_service.get_session(session_id)
+        
+    if len(session.messages) == 0:
         # Create new session with initial messages
-        is_initial_session = True
-        initial_messages = llm_service.get_initial_messages(query)
-        session = session_service.create_session(
-            SessionCreate(
-                messages=initial_messages,
-            )
+        is_initial_message = True
+        rag_system_message = llm_service.get_rag_system_message()
+        user_message = llm_service.get_user_message(query)
+        session = session_service.add_messages(
+            session_id=session.id,
+            messages=[rag_system_message, user_message]
         )
     else:
+        is_initial_message = False
         # Add message to existing session
-        session_messages = session_service.get_messages(session)
         user_message = llm_service.get_user_message(query)
-        session = session_service.update_session(
-            session.id,
-            SessionUpdate(
-                messages=session_messages + [user_message]
-            )
+        session = session_service.add_message(
+            session_id=session.id, 
+            message=user_message
         )
         logger.info(f"Using existing session: {session.id}")
 
+    # Get messages list before passing to generator
+    messages = session.messages
+    
     return StreamingResponse(
-        event_generator(session, query, is_initial_session, session_service, llm_service, qdrant_service),
+        event_generator(session, messages, query, is_initial_message, session_service, llm_service, qdrant_service),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -82,9 +77,10 @@ async def chat_endpoint(
     )
 
 async def event_generator(
-    session, 
-    query, 
-    is_initial_session : bool,
+    session : Session, 
+    messages : List[ChatMessage], 
+    query : str, 
+    is_initial_message : bool,
     session_service : SessionService, 
     llm_service : BaseLLMService, 
     qdrant_service : QdrantService
@@ -152,66 +148,37 @@ async def event_generator(
         }) + "\n\n"
         await sleep(0)
         
-        async for response in generate_full_response(llm_service, session.messages, relevant_docs):
+        async for response in generate_full_response(
+            llm_service, 
+            session_service, 
+            messages, 
+            relevant_docs, 
+            is_initial_message, 
+            session.id, 
+            query
+        ):
             yield 'data: ' + json.dumps(response) + "\n\n"
             await sleep(0)
-
-            if response["type"] == "full":
-                full_formatted_content = response["content"]
-                full_original_content = response["content_original"]      
-
+ 
     except Exception as e:
         logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
         yield 'data: ' + json.dumps({"type": "error", "content": str(e)}) + "\n\n"
         await sleep(0)
-    finally:
-        # Update the session with the assistant's response
-        if full_original_content:
-            try:
-                if is_initial_session:
-                    chat_name = llm_service.create_chat_session_name(query)
-                else:
-                    chat_name = session.name
-            except Exception as e:
-                logger.error(f"Error creating session name: {e}", exc_info=True)
-                         
-            try:               
-                saved_session = session_service.update_session(
-                    session_id=session.id,                        
-                    session_update=SessionUpdate(
-                        name=chat_name,
-                        messages = session_service.get_messages(session) + [
-                            ChatMessage(                                
-                                role="assistant",
-                                content=full_original_content,
-                                formatted_content=full_formatted_content,                                    
-                                documents = session_service.get_documents(session) + [
-                                    ChatDocument(
-                                        chunk_id=doc.get('chunk_id'),
-                                        score=doc.get('score'),
-                                        content=doc.get('content', ''),
-                                        title=doc.get('title', ''),
-                                        url=doc.get('url', '')
-                                    )
-                                    for doc in relevant_docs
-                                ]   
-                            )
-                        ],
-                    )
-                )
-                
-                logger.debug(f"Saved session: {saved_session}")
-                yield 'data: ' + json.dumps({"type": "full_session", "session": saved_session.model_dump()}) + "\n\n"
-                await sleep(0)                
-                
-            except Exception as e:
-                logger.error(f"Error updating session: {e}", exc_info=True)
-            
+        
+    finally:            
         # Send a proper close event with data
         yield 'event: close\n\ndata: {"type": "end"}\n\n'
         await sleep(0)
         
-async def generate_full_response(llm_service : BaseLLMService, session_messages: List[ChatMessage], relevant_docs: List[Dict]):
+async def generate_full_response(
+    llm_service : BaseLLMService, 
+    session_service: SessionService, 
+    session_messages: List[ChatMessage], 
+    relevant_docs: List[Dict], 
+    is_initial_message: bool, 
+    session_id: str, 
+    query: str
+):
     logger.debug(f"Generating full response for query: {session_messages[-1].content}")
     full_text = ""
     citations = []
@@ -251,18 +218,43 @@ async def generate_full_response(llm_service : BaseLLMService, session_messages:
             "citations": []
         }    
     else:
-        # Send the final full message
-        text_formatted = format_text(full_text, citations)
+        if is_initial_message:
+            try:
+                chat_name = llm_service.create_chat_session_name(query)
+                session_service.update_session_name(session_id=session_id, name=chat_name)
+            except Exception as e:
+                logger.error(f"Error creating session name: {e}", exc_info=True)
+             
+        try:      
+            session_service.add_message(
+                session_id=session_id,
+                message=ChatMessage(                                
+                    role="assistant",
+                    content=full_text,
+                    formatted_content=text_formatted,                                    
+                    documents = [
+                        ChatDocument(
+                            chunk_id=doc.get('chunk_id'),
+                            score=doc.get('score'),
+                            content=doc.get('content', ''),
+                            title=doc.get('title', ''),
+                            url=doc.get('url', '')
+                        )
+                        for doc in relevant_docs
+                    ]   
+                )
+            )
+        except Exception as e:
+            logger.error(f"Error updating session: {e}", exc_info=True)
+            
+        text_formatted = format_text(full_text, citations)    
+        session = session_service.get_session_with_relations(session_id)                  
+        
         yield {
             "type": "full",
-            "role": "assistant",
-            "message_id": session_messages[-1].id,
-            "content": text_formatted,
-            "content_original": full_text,
-            "citations": citations,
+            "session": session.model_dump()
         }
-
-
+        
 async def generate_response(llm_service: BaseLLMService, messages: List[ChatMessage], relevant_docs: List[Dict]) -> AsyncGenerator[Dict, None]:        
     logger.debug(f"Generating response for messages and documents: {messages}")
     

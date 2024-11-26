@@ -29,7 +29,7 @@ You are Bron Chat. You are an extremely capable large language model built by Op
 
 ## Style Guide
 
-Always create a short and descriptive title in Dutch. Don't use any special characters or punctuation.
+Always create a short and descriptive title of five words or less in Dutch. Don't use any special characters or punctuation.
 
 '''
     
@@ -47,10 +47,7 @@ Always create a short and descriptive title in Dutch. Don't use any special char
         
     @abstractmethod
     def create_chat_session_name(self, query: str) -> str:
-        pass
-
-    def get_initial_messages(self, query: str):
-        return [self._get_rag_system_message(), self.get_user_message(query)]        
+        pass   
 
     def get_user_message(self, content: str):
         return ChatMessage(
@@ -58,7 +55,7 @@ Always create a short and descriptive title in Dutch. Don't use any special char
             content=content
         )        
 
-    def _get_rag_system_message(self):
+    def get_rag_system_message(self):
         formatted_date = get_formatted_current_date_english()                
         formatted_year = get_formatted_current_year()
         return ChatMessage(
@@ -72,7 +69,7 @@ Always create a short and descriptive title in Dutch. Don't use any special char
             content=self.CHAT_NAME_SYSTEM_MESSAGE
         )
     
-    def _get_rag_system_message(self):
+    def get_rag_system_message(self):
         formatted_date = get_formatted_current_date_english()                
         formatted_year = get_formatted_current_year()
         return ChatMessage(

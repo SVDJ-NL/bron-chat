@@ -223,19 +223,25 @@
                 };
                 break;
             case 'full':
-                addMessage({
-                    id: data.message_id,
-                    role: data.role,
-                    content: data.content,
-                    content_original: data.content_original,
-                    citations: data.citations,
-                    feedback: null
-                });
+                // Get last message from session
+                const lastMessage = data.session?.messages?.length > 0 ? 
+                    data.session.messages[data.session.messages.length - 1] : 
+                    null;
+
+                if (lastMessage) {                
+                    addMessage({
+                        id: lastMessage.id,
+                        role: lastMessage.role,
+                        content: lastMessage.formatted_content,
+                        content_original: lastMessage.content,
+                        feedback: lastMessage.feedback
+                    });
+                }
+                
                 currentMessage = null;
                 streamedContent = '';
                 isLoading = false;
-                break;
-            case 'full_session':
+
                 const session = data.session;
                 if (session) {
                     sessionName = session.name;
@@ -243,6 +249,7 @@
                 } else {
                     console.error('Received full_session event but no session data:', data);
                 }
+
                 break;
             case 'end':   
                 console.debug('Received end event');

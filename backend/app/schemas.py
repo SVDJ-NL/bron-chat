@@ -117,7 +117,6 @@ class SessionBase(BaseModel):
     name: Optional[str] = None
     messages: List[ChatMessage] = []
     
-    
 class SessionCreate(SessionBase):
     pass
 

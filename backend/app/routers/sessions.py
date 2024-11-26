@@ -35,36 +35,27 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
         
     qdrant_service = QdrantService(llm_service)
     
-    session = session_service.get_session(session_id)
-    messages = session_service.get_messages(session)
-    documents = session_service.get_documents(session)
+    session = session_service.get_session_with_relations(session_id)    
+    documents = []
+    for message in session.messages:
+        documents.extend(message.documents)
     logger.info(f"Found {len(documents)} documents for session {session_id}")
     qdrant_documents = qdrant_service.get_documents_by_ids(documents)    
     logger.info(f"Found {len(qdrant_documents)} documents for session {session_id}")
     
     # TODO: Remove this once the frontend is updated to use the formatted_content
-    for message in messages:
+    for message in session.messages:
         if message.formatted_content:
             message.content = message.formatted_content
                      
     response = {
         "id": session.id,
         "name": session.name,
-        "messages": messages,
+        "messages": session.messages,
         "documents": qdrant_documents
     }
     
     return response
-
-@router.put(base_api_url + "sessions/{session_id}")
-async def update_session(session_id: str, session: SessionUpdate, db: Session = Depends(get_db)):
-    session_service = SessionService(db)
-    return session_service.update_session(session_id, session)
-
-@router.post(base_api_url + "generate_session_name")
-async def generate_session_name(request: ChatRequest, db: Session = Depends(get_db)):
-    session_service = SessionService(db)
-    return session_service.generate_session_name(request.content)
 
 @router.post(base_api_url + "new_session")
 async def create_session(db: Session = Depends(get_db)):
