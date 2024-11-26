@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict
 from typing import List, Dict, Optional
 from datetime import datetime
 from enum import Enum
@@ -18,12 +18,17 @@ class DocumentFeedbackBase(BaseModel):
 
 class DocumentFeedback(DocumentFeedbackBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(ser_json_timedelta='iso8601', from_attributes=True)
+    
+    @field_serializer('created_at')
+    @field_serializer('updated_at')
+    def serialize_dt(self, dt: datetime, _info):
+        if dt:
+            return dt.timestamp()
+        return None
     
 class DocumentBase(BaseModel):
     chunk_id: str
@@ -38,11 +43,16 @@ class DocumentCreate(DocumentBase):
 
 class Document(DocumentBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(ser_json_timedelta='iso8601', from_attributes=True)
+    
+    @field_serializer('created_at')
+    @field_serializer('updated_at')
+    def serialize_dt(self, dt: datetime, _info):
+        if dt:
+            return dt.timestamp()
+        return None
 
 class ChatDocument(BaseModel):
     id: Optional[int] = None
@@ -70,12 +80,17 @@ class MessageFeedbackBase(BaseModel):
     
 class MessageFeedback(MessageFeedbackBase):
     id: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(ser_json_timedelta='iso8601', from_attributes=True)
+    
+    @field_serializer('created_at')
+    @field_serializer('updated_at')
+    def serialize_dt(self, dt: datetime, _info):
+        if dt:
+            return dt.timestamp() 
+        return None
 
 class MessageFeedbackCreate(MessageFeedbackBase):
     pass
@@ -113,12 +128,17 @@ class SessionUpdate(SessionBase):
 
 class Session(SessionBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(ser_json_timedelta='iso8601', from_attributes=True)
+    
+    @field_serializer('created_at')
+    @field_serializer('updated_at')
+    def serialize_dt(self, dt: datetime, _info):
+        if dt:
+            return dt.timestamp()     
+        return None
 
 class FeedbackBase(BaseModel):
     id: int
@@ -128,8 +148,11 @@ class FeedbackBase(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(ser_json_timedelta='iso8601', from_attributes=True)
+    
+    @field_serializer('created_at')
+    def serialize_dt(self, dt: datetime, _info):
+        return dt.timestamp()   
         
         
 class SessionFeedbackCreateRequest(BaseModel):

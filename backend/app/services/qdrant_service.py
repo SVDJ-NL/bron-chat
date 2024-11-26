@@ -192,12 +192,12 @@ class QdrantService:
             url = doc.payload['meta']['url'] 
         return url
     
-    def _prepare_document_dict(self, doc, id=None, score=None, feedback=None):
+    def _prepare_document_dict(self, doc, score=None, feedback=None, id=None):
         """Helper method to prepare a single document dictionary"""
         
         return {
-            'id': id if id is not None else doc.id,  
-            'chunk_id': f'{doc.id}',  
+            'id': id,  
+            'chunk_id': doc.id,
             'score': score if score is not None else doc.score,
             'feedback': feedback,
             'data': {
@@ -221,11 +221,11 @@ class QdrantService:
 
     def prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
-        id_map = {str(doc.chunk_id): doc.id for doc in documents}
         score_map = {str(doc.chunk_id): doc.score for doc in documents}
         feedback_map = {str(doc.chunk_id): doc.feedback for doc in documents}
+        chunk_id_map = {str(doc.chunk_id): doc.id for doc in documents}
         
-        return [self._prepare_document_dict(doc, id_map.get(str(doc.id), 0), score_map.get(str(doc.id), 0), feedback_map.get(str(doc.id), None)) 
+        return [self._prepare_document_dict(doc, score_map.get(str(doc.id), 0), feedback_map.get(str(doc.id), None), chunk_id_map.get(str(doc.id), None)) 
                 for doc in qdrant_documents]
     
     def reorder_documents_by_publication_date(self, documents: List[Dict]):

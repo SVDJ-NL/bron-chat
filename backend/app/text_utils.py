@@ -62,3 +62,25 @@ def format_content(content):
     content = re.sub(r'</?(?!span\b)\w+[^>]*>', '', content)
     content = f'[...] {content} [...]'
     return to_markdown(content)
+   
+def add_citations_to_text(text, citations):
+    citations_list = sorted(citations, key=lambda x: x['start'])
+    
+    text_w_citations = ""
+    last_end = 0
+    
+    for citation in citations_list:
+        text_w_citations += text[last_end:citation['start']]
+        citation_text = text[citation['start']:citation['end']]
+        document_id_list_string = ','.join([f"'{doc_id}'" for doc_id in citation['document_ids']])
+        text_w_citations += f'<span class="citation-link" data-document-ids="[{document_id_list_string}]">{citation_text}</span>'
+        last_end = citation['end']
+    
+    text_w_citations += text[last_end:]
+    
+    return text_w_citations
+
+def format_text(text, citations):
+    text_w_citations = add_citations_to_text(text, citations)    
+    html_text = to_markdown(text_w_citations)  # Change this line
+    return html_text

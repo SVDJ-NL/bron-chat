@@ -61,7 +61,7 @@
                     <img class="block sm:hidden h-6 w-auto ml-0.5" src="/bron-logo-small.svg" alt="Bron Logo" />
                 </a>
                 <a href="/" class="ml-2 sm:ml-0 sm:mt-1">
-                    <span class="text-black text-2xl sm:text-3xl font-semibold uppercase">Chat</span>
+                    <span class="text-black text-3xl sm:text-4xl font-bold">chat</span>
                     <!-- <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-4 w-4 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg> -->

@@ -81,7 +81,7 @@
 <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
     <div class="w-full max-w-2xl text-center mb-4">
         <h1 class="text-xl sm:text-3xl font-bold mb-2 sm:mb-4">
-            Welkom bij BRON Chat            
+            Welkom bij Bron chat            
         </h1>
         <h2 id="typed-title" class="text-gray-600 text-lg lg:text-xl"></h2>
     </div>

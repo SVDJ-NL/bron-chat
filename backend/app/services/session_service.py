@@ -1,11 +1,13 @@
 from .database_service import DatabaseService
 from ..models import Session as SessionModel, DocumentFeedback, Message, Document, MessageFeedback, MessageDocument
-from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument
+from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument, Session
 from fastapi import HTTPException
 from datetime import datetime
 import uuid
 import logging  
 from typing import List
+from sqlalchemy.orm import joinedload
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO) 
@@ -59,7 +61,7 @@ class SessionService(DatabaseService):
         self.db.refresh(new_session)
         return new_session
 
-    def update_session(self, session_id: str, session_update: SessionUpdate) -> SessionModel:
+    def update_session(self, session_id: str, session_update: SessionUpdate) -> Session:
         db_session = self.get_session(session_id)
         if not db_session:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -106,7 +108,32 @@ class SessionService(DatabaseService):
         self.db.commit()
         self.db.refresh(db_session)
                 
-        return db_session
+        return self.convert_to_schemas_session(db_session)
+    
+    def convert_to_schemas_session(self, db_session: SessionModel) -> Session:
+        return Session(
+            id=db_session.id,
+            name=db_session.name,
+            messages=[
+                ChatMessage(
+                    id=msg.id,
+                    role=msg.role,
+                    content=msg.content,
+                    formatted_content=msg.formatted_content,
+                    feedback=msg.feedback,
+                    documents = [
+                        ChatDocument(
+                            id=doc.id,
+                            chunk_id=doc.chunk_id,
+                            content=doc.content,
+                            score=doc.score,
+                            title=doc.title,
+                            url=doc.url,
+                        ) for doc in msg.documents
+                    ]
+                ) for msg in db_session.messages
+            ]
+        )
     
     def get_session(self, session_id: str) -> SessionModel:
         db_session = self.db.query(SessionModel).filter(SessionModel.id == session_id).first()
@@ -123,10 +150,11 @@ class SessionService(DatabaseService):
         self.db.delete(db_session)
     
     def get_messages(self, session: SessionModel) -> List[ChatMessage]:
-        # Query messages directly instead of accessing relationship
+        # Query messages with feedback relationship eagerly loaded
         messages = self.db.query(Message)\
             .filter(Message.session_id == session.id)\
             .outerjoin(MessageFeedback)\
+            .options(joinedload(Message.feedback))\
             .order_by(Message.sequence)\
             .all()
         
@@ -160,16 +188,15 @@ class SessionService(DatabaseService):
                 url=doc.url,
                 feedback=doc.feedback
             ) for doc in documents
-        ]
-        
-        
+        ]     
     
-    def add_message(self, session: SessionModel, message: ChatMessage):
+    def add_message(self, session: SessionModel, message: ChatMessage):        
         new_message = Message(
             session_id=session.id,
             sequence=len(session.messages),
             role=message.role,
-            content=message.content
+            content=message.content,
+            formatted_content=message.formatted_content,
         )
         self.db.add(new_message)
         

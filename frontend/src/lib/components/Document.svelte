@@ -184,6 +184,7 @@
     
     <div class="flex items-end mt-3 justify-between">
         <div class="flex items-end mt-2">
+            {#if doc.id}
             <button 
                 class="text-sm text-blue-800 hover:text-blue-900 cursor-pointer transition-colors duration-200 {doc.feedback && doc.feedback.feedback_type === 'relevant' ? 'selected' : ''}"
                 on:click={() => {
@@ -216,6 +217,7 @@
                     </svg>
                 {/if}
             </button>
+            {/if}
         </div>
 
         {#if feedbackPopupVisible}

@@ -76,6 +76,7 @@
     }
 
     function addMessage(message) {
+        console.debug('Adding message:', message);
         messages = [...messages, message];
     }
 
@@ -192,7 +193,7 @@
                 break;
             case 'status':
                 addStatusMessage({
-                    role: 'assistant',
+                    role: data.role,
                     content: data.content,
                     type: 'status'
                 });
@@ -208,14 +209,14 @@
             case 'partial':
                 streamedContent += data.content;
                 currentMessage = {
-                    role: 'assistant',
+                    role: data.role,
                     content: streamedContent
                 };
                 break;
             case 'citation':
                 autoScroll = false;
                 currentMessage = {
-                    role: 'assistant',
+                    role: data.role,
                     content: data.content,
                     content_original: data.content_original,
                     citations: data.citations
@@ -223,17 +224,25 @@
                 break;
             case 'full':
                 addMessage({
-                    role: 'assistant',
+                    id: data.message_id,
+                    role: data.role,
                     content: data.content,
                     content_original: data.content_original,
-                    citations: data.citations
+                    citations: data.citations,
+                    feedback: null
                 });
                 currentMessage = null;
                 streamedContent = '';
                 isLoading = false;
                 break;
-            case 'session_name':
-                sessionName = data.content;
+            case 'full_session':
+                const session = data.session;
+                if (session) {
+                    sessionName = session.name;
+                    updateDocumentsFromFullSession(session.messages)
+                } else {
+                    console.error('Received full_session event but no session data:', data);
+                }
                 break;
             case 'end':   
                 console.debug('Received end event');
@@ -242,14 +251,37 @@
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
-                updateCurrentMessage({ 
+                addStatusMessage({ 
                     role: 'assistant', 
-                    content: `An error occurred: ${data.content}` 
+                    content: `Er ging iets mis bij het versturen van je vraag. Probeer het opnieuw.` 
                 });
                 isLoading = false;
                 currentMessage = null;
                 break;
         }
+    }
+
+    function updateDocumentsFromFullSession(messages) {
+        if (messages?.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage.documents) {
+                addDatabaseIdsToDocuments(lastMessage.documents);
+            }
+        }
+    }
+
+    function addDatabaseIdsToDocuments(newDocuments) {
+        // Match documents by chunk_id and update ids
+        documents = documents.map(existingDoc => {
+            const matchingNewDoc = newDocuments.find(newDoc => newDoc.chunk_id === existingDoc.chunk_id);
+            if (matchingNewDoc && matchingNewDoc.id) {
+                return {
+                    ...existingDoc,
+                    id: matchingNewDoc.id
+                };
+            }
+            return existingDoc;
+        });
     }
 
     function handleShowAllDocuments() {

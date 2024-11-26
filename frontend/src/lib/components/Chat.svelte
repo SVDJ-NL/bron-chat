@@ -181,19 +181,20 @@
                 throw new Error(error.detail || 'Failed to submit feedback');
             }
 
+            const feedback = await response.json();
+
+            // Update the messages array by mapping over each message
             messages = messages.map(msg => {
+                // If this is the message that received feedback
                 if (msg.id === messageId) {
-                    return {
-                        ...msg,
-                        feedback: {
-                            ...msg.feedback,
-                            feedback_type: feedbackType
-                        }
-                    };
+                    // Show the feedback popup for this message
+                    showFeedbackPopup(msg);
+                    // Return a new message object with the feedback data merged in
+                    return { ...msg, feedback };
                 }
+                // Return unchanged messages as-is
                 return msg;
             });
-
         } catch (error) {
             console.error('Error submitting feedback:', error);
         }
@@ -445,7 +446,6 @@
                                                     event.stopPropagation();
                                                     popupAnchor = event.currentTarget;
                                                     submitFeedbackType(message.id, 'positive');
-                                                    showFeedbackPopup(message);
                                                 }}
                                             >
                                                 {#if message.feedback != null && message.feedback.feedback_type === 'positive'}
@@ -464,7 +464,6 @@
                                                     event.stopPropagation();
                                                     popupAnchor = event.currentTarget;
                                                     submitFeedbackType(message.id, 'negative');
-                                                    showFeedbackPopup(message);
                                                 }}
                                             >
                                                 {#if message.feedback != null && message.feedback.feedback_type === 'negative'}
