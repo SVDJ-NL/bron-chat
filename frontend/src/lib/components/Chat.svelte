@@ -149,7 +149,7 @@
             navigator.clipboard.writeText(strippedText).then(() => {
                 copiedMessage = true;
                 setTimeout(() => copiedMessage = false, 2000);
-                console.log(`Text ${strippedText} copied to clipboard`);
+                console.debug(`Text ${strippedText} copied to clipboard`);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
             });
@@ -161,7 +161,7 @@
             navigator.clipboard.writeText(window.location.href).then(() => {
                 sharedMessage = true;
                 setTimeout(() => sharedMessage = false, 2000);
-                console.log(`Shared link ${window.location.href} copied to clipboard`);
+                console.debug(`Shared link ${window.location.href} copied to clipboard`);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
             });

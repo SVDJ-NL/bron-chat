@@ -32,7 +32,17 @@ You are Bron Chat. You are an extremely capable large language model built by Op
 Always create a short and descriptive title of five words or less in Dutch. Don't use any special characters or punctuation.
 
 '''
-    
+
+    HUMAN_READABLE_SOURCES = {
+        "openbesluitvorming": "Raadstuk",
+        "poliflw": "Politiek nieuwsbericht",
+        "openspending": "Begrotingsdata",
+        "woogle": "Woo-verzoek",
+        "obk": "Officiële bekendmaking",
+        "cvdr": "Rapport",
+        "oor": "Lokale wet- en regelgeving",
+    }
+
     @abstractmethod
     def chat_stream(self, messages: list, documents: list) -> AsyncGenerator:
         pass
@@ -48,6 +58,9 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
     @abstractmethod
     def create_chat_session_name(self, query: str) -> str:
         pass   
+
+    def get_human_readable_source(self, source: str) -> str: 
+        return self.HUMAN_READABLE_SOURCES.get(source, source)
 
     def get_user_message(self, content: str):
         return ChatMessage(

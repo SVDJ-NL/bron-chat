@@ -260,7 +260,11 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
                 "publication date": get_formatted_date_english(
                     doc['data']['published']
                 ),
-                "municipality": doc['data']['location_name']
+                "municipality": doc['data']['location_name'],
+                "source": llm_service.get_human_readable_source(
+                    doc['data']['source']
+                ),
+                "type": doc['data']['type'],
             }
         } for doc in relevant_docs
     ]
