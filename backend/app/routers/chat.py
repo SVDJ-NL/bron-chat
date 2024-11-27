@@ -42,7 +42,7 @@ async def chat_endpoint(
     qdrant_service = QdrantService(llm_service)    
     session_service = SessionService(db)
             
-    session = session_service.get_session(session_id)
+    session = session_service.get_session_with_relations(session_id)
         
     if len(session.messages) == 0:
         # Create new session with initial messages
@@ -62,12 +62,9 @@ async def chat_endpoint(
             message=user_message
         )
         logger.info(f"Using existing session: {session.id}")
-
-    # Get messages list before passing to generator
-    messages = session.messages
     
     return StreamingResponse(
-        event_generator(session, messages, query, is_initial_message, session_service, llm_service, qdrant_service),
+        event_generator(session, query, is_initial_message, session_service, llm_service, qdrant_service),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -78,16 +75,12 @@ async def chat_endpoint(
 
 async def event_generator(
     session : Session, 
-    messages : List[ChatMessage], 
     query : str, 
     is_initial_message : bool,
     session_service : SessionService, 
     llm_service : BaseLLMService, 
     qdrant_service : QdrantService
-):
-    full_formatted_content = ""
-    full_original_content = ""
-    
+):    
     try:
         yield 'data: ' + json.dumps({
             "type": "session",
@@ -151,7 +144,7 @@ async def event_generator(
         async for response in generate_full_response(
             llm_service, 
             session_service, 
-            messages, 
+            session.messages, 
             relevant_docs, 
             is_initial_message, 
             session.id, 
@@ -181,6 +174,7 @@ async def generate_full_response(
 ):
     logger.debug(f"Generating full response for query: {session_messages[-1].content}")
     full_text = ""
+    text_formatted = ""
     citations = []
     
     async for event in generate_response(llm_service, session_messages, relevant_docs):
@@ -259,7 +253,7 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
     logger.debug(f"Generating response for messages and documents: {messages}")
     
     formatted_docs = [{     
-            'id': doc['id'],   
+            'id': doc['chunk_id'],   
             "data": {
                 "title": doc['data']['title'],
                 "snippet": doc['data']['content'],
@@ -270,42 +264,50 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
             }
         } for doc in relevant_docs
     ]
-    
+        
     current_citation = None
     first_citation = True
     try:
         for event in llm_service.chat_stream(messages, formatted_docs):
             if event:
-                if event.type == "content-delta":
-                    yield {
-                        "type": "text",
-                        "content": event.delta.message.content.text
-                    }
-                elif event.type == 'citation-start':       
-                    if first_citation:
-                        yield {
-                            "type": "status",
-                            "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
-                        }
-                        first_citation = False
+                if hasattr(event, 'type'):
+                    if event.type == "content-delta":
+                        if hasattr(event, 'delta') and hasattr(event.delta, 'message') and hasattr(event.delta.message, 'content'):
+                            yield {
+                                "type": "text",
+                                "content": event.delta.message.content.text
+                            }
+                    elif event.type == 'citation-start':       
+                        if first_citation:
+                            yield {
+                                "type": "status",
+                                "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
+                            }
+                            first_citation = False
                         
-                    current_citation = {
-                        'start': event.delta.message.citations.start,
-                        'end': event.delta.message.citations.end,
-                        'text': event.delta.message.citations.text,
-                        'document_ids': [source.document['id'] for source in event.delta.message.citations.sources]
-                    }
-                    
-                elif event.type == 'citation-end':
-                    if current_citation:
-                        yield {
-                            "type": "citation",
-                            "content": current_citation
-                        }
-                        current_citation = None
+                        if (hasattr(event, 'delta') and 
+                            hasattr(event.delta, 'message') and 
+                            hasattr(event.delta.message, 'citations')):
+                            
+                            document_ids = []
+                            if hasattr(event.delta.message.citations, 'sources') and event.delta.message.citations.sources:
+                                document_ids = [source.document.get('id') for source in event.delta.message.citations.sources if hasattr(source, 'document')]
+                            
+                            current_citation = {
+                                'start': event.delta.message.citations.start,
+                                'end': event.delta.message.citations.end,
+                                'text': event.delta.message.citations.text,
+                                'document_ids': document_ids
+                            }
+                        
+                    elif event.type == 'citation-end':
+                        if current_citation:
+                            yield {
+                                "type": "citation",
+                                "content": current_citation
+                            }
+                            current_citation = None
     except GeneratorExit:
         logger.info("Generator closed due to GeneratorExit")
-        # Handle any cleanup if necessary
     finally:
-        # Perform any necessary cleanup here
         logger.info("Exiting generate_response")

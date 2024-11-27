@@ -133,11 +133,30 @@
     :global(mark) {
         @apply bg-yellow-200 px-0.5 py-0.5 -mx-0.5 inline rounded transition-colors duration-200 whitespace-normal ;
     }
+
+    :global(.document-content h2) {
+        @apply mt-3 font-medium;
+    }
+
+    :global(.document-content h2:first-child) {
+        @apply mt-0;
+    }
+    :global(.document-content p) {
+        @apply break-words mb-3;
+    }
+
+    :global(.document-content p:has(+ h2)) {
+        @apply mb-0;
+    }
+
+    :global(.document-content p:last-child) {
+        @apply mb-0;
+    }
 </style>
 
-<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50 {doc.feedback != null && doc.feedback.feedback_type === 'irrelevant' ? 'opacity-50' : ''}" data-doc-id="{doc.id}">
+<div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50 {doc.feedback != null && doc.feedback.feedback_type === 'irrelevant' ? 'opacity-50' : ''}" data-doc-id="{doc.chunk_id}">
     <header class="mb-4">
-        <h3 class="font-title text-black text-sm sm:text-lg font-semibold leading-tight sm:leading-normal {doc.feedback && doc.feedback.feedback_type === 'irrelevant' ? 'line-through': ''}" bind:this={titleElement}>
+        <h3 class="font-title text-black text-sm sm:text-base font-semibold !leading-snug {doc.feedback && doc.feedback.feedback_type === 'irrelevant' ? 'line-through': ''}" bind:this={titleElement}>
             <!-- Content will be inserted here by the updateTitle function -->
         </h3>
         <div class="flex flex-col sm:flex-row items-start sm:items-center text-gray-500 text-sm mt-1 flex-wrap space-y-2 sm:space-y-0">
@@ -178,7 +197,7 @@
         </div>
     </header>
     
-    <div class="text-gray-600 text-sm break-words" bind:this={contentElement}>
+    <div class="document-content text-gray-600 text-sm break-words" bind:this={contentElement}>
         <!-- Content will be inserted here by the updateContent function -->
     </div>
     

@@ -212,7 +212,7 @@ class QdrantService:
                 'source': doc.payload['meta']['source'],
                 # 'page_number': doc.payload['meta']['page_number'],
                 # 'page_count': doc.payload['meta']['page_count'],
-                'content': format_content(doc.payload['content'])
+                'content': doc.payload['content']
             }
         }
 

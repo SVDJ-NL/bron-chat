@@ -64,13 +64,18 @@
         // Use a regex to find and replace spans with citation links
         const citationRegex = /<span class="citation-link" data-document-ids="([^"]+)">(.*?)<\/span>/g;
         const formattedText = text_formatted.replace(citationRegex, (match, documentIds, citationText) => {
-            return `<a class="citation-link" onclick="handleCitationClick(${documentIds}, '${citationText.replace(/'/g, "\\'")}')">${citationText}</a>`;
+            let formattedCitationText = citationText.replace(/['"''""]/g, '');
+            return `<a class="citation-link" onclick="handleCitationClick(event, ${documentIds}, '${formattedCitationText}')">${citationText}</a>`;
         });
 
-        return formattedText;
+        // Replace "Bron Gids" with a link to bron.live/gids
+        const guideLinkRegex = /Bron Gids/g;
+        const formattedWithGuideLink = formattedText.replace(guideLinkRegex, '<a class="external-link" href="https://site.bron.live/gids" target="_blank" rel="noopener noreferrer"><span>Bron Gids</span><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" class="s-64usSJ3OYh2K"></path><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path></svg></a>');
+        return formattedWithGuideLink;
     }
 
-    function handleCitationClick(documentIds, citationText) {
+    function handleCitationClick(event, documentIds, citationText) {
+
         resetAllCitations();
         if (selectedCitation) {
             selectedCitation.classList.remove('selected');
@@ -308,6 +313,10 @@
         @apply bg-gray-200 text-blue-900 px-0.5 py-0.5 -mx-0.5 inline rounded cursor-pointer transition-colors duration-200 whitespace-normal text-left relative;
     }
 
+    :global(.external-link) {
+        @apply inline-flex items-center bg-gray-200 text-blue-900 px-0.5 py-0.5 -mx-0.5 inline rounded cursor-pointer transition-colors duration-200 whitespace-normal text-left relative;
+    }
+
     :global(.citation-link:hover) {
         @apply bg-blue-200;
     }
@@ -334,6 +343,10 @@
 
     :global(.message-content p) {
         @apply mb-4;
+    }
+
+    :global(.message-content p:last-child) {
+        @apply mb-0;
     }
 
     :global(.message-content ul, .message-content ol) {
@@ -413,7 +426,7 @@
                             {:else if message.role === 'assistant'}
                                 {@html insertClickableCitations(message.content, message.type)}
                                         
-                                <div class="flex items-center">
+                                <div class="flex items-center mt-4">
                                     <button on:click={() => copyToClipboard(message.content)} class="ml-0 text-sm text-blue-800 hover:text-blue-900">
                                         {#if copiedMessage}
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">

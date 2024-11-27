@@ -47,7 +47,7 @@
 
     function handleCitationClick(event) {
         const documentIds = event.detail.documentIds;
-        selectedDocuments = documents.filter(doc => documentIds.includes(doc.id));
+        selectedDocuments = documents.filter(doc => documentIds.includes(doc.chunk_id));
         citationText = event.detail.citationText;        
         citationWords = removeStopwords(event.detail.citationText.split(' '), nld);
         autoScroll = false;

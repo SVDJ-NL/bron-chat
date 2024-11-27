@@ -60,7 +60,7 @@ def to_markdown(text):
 def format_content(content):
     # Remove leading and trailing whitespace
     content = re.sub(r'</?(?!span\b)\w+[^>]*>', '', content)
-    content = f'[...] {content} [...]'
+    content = f'{content} [...]'
     return to_markdown(content)
    
 def add_citations_to_text(text, citations):

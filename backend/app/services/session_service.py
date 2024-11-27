@@ -83,9 +83,9 @@ class SessionService(DatabaseService):
         db_session.messages.append(db_message)
 
         self.db.commit()
-        self.db.refresh(db_message)        
+        self.db.refresh(db_session, ['messages'])        
   
-        return self._message_db_model_to_schema(db_message)
+        return self._session_db_model_to_schema(db_session)
 
     def add_messages(self, session_id: int, messages: List[ChatMessage]) -> Session:
         db_session = self._get_session(session_id)
