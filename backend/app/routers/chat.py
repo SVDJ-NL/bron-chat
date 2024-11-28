@@ -253,24 +253,24 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
     logger.debug(f"Generating response for messages and documents: {messages}")
     
     formatted_docs = [{     
-            'id': doc['chunk_id'],   
-            "data": {
-                "title": doc['data']['title'],
-                "snippet": doc['data']['content'],
-                "publication date": get_formatted_date_english(
-                    doc['data']['published']
-                ),
-                "municipality": doc['data']['location_name'],
-                "source": llm_service.get_human_readable_source(
-                    doc['data']['source']
-                ),
-                "type": doc['data']['type'],
-            }
-        } for doc in relevant_docs
-    ]
-        
+        'id': doc['chunk_id'],   
+        "data": {
+            "title": doc['data']['title'],
+            "snippet": doc['data']['content'],
+            "publication date": get_formatted_date_english(
+                doc['data']['published']
+            ),
+            "municipality": doc['data']['location_name'],
+            "source": llm_service.get_human_readable_source(
+                doc['data']['source']
+            ),
+            "type": doc['data']['type'],
+        }
+    } for doc in relevant_docs]
+    
     current_citation = None
     first_citation = True
+    
     try:
         for event in llm_service.chat_stream(messages, formatted_docs):
             if event:
@@ -303,15 +303,19 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
                                 'text': event.delta.message.citations.text,
                                 'document_ids': document_ids
                             }
-                        
+                    
                     elif event.type == 'citation-end':
                         if current_citation:
                             yield {
                                 "type": "citation",
                                 "content": current_citation
                             }
-                            current_citation = None
+                            current_citation = None                    
     except GeneratorExit:
-        logger.info("Generator closed due to GeneratorExit")
+        logger.info("Generator closed by client")
+        return
+    except Exception as e:
+        logger.error(f"Error in generate_response: {e}")
+        raise
     finally:
         logger.info("Exiting generate_response")

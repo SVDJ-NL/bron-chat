@@ -4,6 +4,7 @@ import logging
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage
 from .base_llm_service import BaseLLMService
+from typing import Generator
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,18 +13,25 @@ class CohereService(BaseLLMService):
     def __init__(self):
         self.client = CohereClient(api_key=settings.COHERE_API_KEY)
         
-    def chat_stream(self, messages: list, documents: list):
+    def chat_stream(self, messages: list, documents: list) -> Generator:
         logger.info("Starting chat stream...")
-        return self.client.chat_stream(
-            model="command-r-plus",
-            messages=[{
-                'role': message.role, 
-                'content': message.content
-                } for message in messages
-            ],
-            documents=documents
-        )
-
+        try:
+            return self.client.chat_stream(
+                model="command-r-plus",
+                messages=[{
+                    'role': message.role, 
+                    'content': message.content
+                    } for message in messages
+                ],
+                documents=documents
+            )
+        except GeneratorExit:
+            logger.info("Chat stream generator closed")
+            return
+        except Exception as e:
+            logger.error(f"Error in chat stream: {e}")
+            raise
+        
     def rerank_documents(self, query: str, documents: list):
         logger.info("Reranking documents...")
         return self.client.rerank(

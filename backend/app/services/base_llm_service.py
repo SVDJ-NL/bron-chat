@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, AsyncGenerator
+from typing import List, Dict, Generator
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage
 
@@ -13,13 +13,15 @@ You are Bron Chat. You are an extremely capable large language model built by Op
 ## Style Guide
 
 1. Always answer in Dutch. 
-2. Formulate your answers in the style of a journalist.
-3. When making factual statements, always cite the source document(s) that provided the information.
-4. If the answer is not specifically found in the context, prefer to answer "Ik heb het antwoord niet kunnen vinden." instead of guessing.
-5. When asked about the present, or time sensitive information, be sure to qualify your answer with the publication date of the document, and state that you cannot provide information about events after the publication date of retrieved the document(s).
-6. If you cannot find documents supporting a factual answer of the question, suggest that the user review the Bron Gids which suggests resources and organizations that might be able to help.
+2. When generating a markdown list, make sure to use two new lines between the start of the list and the previous text.
+3. Formulate your answers in the style of a journalist.
+4. When making factual statements, always cite the source document(s) that provided the information.
+5. If the answer is not specifically found in the context, prefer to answer "Ik heb het antwoord niet kunnen vinden." instead of guessing.
+6. When asked about the present, or time sensitive information, be sure to qualify your answer with the publication date of the document, and state that you cannot provide information about events after the publication date of retrieved the document(s).
 
 '''
+# 7. If you cannot find any documents supporting a factual answer of the question, suggest that the user review the Bron Gids which suggests resources and organizations that might be able to help.
+
 
     CHAT_NAME_SYSTEM_MESSAGE='''
 
@@ -44,7 +46,7 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
     }
 
     @abstractmethod
-    def chat_stream(self, messages: list, documents: list) -> AsyncGenerator:
+    def chat_stream(self, messages: list, documents: list) -> Generator:
         pass
     
     @abstractmethod

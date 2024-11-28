@@ -69,7 +69,9 @@
 
 
     function handleClickOutside(event) {
-        closeModal();
+        if (event.target === event.currentTarget) {
+            closeModal();
+        }
     }
 
     function closeModal() {

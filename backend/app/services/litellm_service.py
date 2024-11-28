@@ -6,7 +6,7 @@ import logging
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage
 from .base_llm_service import BaseLLMService
-
+from typing import Generator
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class LiteLLMService(BaseLLMService):
     def __init__(self):
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
         
-    def chat_stream(self, messages: list, documents: list):
+    def chat_stream(self, messages: list, documents: list) -> Generator:
         logger.info("Starting chat stream...")
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
         
@@ -38,12 +38,18 @@ class LiteLLMService(BaseLLMService):
                 elif hasattr(chunk, 'choices') and chunk.choices:
                     yield chunk.choices[0].delta.content
                     
+        except GeneratorExit:
+            logger.info("Chat stream generator closed")
+            return
         except APIConnectionError as e:
             logger.error(f'Chat stream connection failed: {e}')
+            raise
         except Timeout as e:
             logger.error(f'Chat stream request timed out: {e}')
+            raise
         except APIError as e:
             logger.error(f'Chat stream API error occurred: {e}')
+            raise
 
     def rerank_documents(self, query: str, documents: list):
         logger.info("Reranking documents...")
