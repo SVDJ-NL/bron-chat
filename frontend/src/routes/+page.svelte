@@ -152,7 +152,7 @@
                         <p>Neem dan contact met ons op. Alle feedback is welkom!</p>
                         <p class="mt-2">Joost van de Loo<br>
                         tel: 06-50733904<br>
-                        joostvandeloo@svdjincubator.nl</p>
+                        <a href="mailto:joostvandeloo@svdjincubator.nl" class="text-blue-600 hover:underline">joostvandeloo@svdjincubator.nl</a></p>
                     </div>
                 </div>
             </div>

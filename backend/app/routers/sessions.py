@@ -44,6 +44,9 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     
     qdrant_documents = qdrant_service.get_documents_by_ids(documents)    
     logger.info(f"Found {len(qdrant_documents)} documents in Qdrant for session {session_id}")
+        
+    # Remove system messages from the session
+    session.messages = [msg for msg in session.messages if msg.role != "system"]
     
     # TODO: Remove this once the frontend is updated to use the formatted_content
     for message in session.messages:

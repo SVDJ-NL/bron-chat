@@ -13,7 +13,7 @@ You are Bron Chat. You are an extremely capable large language model built by Op
 ## Style Guide
 
 1. Always answer in Dutch. 
-2. When generating a markdown list, make sure to use two new lines between the start of the list and the previous text.
+2. When generating a list, always add two new lines before the start of the list.
 3. Formulate your answers in the style of a journalist.
 4. When making factual statements, always cite the source document(s) that provided the information.
 5. If the answer is not specifically found in the context, prefer to answer "Ik heb het antwoord niet kunnen vinden." instead of guessing.
@@ -36,6 +36,33 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
 
 '''
 
+    QUERY_REWRITE_SYSTEM_MESSAGE = '''
+    
+## Task and Context
+
+You are a search query rewriter. Your task is to enhance the user's latest query by incorporating relevant context from the conversation history. The enhanced query will be used to search a database of Dutch government documents.
+
+## Instructions
+
+1. Analyze the conversation history to understand the full context
+2. Focus on the user's latest query
+3. Add essential context from previous messages that could improve search results
+4. Maintain the original intent of the latest query
+5. Keep the rewritten query concise and focused
+6. Write the query in Dutch
+7. Only output the rewritten query, no explanations or additional text
+
+## Example
+
+Conversation:
+User: "Wat zijn de regels voor zonnepanelen?"
+Assistant: *explains basic rules*
+User: "En wat kost de vergunning?"
+
+Rewritten query: "kosten vergunning zonnepanelen gemeente"
+
+'''
+
     HUMAN_READABLE_SOURCES = {
         "openbesluitvorming": "Raadstuk",
         "poliflw": "Politiek nieuwsbericht",
@@ -47,7 +74,7 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
     }
 
     @abstractmethod
-    def chat_stream(self, messages: list, documents: list) -> Generator:
+    def chat_stream(self, messages: list[ChatMessage], documents: list) -> Generator:
         pass
     
     @abstractmethod
@@ -59,8 +86,12 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
         pass
         
     @abstractmethod
-    def create_chat_session_name(self, query: str) -> str:
+    def create_chat_session_name(self, user_message: ChatMessage) -> str:
         pass   
+
+    @abstractmethod
+    def rewrite_query(self, query: str, messages: list[ChatMessage]) -> str:
+        pass
 
     def get_human_readable_source(self, source: str) -> str: 
         return self.HUMAN_READABLE_SOURCES.get(source, source)
@@ -68,7 +99,8 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
     def get_user_message(self, content: str):
         return ChatMessage(
             role="user",
-            content=content
+            content=content,
+            formatted_content=content
         )        
 
     def get_rag_system_message(self):
@@ -84,15 +116,7 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
             role="system", 
             content=self.CHAT_NAME_SYSTEM_MESSAGE
         )
-    
-    def get_rag_system_message(self):
-        formatted_date = get_formatted_current_date_english()                
-        formatted_year = get_formatted_current_year()
-        return ChatMessage(
-            role="system", 
-            content=self.RAG_SYSTEM_MESSAGE.format(date=formatted_date, year=formatted_year) 
-        )
-        
+            
     def _get_chat_name_system_message(self):
         return ChatMessage(
             role="system", 

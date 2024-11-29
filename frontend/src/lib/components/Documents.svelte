@@ -2,8 +2,8 @@
     import { createEventDispatcher } from 'svelte';
     import { fade } from 'svelte/transition';
     import Document from './Document.svelte';
+    import { sessionStore } from '$lib/stores/sessionStore';
 
-    export let documents = [];
     export let selectedDocuments = null;
     export let citationText = '';
     export let citationWords = [];
@@ -29,6 +29,7 @@
         });
     }
 
+    $: documents = $sessionStore.documents || [];
     $: sortedDocuments = documents ? sortDocuments(documents) : [];
     $: sortedSelectedDocuments = selectedDocuments ? sortDocuments(selectedDocuments) : null;
 

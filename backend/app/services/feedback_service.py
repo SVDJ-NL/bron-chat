@@ -2,7 +2,7 @@ from uuid import UUID
 from typing import Optional
 from sqlalchemy import select, update, insert
 from app.models import MessageFeedback, SessionFeedback, Document, DocumentFeedback
-from app.schemas import MessageFeedbackCreate, MessageFeedbackUpdate, FeedbackCreate, DocumentFeedbackCreate, DocumentFeedbackUpdate
+from app.schemas import MessageFeedbackCreate, MessageFeedbackUpdate, SessionFeedbackCreate, DocumentFeedbackCreate, DocumentFeedbackUpdate, FeedbackCreate
 from .database_service import DatabaseService
 from fastapi import HTTPException
 
@@ -49,13 +49,9 @@ class FeedbackService(DatabaseService):
     def get_session_feedback(self, session_id: int) -> dict:
         return self.db.query(SessionFeedback).filter(SessionFeedback.session_id == session_id).first()
     
-    def create_session_feedback(self, feedback: FeedbackCreate) -> dict:
-        session = self.get_session_feedback(feedback.session_id)
-        if session is None:
-            raise HTTPException(status_code=404, detail="Session not found")
-        
+    def create_session_feedback(self, feedback: SessionFeedbackCreate) -> dict:
         new_session_feedback = SessionFeedback(
-            session_id=session.id,
+            session_id=feedback.session_id,
             question=feedback.question,
             name=feedback.name,
             email=feedback.email
@@ -66,6 +62,19 @@ class FeedbackService(DatabaseService):
         self.db.refresh(new_session_feedback)
         
         return new_session_feedback
+    
+    def create_feedback(self, feedback: FeedbackCreate) -> dict:        
+        new_feedback = SessionFeedback(
+            question=feedback.question,
+            name=feedback.name,
+            email=feedback.email
+        )
+        
+        self.db.add(new_feedback)        
+        self.db.commit()        
+        self.db.refresh(new_feedback)
+        
+        return new_feedback
 
     def create_document_feedback(self, document_feedback: DocumentFeedbackCreate) -> dict:
         """Create new document feedback"""

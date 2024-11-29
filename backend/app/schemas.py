@@ -154,13 +154,19 @@ class FeedbackBase(BaseModel):
         return dt.timestamp()   
         
         
-class SessionFeedbackCreateRequest(BaseModel):
+class FeedbackCreateRequest(BaseModel):
     question: str
     name: Optional[str] = None
     email: Optional[str] = None
 
         
 class FeedbackCreate(BaseModel):
+    question: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+        
+        
+class SessionFeedbackCreate(BaseModel):
     session_id: str
     question: str
     name: Optional[str] = None

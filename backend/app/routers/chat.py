@@ -55,8 +55,10 @@ async def chat_endpoint(
         )
     else:
         is_initial_message = False
-        # Add message to existing session
+        # For follow-up messages, rewrite the query        
         user_message = llm_service.get_user_message(query)
+        rewritten_query = llm_service.rewrite_query(user_message, session.messages)
+        user_message.formatted_content = rewritten_query
         session = session_service.add_message(
             session_id=session.id, 
             message=user_message
@@ -64,7 +66,7 @@ async def chat_endpoint(
         logger.info(f"Using existing session: {session.id}")
     
     return StreamingResponse(
-        event_generator(session, query, is_initial_message, session_service, llm_service, qdrant_service),
+        event_generator(session, user_message, is_initial_message, session_service, llm_service, qdrant_service),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -75,7 +77,7 @@ async def chat_endpoint(
 
 async def event_generator(
     session : Session, 
-    query : str, 
+    user_message : ChatMessage, 
     is_initial_message : bool,
     session_service : SessionService, 
     llm_service : BaseLLMService, 
@@ -103,7 +105,8 @@ async def event_generator(
         await sleep(0)
         
         try: 
-            relevant_docs = qdrant_service.retrieve_relevant_documents(query)
+            # Use the formatted_content (rewritten query) from the last message
+            relevant_docs = qdrant_service.retrieve_relevant_documents(user_message.formatted_content)
             logger.debug(f"Relevant documents: {relevant_docs}")
         except Exception as e:
             logger.error(f"Error retrieving relevant documents: {e}")
@@ -150,7 +153,7 @@ async def event_generator(
                 relevant_docs, 
                 is_initial_message, 
                 session.id, 
-                query
+                user_message
             ):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
@@ -179,9 +182,9 @@ async def generate_full_response(
     relevant_docs: List[Dict], 
     is_initial_message: bool, 
     session_id: str, 
-    query: str
+    user_message: ChatMessage
 ):
-    logger.debug(f"Generating full response for query: {session_messages[-1].content}")
+    logger.debug(f"Generating full response for query: {user_message.content}, rewritten query: {user_message.formatted_content}")
     full_text = ""
     text_formatted = ""
     citations = []
@@ -223,7 +226,7 @@ async def generate_full_response(
     else:
         if is_initial_message:
             try:
-                chat_name = llm_service.create_chat_session_name(query)
+                chat_name = llm_service.create_chat_session_name(user_message)
                 session_service.update_session_name(session_id=session_id, name=chat_name)
             except Exception as e:
                 logger.error(f"Error creating session name: {e}", exc_info=True)
@@ -251,7 +254,9 @@ async def generate_full_response(
             logger.error(f"Error updating session: {e}", exc_info=True)
             
         text_formatted = format_text(full_text, citations)    
-        session = session_service.get_session_with_relations(session_id)                  
+        session = session_service.get_session_with_relations(session_id)    
+        # Remove system messages from the session
+        session.messages = [msg for msg in session.messages if msg.role != "system"]              
         
         yield {
             "type": "full",
@@ -260,7 +265,7 @@ async def generate_full_response(
         
 async def generate_response(llm_service: BaseLLMService, messages: List[ChatMessage], relevant_docs: List[Dict]) -> AsyncGenerator[Dict, None]:        
     logger.debug(f"Generating response for messages and documents: {messages}")
-    
+        
     formatted_docs = [{     
         'id': doc['chunk_id'],   
         "data": {

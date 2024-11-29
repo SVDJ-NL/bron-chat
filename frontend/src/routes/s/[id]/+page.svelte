@@ -1,17 +1,16 @@
 <script>
     import ChatLayout from '$lib/components/ChatLayout.svelte';
-    import { page } from '$app/stores';
-    import { API_BASE_URL } from '$lib/config';
+    import { sessionStore } from '$lib/stores/sessionStore';
 
     export let data;
 
-    $: ({ sessionId, messages, documents, sessionName } = data);
+    $: sessionStore.set({
+        sessionId: data.sessionId,
+        messages: data.messages || [],
+        documents: data.documents || [],
+        sessionName: data.sessionName || ''
+    });
 </script>
 
-<ChatLayout 
-    sessionId={sessionId}
-    sessionName={sessionName || ''}
-    initialMessages={messages || []}
-    initialDocuments={documents || []}
-/>
+<ChatLayout />
 

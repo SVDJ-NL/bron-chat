@@ -2,17 +2,20 @@
     import { page } from '$app/stores';
     import { API_BASE_URL } from '$lib/config';
     import { onMount } from 'svelte';
+    import { sessionStore } from '$lib/stores/sessionStore';
 
     let showModal = false;
     let formData = {
         question: '',
         name: '',
         email: '',
-        session_id: $page.params.id
+        session_id: ''
     };
     let showThankYou = false;
     let isSubmitting = false;
     let modalContent;
+
+    $: formData.session_id = $sessionStore.sessionId;
 
     function handleClickOutside(event) {
         if (modalContent && !modalContent.contains(event.target)) {
@@ -28,8 +31,14 @@
 
     async function handleSubmit() {
         isSubmitting = true;
+        let feedbackEndpoint = `${API_BASE_URL}/feedback`;
+
+        if (formData.session_id) {
+            feedbackEndpoint = `${feedbackEndpoint}/${formData.session_id}`;
+        }
+
         try {
-            const response = await fetch(`${API_BASE_URL}/feedback/${formData.session_id}`, {
+            const response = await fetch(feedbackEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -6,15 +6,14 @@
     import { goto } from '$app/navigation';
     import { API_BASE_URL } from '$lib/config';
     import ChatInput from './ChatInput.svelte';
+    import { sessionStore } from '$lib/stores/sessionStore';
 
-    export let sessionId = null;
-    export let sessionName = '';
-    export let initialMessages = [];
-    export let initialDocuments = [];
+    $: messages = $sessionStore.messages || [];
+    $: documents = Array.isArray($sessionStore.documents) ? $sessionStore.documents : [];
+    $: sessionId = $sessionStore.sessionId;
+    $: sessionName = $sessionStore.sessionName;
 
-    let messages = initialMessages || [];  // Ensure messages is always an array
     let currentStatusMessage = null;
-    let documents = Array.isArray(initialDocuments) ? initialDocuments : [];
     let selectedDocuments = null;
     let currentMessage = null;
     let citationText = '';
@@ -36,13 +35,14 @@
 
     function handleNewDocuments(event) {
         const newDocs = Array.isArray(event.detail) ? event.detail : [];
-        documents = [...documents, ...newDocs];
-        // Sort documents by publication date (newest first)
-        documents = documents.sort((a, b) => {
-            const dateA = new Date(a.published);
-            const dateB = new Date(b.published);
-            return dateB - dateA;
-        });
+        sessionStore.update(store => ({
+            ...store,
+            documents: [...store.documents, ...newDocs].sort((a, b) => {
+                const dateA = new Date(a.published);
+                const dateB = new Date(b.published);
+                return dateB - dateA;
+            })
+        }));
     }
 
     function handleCitationClick(event) {
@@ -74,10 +74,13 @@
     function addStatusMessage(statusMessage) {
         currentStatusMessage = statusMessage;
     }
-
+  
     function addMessage(message) {
         console.debug('Adding message:', message);
-        messages = [...messages, message];
+        sessionStore.update(store => ({
+            ...store,
+            messages: [...store.messages, message]
+        }));
     }
 
     function updateCurrentMessage(message) {
@@ -344,7 +347,6 @@
             {isDocumentsPanelOpen ? 'lg:-translate-x-[calc(50%)] lg:w-1/2' : 'translate-x-0'}">
         <div class="order-2 lg:order-1 h-full flex flex-col transition-all duration-300 pt-4 sm:pt-8 md:pt-5">
             <Chat 
-                {messages} 
                 {currentMessage} 
                 {currentStatusMessage} 
                 {autoScroll}
@@ -367,7 +369,6 @@
             {isDocumentsPanelOpen ? 'translate-x-0' : 'translate-x-full'}">
             <div class="h-full">
                 <Documents 
-                    {documents}
                     {selectedDocuments}
                     {citationText}
                     {citationWords}

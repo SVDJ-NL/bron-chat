@@ -15,7 +15,7 @@ class LiteLLMService(BaseLLMService):
     def __init__(self):
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
         
-    def chat_stream(self, messages: list, documents: list) -> Generator:
+    def chat_stream(self, messages: list[ChatMessage], documents: list) -> Generator:
         logger.info("Starting chat stream...")
         os.environ["COHERE_API_KEY"] = settings.COHERE_API_KEY
         
@@ -84,8 +84,7 @@ class LiteLLMService(BaseLLMService):
         except APIError as e:
             logger.error(f'Embedding API error occurred: {e}')         
 
-    def create_chat_session_name(self, query: str):      
-        user_message = self.get_user_message(query)
+    def create_chat_session_name(self, user_message: ChatMessage):      
         system_message = self._get_chat_name_system_message()  
         messages = [system_message, user_message]
         response = None
@@ -95,7 +94,7 @@ class LiteLLMService(BaseLLMService):
                 model="cohere/command-r",
                 messages=[{
                     'role': message.role, 
-                    'content': message.content
+                    'content': message.formatted_content
                     } for message in messages
                 ],
             )
@@ -111,3 +110,7 @@ class LiteLLMService(BaseLLMService):
             return self._truncate_chat_name(name)
         else:
             return None
+        
+    def rewrite_query(self, query: str, messages: list[ChatMessage]) -> str:
+        logger.info("Rewriting query based on chat history...")
+        return query

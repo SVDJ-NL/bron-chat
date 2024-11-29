@@ -1,6 +1,10 @@
 <script>
     import { API_BASE_URL } from '$lib/config';
-    export let messages = [];
+    import { sessionStore } from '$lib/stores/sessionStore';
+    
+    // Remove the messages prop
+    // export let messages = [];
+    $: messages = $sessionStore.messages;
     export let currentMessage = null;
     export let currentStatusMessage = null;
     export let autoScroll = true; 
@@ -307,7 +311,6 @@
         });
     }
 </script>
-
 <style lang="postcss">
     :global(.citation-link) {
         @apply bg-gray-200 text-blue-900 px-0.5 py-0.5 -mx-0.5 inline rounded cursor-pointer transition-colors duration-200 whitespace-normal text-left relative;
@@ -559,3 +562,4 @@
         {/if}
     </div>
 </div>
+
