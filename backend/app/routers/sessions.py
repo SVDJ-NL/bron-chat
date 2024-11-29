@@ -39,9 +39,11 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     documents = []
     for message in session.messages:
         documents.extend(message.documents)
-    logger.info(f"Found {len(documents)} documents for session {session_id}")
+        
+    logger.debug(f"Found {len(documents)} documents in MySQL for session {session_id}")
+    
     qdrant_documents = qdrant_service.get_documents_by_ids(documents)    
-    logger.info(f"Found {len(qdrant_documents)} documents for session {session_id}")
+    logger.info(f"Found {len(qdrant_documents)} documents in Qdrant for session {session_id}")
     
     # TODO: Remove this once the frontend is updated to use the formatted_content
     for message in session.messages:

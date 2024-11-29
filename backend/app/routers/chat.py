@@ -127,30 +127,39 @@ async def event_generator(
         }) + "\n\n"
         await sleep(0)
         
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "assistant", 
-            "content": "Documenten gevonden."
-        }) + "\n\n"
-        await sleep(0)
+        relevant_docs_count = len(relevant_docs)
+        if relevant_docs_count > 0:
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": f"{relevant_docs} nieuwe documenten gevonden."
+            }) + "\n\n"
+            await sleep(0)            
         
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "assistant", 
-            "content": "Bron genereert nu een antwoord op uw vraag..."
-        }) + "\n\n"
-        await sleep(0)
-        
-        async for response in generate_full_response(
-            llm_service, 
-            session_service, 
-            session.messages, 
-            relevant_docs, 
-            is_initial_message, 
-            session.id, 
-            query
-        ):
-            yield 'data: ' + json.dumps(response) + "\n\n"
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": "Bron genereert nu een antwoord op uw vraag..."
+            }) + "\n\n"
+            await sleep(0)
+            
+            async for response in generate_full_response(
+                llm_service, 
+                session_service, 
+                session.messages, 
+                relevant_docs, 
+                is_initial_message, 
+                session.id, 
+                query
+            ):
+                yield 'data: ' + json.dumps(response) + "\n\n"
+                await sleep(0)
+        else:
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "assistant", 
+                "content": "Excuses, ik kon geen relevante documenten vinden om uw vraag te beantwoorden."
+            }) + "\n\n"
             await sleep(0)
  
     except Exception as e:

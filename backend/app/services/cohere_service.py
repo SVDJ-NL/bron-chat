@@ -1,7 +1,6 @@
 from ..config import settings
 from cohere import ClientV2 as CohereClient
 import logging
-from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage
 from .base_llm_service import BaseLLMService
 from typing import Generator
@@ -14,7 +13,7 @@ class CohereService(BaseLLMService):
         self.client = CohereClient(api_key=settings.COHERE_API_KEY)
         
     def chat_stream(self, messages: list, documents: list) -> Generator:
-        logger.info("Starting chat stream...")
+        logger.info(f"Starting chat stream with {len(messages)} messages and {len(documents)} documents...")
         try:
             return self.client.chat_stream(
                 model="command-r-plus",
@@ -33,7 +32,7 @@ class CohereService(BaseLLMService):
             raise
         
     def rerank_documents(self, query: str, documents: list):
-        logger.info("Reranking documents...")
+        logger.info(f"Reranking {len(documents)} documents...")
         return self.client.rerank(
             query=query,
             documents=documents,
@@ -43,6 +42,8 @@ class CohereService(BaseLLMService):
         )
 
     def generate_dense_embedding(self, query: str):
+        logger.info(f"Generating dense embedding for query: {query}")
+        
         if settings.EMBEDDING_QUANTIZATION == "float":
             return self.client.embed(
                 texts=[query], 
@@ -66,6 +67,7 @@ class CohereService(BaseLLMService):
             ).embeddings.float[0]
         
     def create_chat_session_name(self, query: str):      
+        logger.info(f"Creating chat session name for query: {query}")
         user_message = self.get_user_message(query)
         system_message = self._get_chat_name_system_message()  
         messages = [system_message, user_message]
