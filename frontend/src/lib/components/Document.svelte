@@ -36,9 +36,10 @@
     });
 
 
-    function highlightCitationWords(text, citationWords) {
+    function highlightCitationWords(text, citationWords) {        
         citationWords.forEach(word => {
-            const regex = new RegExp(word, 'gi');
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escapedWord, 'gi');
             text = text.replace(regex, match => `<mark>${match}</mark>`);
         });
         return text;
@@ -54,6 +55,33 @@
     }
 
     function updateContent() {
+
+        // Reset any previous extensions
+        marked.setOptions({
+            highlight: null,
+            pedantic: false,
+            gfm: true,
+            breaks: false,
+            sanitize: false,
+            smartypants: false,
+            xhtml: false
+        });
+
+        // Add extension to handle code blocks and spans
+        marked.use({
+            extensions: [{
+                name: 'code',
+                renderer(token) {
+                    return token.text;
+                }
+            }, {
+                name: 'codespan',
+                renderer(token) {
+                    return token.text;
+                }
+            }]
+        });
+
         let content = marked.parse(doc.data.content || '');
         content = highlightCitationWords(content, citationWords);
         parsedContent = DOMPurify.sanitize(content);
@@ -249,8 +277,8 @@
         <!-- Content will be inserted here by the updateContent function -->
     </div>
     
-    <div class="flex items-end mt-3 justify-between">
-        <div class="flex items-end mt-2">
+    <div class="flex items-end mt-2 justify-between">
+        <div class="flex items-end mt-1">
             {#if doc.id}
             <button 
                 class="text-sm text-blue-800 hover:text-blue-900 cursor-pointer transition-colors duration-200 {doc.feedback && doc.feedback.feedback_type === 'relevant' ? 'selected' : ''}"
