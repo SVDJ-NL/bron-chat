@@ -1,7 +1,7 @@
 from ..config import settings
 from cohere import ClientV2 as CohereClient
 import logging
-from ..schemas import ChatMessage
+from ..schemas import ChatMessage, MessageRole
 from .base_llm_service import BaseLLMService
 from typing import Generator
 # Set up logging
@@ -27,7 +27,7 @@ class CohereService(BaseLLMService):
         logger.info(f"Filtered to {len(filtered_messages)} valid non-status messages")
         
         try:
-            return self.client.chat_stream(
+            stream = self.client.chat_stream(
                 model="command-r-plus",
                 messages=[{
                     'role': message.role, 
@@ -36,6 +36,14 @@ class CohereService(BaseLLMService):
                 ],
                 documents=documents
             )
+            
+            for response in stream:
+                try:
+                    yield response
+                except GeneratorExit:
+                    logger.info("Chat stream generator closed by client")
+                    return
+                
         except GeneratorExit:
             logger.info("Chat stream generator closed")
             return
@@ -107,10 +115,9 @@ class CohereService(BaseLLMService):
     def rewrite_query_with_history(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")
 
-
         # Filter out system messages and get last few messages for context
         # Get up to last 6 messages, but works with fewer messages too
-        chat_history = [msg for msg in messages if msg.role != "system"][-6:]
+        chat_history = [msg for msg in messages if msg.role == MessageRole.USER][-6:]
         
         system_message = ChatMessage(
             role="system",
@@ -119,7 +126,7 @@ class CohereService(BaseLLMService):
         
         # Format chat history and new query
         history_context = "\n".join([
-            f"{msg.role}: {msg.formatted_content}" for msg in chat_history
+            f"{msg.role}: {msg.get_param('formatted_content')}" for msg in chat_history
         ])
         user_message = ChatMessage(
             role="user",
