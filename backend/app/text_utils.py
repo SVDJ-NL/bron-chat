@@ -55,6 +55,8 @@ def get_formatted_date_dutch(date):
     return date.strftime('%A, %d %B %Y')
 
 def to_markdown(text):
+    # Replace single line bullet points with properly formatted ones
+    text = re.sub(r':\s*-\s*', ':\n\n- ', text)
     return markdown.markdown(text)
 
 def format_content(content):
