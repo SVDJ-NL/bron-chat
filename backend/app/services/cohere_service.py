@@ -92,16 +92,17 @@ class CohereService(BaseLLMService):
         else:
             return None
 
-    def rewrite_query(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
+    def rewrite_query_with_history(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")
-        
+
+
         # Filter out system messages and get last few messages for context
         # Get up to last 6 messages, but works with fewer messages too
         chat_history = [msg for msg in messages if msg.role != "system"][-6:]
         
         system_message = ChatMessage(
             role="system",
-            content=self.QUERY_REWRITE_SYSTEM_MESSAGE
+            content=self.QUERY_REWRITE_SYSTEM_MESSAGE_WITH_HISTORY
         )
         
         # Format chat history and new query
@@ -111,12 +112,12 @@ class CohereService(BaseLLMService):
         user_message = ChatMessage(
             role="user",
             content=f"""Chat history:
-            {history_context}
-            
-            New query: {new_message.content}
-            
-            Rewrite this query to include relevant context from the chat history."""
-        )
+{history_context}
+
+New query: {new_message.content}
+
+Rewrite this query to include relevant context from the chat history."""
+            )
         
         try:
             response = self.client.chat(
@@ -136,3 +137,34 @@ class CohereService(BaseLLMService):
             logger.error(f"Error rewriting query: {e}")
             return new_message.content  # Fall back to original query if rewriting fails
 
+    def rewrite_query(self, new_message: ChatMessage) -> str:       
+        system_message = ChatMessage(
+            role="system",
+            content=self.QUERY_REWRITE_SYSTEM_MESSAGE
+        )
+    
+        user_message = ChatMessage(
+            role="user",
+            content=f"""                
+Query: {new_message.content}
+
+Rewrite this query to optimize the search."""
+        )
+        
+        try:
+            response = self.client.chat(
+                model="command-r",
+                messages=[{
+                    'role': msg.role,
+                    'content': msg.content
+                } for msg in [system_message, user_message]],
+                temperature=0.1
+            )
+            
+            rewritten_query = response.message.content[0].text
+            logger.info(f"Original query: {new_message.content}")
+            logger.info(f"Rewritten query: {rewritten_query}")
+            return rewritten_query
+        except Exception as e:
+            logger.error(f"Error rewriting query: {e}")
+            return new_message.content  # Fall back to original query if rewriting fails

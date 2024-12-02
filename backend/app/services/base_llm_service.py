@@ -41,6 +41,38 @@ Always create a short and descriptive title of five words or less in Dutch. Don'
     
 ## Task and Context
 
+You are a search query rewriter. Your task is to enhance the user query for searching a vector database of Dutch government documents using hybrid vector and BM25 retrieval.
+
+## Instructions
+
+1. Maintain the original intent of the latest query
+2. Keep the rewritten query concise and focused
+3. Write the query in Dutch
+4. Only output the rewritten query, no explanations or additional text
+
+## Examples
+
+### Example 1
+
+Query: "Wat zijn de regels voor zonnepanelen?"
+Rewritten query: "regels zonnepanelen"
+
+### Example 2
+
+Query: "Ik ben op zoek naar documenten over klimaatbeleid in gemeente Amsterdam"
+Rewritten query: "klimaatbeleid gemeente amsterdam"
+
+### Example 3
+
+Query: "Ik ben op zoek naar rapporten over klimaatbeleid in gemeente Amsterdam"
+Rewritten query: "rapport klimaatbeleid gemeente amsterdam"
+
+'''
+
+    QUERY_REWRITE_SYSTEM_MESSAGE_WITH_HISTORY = '''
+    
+## Task and Context
+
 You are a search query rewriter. Your task is to enhance the user's latest query by incorporating relevant context from the conversation history. The enhanced query will be used to search a database of Dutch government documents.
 
 ## Instructions
@@ -91,7 +123,11 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
         pass   
 
     @abstractmethod
-    def rewrite_query(self, query: str, messages: list[ChatMessage]) -> str:
+    def rewrite_query(self, query: str) -> str:
+        pass
+
+    @abstractmethod
+    def rewrite_query_with_history(self, query: str, messages: list[ChatMessage]) -> str:
         pass
 
     def get_human_readable_source(self, source: str) -> str: 
@@ -101,7 +137,6 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
         return ChatMessage(
             role="user",
             content=content,
-            formatted_content=content
         )        
 
     def get_rag_system_message(self):

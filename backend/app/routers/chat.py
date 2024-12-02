@@ -49,6 +49,9 @@ async def chat_endpoint(
         is_initial_message = True
         rag_system_message = llm_service.get_rag_system_message()
         user_message = llm_service.get_user_message(query)
+        rewritten_query = llm_service.rewrite_query(user_message)
+        user_message.formatted_content = rewritten_query
+                
         session = session_service.add_messages(
             session_id=session.id,
             messages=[rag_system_message, user_message]
@@ -57,7 +60,7 @@ async def chat_endpoint(
         is_initial_message = False
         # For follow-up messages, rewrite the query        
         user_message = llm_service.get_user_message(query)
-        rewritten_query = llm_service.rewrite_query(user_message, session.messages)
+        rewritten_query = llm_service.rewrite_query_with_history(user_message, session.messages)
         user_message.formatted_content = rewritten_query
         session = session_service.add_message(
             session_id=session.id, 
@@ -97,6 +100,13 @@ async def event_generator(
         }) + "\n\n"
         await sleep(0)
                         
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "assistant", 
+            "content": f"Zoekopdracht herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
+        }) + "\n\n"
+        await sleep(0)
+        
         yield 'data: ' + json.dumps({
             "type": "status", 
             "role": "assistant", 
