@@ -76,7 +76,7 @@
         // Use a regex to find and replace spans with citation links
         const citationRegex = /<span class="citation-link" data-document-ids="([^"]+)">(.*?)<\/span>/g;
         const formattedText = text_formatted.replace(citationRegex, (match, documentIds, citationText) => {
-            let formattedCitationText = citationText.replace(/['"''""]/g, '').replace(/[()]/g, '').replace(/\.$/, '')
+            let formattedCitationText = citationText.trim().replace(/[^a-zA-Z0-9\s-$%]/g, '').replace(/\s*[.,]\s*/g, ' ').trim()
             return `<a class="citation-link" onclick="handleCitationClick(event, ${documentIds}, '${formattedCitationText}')">${citationText}</a>`;
         });
 
