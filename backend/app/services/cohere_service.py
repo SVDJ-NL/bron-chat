@@ -1,7 +1,7 @@
 from ..config import settings
 from cohere import ClientV2 as CohereClient
 import logging
-from ..schemas import ChatMessage, MessageRole
+from ..schemas import ChatMessage, MessageRole, MessageType
 from .base_llm_service import BaseLLMService
 from typing import Generator
 # Set up logging
@@ -18,32 +18,24 @@ class CohereService(BaseLLMService):
         # Filter out status messages and validate message content
         filtered_messages = []
         for msg in messages:
-            if msg.message_type != "status":
-                # Ensure message has valid content
-                content = msg.get_param("formatted_content")
-                if content and content.strip():  # Check if content exists and is not just whitespace
-                    filtered_messages.append(msg)
+            if msg.message_type == MessageType.USER_MESSAGE:
+                msg.content = msg.get_param("formatted_content")
+                filtered_messages.append(msg)
+            elif msg.message_type == MessageType.SYSTEM_MESSAGE:
+                filtered_messages.append(msg)
         
         logger.info(f"Filtered to {len(filtered_messages)} valid non-status messages")
         
         try:
-            stream = self.client.chat_stream(
+            return self.client.chat_stream(
                 model="command-r-plus",
                 messages=[{
                     'role': message.role, 
-                    'content': message.get_param("formatted_content")
+                    'content': message.content
                     } for message in filtered_messages
                 ],
                 documents=documents
             )
-            
-            for response in stream:
-                try:
-                    yield response
-                except GeneratorExit:
-                    logger.info("Chat stream generator closed by client")
-                    return
-                
         except GeneratorExit:
             logger.info("Chat stream generator closed")
             return

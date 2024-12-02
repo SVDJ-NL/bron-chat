@@ -386,50 +386,43 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
     try:
         for event in llm_service.chat_stream(messages, formatted_docs):
             if event:
-                try:
-                    if hasattr(event, 'type'):
-                        if event.type == "content-delta":
-                            if hasattr(event, 'delta') and hasattr(event.delta, 'message') and hasattr(event.delta.message, 'content'):
-                                yield {
-                                    "type": "text",
-                                    "content": event.delta.message.content.text
-                                }
-                        elif event.type == 'citation-start':       
-                            if first_citation:
-                                yield {
-                                    "type": "status",
-                                    "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
-                                }
-                                first_citation = False
-                            
-                            if (hasattr(event, 'delta') and 
-                                hasattr(event.delta, 'message') and 
-                                hasattr(event.delta.message, 'citations')):
-                                
-                                document_ids = []
-                                if hasattr(event.delta.message.citations, 'sources') and event.delta.message.citations.sources:
-                                    document_ids = [source.document.get('id') for source in event.delta.message.citations.sources if hasattr(source, 'document')]
-                                
-                                current_citation = {
-                                    'start': event.delta.message.citations.start,
-                                    'end': event.delta.message.citations.end,
-                                    'text': event.delta.message.citations.text,
-                                    'document_ids': document_ids
-                                }
+                if hasattr(event, 'type'):
+                    if event.type == "content-delta":
+                        if hasattr(event, 'delta') and hasattr(event.delta, 'message') and hasattr(event.delta.message, 'content'):
+                            yield {
+                                "type": "text",
+                                "content": event.delta.message.content.text
+                            }
+                    elif event.type == 'citation-start':       
+                        if first_citation:
+                            yield {
+                                "type": "status",
+                                "content": "De bronnen om deze tekst te onderbouwen worden er nu bij gezocht."
+                            }
+                            first_citation = False
                         
-                        elif event.type == 'citation-end':
-                            if current_citation:
-                                yield {
-                                    "type": "citation",
-                                    "content": current_citation
-                                }
-                                current_citation = None                    
-                except GeneratorExit:
-                    logger.info("Client closed connection")
-                    return
-                except Exception as e:
-                    logger.error(f"Error processing event: {e}")
-                    raise
+                        if (hasattr(event, 'delta') and 
+                            hasattr(event.delta, 'message') and 
+                            hasattr(event.delta.message, 'citations')):
+                            
+                            document_ids = []
+                            if hasattr(event.delta.message.citations, 'sources') and event.delta.message.citations.sources:
+                                document_ids = [source.document.get('id') for source in event.delta.message.citations.sources if hasattr(source, 'document')]
+                            
+                            current_citation = {
+                                'start': event.delta.message.citations.start,
+                                'end': event.delta.message.citations.end,
+                                'text': event.delta.message.citations.text,
+                                'document_ids': document_ids
+                            }
+                    
+                    elif event.type == 'citation-end':
+                        if current_citation:
+                            yield {
+                                "type": "citation",
+                                "content": current_citation
+                            }
+                            current_citation = None                    
     except GeneratorExit:
         logger.info("Generator closed by client")
         return
