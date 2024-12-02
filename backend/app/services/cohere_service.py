@@ -68,20 +68,29 @@ class CohereService(BaseLLMService):
         
     def create_chat_session_name(self, user_message: ChatMessage):      
         logger.info(f"Creating chat session name for query: {user_message.content}, using rewritten query: {user_message.formatted_content}")
+        
         system_message = self._get_chat_name_system_message()  
         messages = [system_message, user_message]
         
-        response = self.client.chat(
-            model="command-r",
-            messages=[{
-                'role': message.role, 
-                'content': message.formatted_content
-                } for message in messages
-            ],
-        )
+        response = None
         
-        name = response.message.content[0].text
-        return self._truncate_chat_name(name)
+        try:
+            response = self.client.chat(
+                model="command-r",
+                messages=[{
+                    'role': message.role, 
+                    'content': message.get_param("formatted_content")
+                    } for message in messages
+                ],
+            )
+        except Exception as e:
+            logger.error(f"Error creating chat session name: {e}")
+        
+        if response:
+            name = response.message.content[0].text
+            return self._truncate_chat_name(name)
+        else:
+            return None
 
     def rewrite_query(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")

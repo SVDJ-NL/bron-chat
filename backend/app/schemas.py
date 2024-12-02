@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from datetime import datetime
 from enum import Enum
 
@@ -107,6 +107,30 @@ class ChatMessage(BaseModel):
     formatted_content: Optional[str] = None
     feedback: Optional[MessageFeedback] = None
     documents: Optional[List[ChatDocument]] = []
+
+    def get_param(self, param_name: str) -> Any:
+        """
+        Dynamically get the value of a parameter by its name.
+
+        Args:
+            param_name (str): The name of the parameter to retrieve.
+
+        Returns:
+            Any: The value of the parameter.
+
+        Raises:
+            ValueError: If the parameter does not exist in the model.
+        """
+        if param_name in self.model_fields:
+            if param_name == "formatted_content":
+                if self.formatted_content is not None and self.formatted_content != "":
+                    return self.formatted_content
+                else:
+                    return self.content
+            else:
+                return getattr(self, param_name)
+        else:
+            raise ValueError(f"Parameter '{param_name}' does not exist in the model.")
      
         
 class ChatRequest(BaseModel):

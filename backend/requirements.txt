@@ -16,6 +16,7 @@ pydantic-settings
 sentry-sdk[fastapi]
 arize-phoenix
 litellm
+#git+https://github.com/BerriAI/litellm.git@litellm_dev_11_30_2024#egg=litellm
 openinference-semantic-conventions
 openinference-instrumentation-litellm
 arize-phoenix-otel
