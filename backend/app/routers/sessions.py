@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..schemas import Session, SessionUpdate, SessionCreate, ChatRequest
+from ..schemas import SessionCreate, MessageType, MessageRole
 from ..services.session_service import SessionService
 from ..database import get_db
 from ..services.qdrant_service import QdrantService
@@ -46,12 +46,12 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     logger.info(f"Found {len(qdrant_documents)} documents in Qdrant for session {session_id}")
         
     # Remove system messages from the session
-    session.messages = [msg for msg in session.messages if msg.role != "system"]
+    session.messages = [msg for msg in session.messages if msg.message_type != MessageType.SYSTEM_MESSAGE]
     
     # TODO: Remove this once the frontend is updated to use the formatted_content
     for message in session.messages:
-        if message.formatted_content:
-            message.content = message.formatted_content
+        if message.role == MessageRole.ASSISTANT:
+            message.content = message.get_param("formatted_content")
                      
     response = {
         "id": session.id,

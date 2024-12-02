@@ -9,6 +9,16 @@ class FeedbackType(str, Enum):
     RELEVANT = "relevant"
     IRRELEVANT = "irrelevant"
 
+class MessageType(str, Enum):
+    SYSTEM_MESSAGE = "system_message"
+    USER_MESSAGE = "user_message"
+    ASSISTANT_MESSAGE = "assistant_message"
+    STATUS = "status"
+    
+class MessageRole(str, Enum):
+    SYSTEM = "system"
+    USER = "user"
+    ASSISTANT = "assistant"
 
 class DocumentFeedbackBase(BaseModel):
     document_id: int
@@ -102,7 +112,9 @@ class MessageFeedbackUpdate(MessageFeedbackBase):
        
 class ChatMessage(BaseModel):
     id: Optional[int] = None
-    role: str
+    role: MessageRole
+    message_type: Optional[MessageType] = None
+    sequence: Optional[int] = 0
     content: str
     formatted_content: Optional[str] = None
     feedback: Optional[MessageFeedback] = None

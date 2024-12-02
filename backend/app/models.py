@@ -57,6 +57,7 @@ class Message(Base):
     role = Column(String(50))
     content = Column(Text)
     formatted_content = Column(Text, nullable=True)
+    message_type = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     session = relationship("Session", back_populates="messages")

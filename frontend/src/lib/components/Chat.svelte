@@ -28,15 +28,23 @@
         streamedContent = currentMessage.content;
     }
 
-    $: if (currentStatusMessage && currentStatusMessage.content !== streamedStatusContent) {
+    $: if (currentStatusMessage) {
+        console.log('currentStatusMessage', currentStatusMessage);
         streamedStatusContent = currentStatusMessage.content;
     }
+
+    // Add a new reactive statement to track loading state
+    $: isStatusLoading = currentStatusMessage && currentStatusMessage.content !== streamedStatusContent;
 
     function handleSubmit(event) {
         dispatch('newMessage', {
             role: 'user',
             content: event.detail.query
         });
+    }
+
+    function formatStatusMessage(content) {
+        return content.replace(/\n/g, '<br>');
     }
 
     function handleStop() {
@@ -310,6 +318,19 @@
             maxWidth: 'calc(100vw - 2rem)'
         });
     }
+
+    // Add these new state variables at the top of the script
+    let expandedStatusMessages = new Set();
+
+    // Add this new function
+    function toggleStatusMessage(messageId) {
+        if (expandedStatusMessages.has(messageId)) {
+            expandedStatusMessages.delete(messageId);
+        } else {
+            expandedStatusMessages.add(messageId);
+        }
+        expandedStatusMessages = expandedStatusMessages; // trigger reactivity
+    }
 </script>
 <style lang="postcss">
     :global(.citation-link) {
@@ -373,24 +394,20 @@
     }
 
     :global(.message-content code) {
-        @apply bg-gray-100 rounded px-1 py-0.5 font-mono text-sm;
+        @apply rounded px-1 py-0.5 font-mono text-sm;
     }
 
     :global(.message-content pre) {
-        @apply bg-gray-100 rounded p-4 overflow-x-auto mb-4;
+        @apply rounded p-4 overflow-x-auto mb-4;
     }
 
     :global(.message-content pre code) {
         @apply bg-transparent p-0;
     }
 
-    :global(.message-content.status),
-    :global(.message-content.current-message) {
-        @apply bg-gray-100 text-gray-600 border border-gray-300;
-    }
-
     :global(.message-content.status p) {
-        @apply mb-1 mb-0;
+        @apply mb-1;
+        transition: all 200ms ease-in-out;
     }
 
     :global(.message-content.status p:last-child) {
@@ -415,17 +432,41 @@
         max-width: calc(100vw - 2rem);
     }
 
+
 </style>
 
 <div class="flex flex-col h-full transition-all duration-300 ease-in-out">
     <div class="flex flex-col h-full">
         {#if messages && messages.length > 0}
             <div bind:this={chatContainer} class="flex-1 overflow-y-auto p-4 space-y-4">
-                {#each messages.filter(message => message.role !== 'system') as message}
+
+                {#each messages as message}
                     <div class="flex {message.role === 'user' ? 'justify-end' : 'justify-start'}">
-                        <div class="message-content p-3 rounded-lg relative {message.role === 'user' ? 'bg-blue-500 text-white' : message.type === 'status' ? 'status' : 'bg-gray-200 text-gray-800'}">
+                        <div class="message-content p-3 rounded-lg relative {message.role === 'user' ? 'bg-blue-500 text-white' : ''} {message.role === 'system' ? 'transition-all duration-200 ease-in-out cursor-pointer w-full bg-gray-200 text-gray-600 hover:bg-gray-200' : ''}  {message.role === 'assistant' ? 'bg-gray-200 text-gray-800' : ''} ">
                             {#if message.role === 'user'}
                                 <p>{message.content}</p>
+                            {:else if message.role === 'system'}
+                                <div 
+                                    class="cursor-pointer flex items-start"
+                                    on:click={() => toggleStatusMessage(message.id)}
+                                >
+                                    <svg 
+                                        xmlns="http://www.w3.org/2000/svg" 
+                                        class="h-5 w-5 transition-transform duration-200 mr-1 mt-1"
+                                        viewBox="0 0 20 20" 
+                                        fill="currentColor"
+                                        class:-rotate-90={!expandedStatusMessages.has(message.id)}
+                                    >
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                    <div class="w-full">
+                                        {#if expandedStatusMessages.has(message.id)}
+                                            <p>{@html formatStatusMessage(message.content)}</p>
+                                        {:else}
+                                            <p>{@html formatStatusMessage(message.content.split('\n').pop())}</p>
+                                        {/if}
+                                    </div>
+                                </div>
                             {:else if message.role === 'assistant'}
                                 {@html insertClickableCitations(message.content, message.type)}
                                         
@@ -543,9 +584,17 @@
                 
                 {#if currentStatusMessage }
                     <div class="flex justify-start">
-                        <div class="message-content p-3 rounded-lg status">
+                        <div class="message-content p-3 rounded-lg status bg-gray-200 text-gray-800">
                             <div class="flex items-start">
-                                {@html (streamedStatusContent)}
+                                <svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    class="h-5 w-5 transition-transform duration-200 mr-1 mt-1 -rotate-90"
+                                    viewBox="0 0 20 20" 
+                                    fill="currentColor"
+                                >
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                {@html (streamedStatusContent)}...
                             </div>
                         </div>
                     </div>

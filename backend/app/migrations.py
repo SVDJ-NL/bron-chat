@@ -37,6 +37,23 @@ def migrate_up():
         Base.metadata.create_all(bind=engine)
         db.commit()
         logger.info("Created new tables")
+                # Add message_type column if it doesn't exist
+        result = db.execute(text("""
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_name = 'messages' 
+            AND column_name = 'message_type'
+            AND table_schema = DATABASE()
+        """))
+        
+        if result.scalar() == 0:
+            db.execute(text("""
+                ALTER TABLE messages 
+                ADD COLUMN message_type VARCHAR(50) NULL
+            """))
+            db.commit()
+            logger.info("Added message_type column to messages table")
+        
         
         # Get all existing sessions with filter conditions
         result = db.execute(text("""
@@ -226,6 +243,20 @@ def migrate_up():
 def migrate_down():
     db = SessionLocal()
     try:
+        # Remove message_type column if it exists
+        result = db.execute(text("""
+            SELECT COUNT(*) 
+            FROM information_schema.columns 
+            WHERE table_name = 'messages' 
+            AND column_name = 'message_type'
+            AND table_schema = DATABASE()
+        """))
+        
+        if result.scalar() > 0:
+            db.execute(text("ALTER TABLE messages DROP COLUMN message_type"))
+            db.commit()
+            logger.info("Removed message_type column from messages table")
+            
         # Check if rollback is needed
         result = db.execute(text("""
             SELECT EXISTS (

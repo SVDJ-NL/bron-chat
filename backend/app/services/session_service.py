@@ -86,6 +86,17 @@ class SessionService(DatabaseService):
         self.db.refresh(db_session, ['messages'])        
   
         return self._session_db_model_to_schema(db_session)
+    
+    def add_and_get_message(self, session_id: int, message: ChatMessage) -> Session:     
+        db_session = self._get_session(session_id)
+        db_message = self._message_schema_to_db_model(message, len(db_session.messages))
+        db_session.messages.append(db_message)
+
+        self.db.commit()
+        self.db.refresh(db_session, ['messages'])    
+        
+        logger.info(f"Added message with id: {db_message.id}")
+        return self._message_db_model_to_schema(db_message)
 
     def add_messages(self, session_id: int, messages: List[ChatMessage]) -> Session:
         db_session = self._get_session(session_id)
@@ -95,6 +106,22 @@ class SessionService(DatabaseService):
         self.db.refresh(db_session, ['messages'])
         return self._session_db_model_to_schema(db_session)
 
+    def update_message(self, message: ChatMessage) -> ChatMessage:
+        logger.info(f"Updating message with id: {message.id} and content: {message.content}")
+        db_message = self.db.query(Message)\
+            .filter(Message.id == message.id)\
+            .first()
+                        
+        if db_message is None:
+            raise HTTPException(status_code=404, detail="Message not found")
+        
+        db_message.content = message.content
+        db_message.formatted_content = message.formatted_content        
+        
+        self.db.commit()
+        self.db.refresh(db_message)
+        return self._message_db_model_to_schema(db_message)
+    
     def _get_session(self, session_id: str) -> SessionModel:
         db_session = self.db.query(SessionModel)\
             .options(joinedload(SessionModel.messages))\
@@ -176,6 +203,8 @@ class SessionService(DatabaseService):
         return ChatMessage(
             id=db_message.id,
             role=db_message.role,
+            message_type=db_message.message_type,
+            sequence=db_message.sequence,
             content=db_message.content,
             formatted_content=db_message.formatted_content,
             feedback=self._message_feedback_db_model_to_schema(db_message.feedback),
@@ -206,11 +235,11 @@ class SessionService(DatabaseService):
         return Message(
             sequence=sequence,
             role=message.role,
+            message_type=message.message_type,
             content=message.content,
             formatted_content=message.formatted_content,
-            documents=self._documents_schema_to_db_model(message.documents)
+            documents=self._documents_schema_to_db_model(message.documents),
         )
-
 
     def _document_schema_to_db_model(self, document: ChatDocument) -> Document:
         if document is None:

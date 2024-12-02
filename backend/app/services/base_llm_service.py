@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Generator
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
-from ..schemas import ChatMessage
+from ..schemas import ChatMessage, MessageRole, MessageType
 
 class BaseLLMService(ABC):    
     RAG_SYSTEM_MESSAGE='''
@@ -49,6 +49,7 @@ You are a search query rewriter. Your task is to enhance the user query for sear
 2. Keep the rewritten query concise and focused
 3. Write the query in Dutch
 4. Only output the rewritten query, no explanations or additional text
+5. Keep any text formatting instructions from the original query
 
 ## Examples
 
@@ -80,10 +81,12 @@ You are a search query rewriter. Your task is to enhance the user's latest query
 1. Analyze the conversation history to understand the full context
 2. Focus on the user's latest query
 3. Add essential context from previous messages that could improve search results
-4. Maintain the original intent of the latest query
-5. Keep the rewritten query concise and focused
-6. Write the query in Dutch
-7. Only output the rewritten query, no explanations or additional text
+4. Focus on local context, such as municipalities, provinces, ministries, etc. and time context, such as years
+5. Maintain the original intent of the latest query
+6. Keep the rewritten query concise and focused
+7. Write the query in Dutch
+8. Only output the rewritten query, no explanations or additional text
+9. Keep any text formatting instructions from the original query
 
 ## Example
 
@@ -135,7 +138,8 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
 
     def get_user_message(self, content: str):
         return ChatMessage(
-            role="user",
+            role=MessageRole.USER,
+            message_type=MessageType.USER_MESSAGE,
             content=content,
         )        
 
@@ -143,19 +147,22 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
         formatted_date = get_formatted_current_date_english()                
         formatted_year = get_formatted_current_year()
         return ChatMessage(
-            role="system", 
+            role=MessageRole.SYSTEM, 
+            message_type=MessageType.SYSTEM_MESSAGE,
             content=self.RAG_SYSTEM_MESSAGE.format(date=formatted_date, year=formatted_year) 
         )
         
     def _get_chat_name_system_message(self):
         return ChatMessage(
-            role="system", 
+            role=MessageRole.SYSTEM, 
+            message_type=MessageType.SYSTEM_MESSAGE,
             content=self.CHAT_NAME_SYSTEM_MESSAGE
         )
             
     def _get_chat_name_system_message(self):
         return ChatMessage(
-            role="system", 
+            role=MessageRole.SYSTEM, 
+            message_type=MessageType.SYSTEM_MESSAGE,
             content=self.CHAT_NAME_SYSTEM_MESSAGE
         )
 

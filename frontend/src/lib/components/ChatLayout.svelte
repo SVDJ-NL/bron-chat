@@ -71,7 +71,7 @@
         }
     }
 
-    function addStatusMessage(statusMessage) {
+    function handleCurrentStatusMessage(statusMessage) {
         currentStatusMessage = statusMessage;
     }
   
@@ -87,10 +87,6 @@
         currentMessage = message;
     }
     
-    function updateCurrentStatusMessage(statusMessage) {
-        currentStatusMessage = statusMessage + '\n';
-    }
-
     function setSessionId(id) {
         sessionId = id;
         console.debug('Session ID set to:', sessionId);
@@ -195,10 +191,10 @@
                 setSessionId(data.session_id);
                 break;
             case 'status':
-                addStatusMessage({
+                handleCurrentStatusMessage({
                     role: data.role,
                     content: data.content,
-                    type: 'status'
+                    type: data.type
                 });
                 break;
             case 'documents':
@@ -226,29 +222,56 @@
                 };
                 break;
             case 'full':
-                // Get last message from session
-                const lastMessage = data.session?.messages?.length > 0 ? 
-                    data.session.messages[data.session.messages.length - 1] : 
-                    null;
+                if( data.session?.messages?.length === 0 ) {
+                    break;
+                }
 
-                if (lastMessage) {                
+              
+
+                const statusMessages = data.session.messages
+                    .filter(msg => msg.role === 'system' && msg.message_type === 'status')
+                    .sort((a, b) => b.sequence - a.sequence);
+                
+                if (statusMessages.length > 0) {
+                    const latestStatus = statusMessages[0];
                     addMessage({
-                        id: lastMessage.id,
-                        role: lastMessage.role,
-                        content: lastMessage.formatted_content,
-                        content_original: lastMessage.content,
-                        feedback: lastMessage.feedback
+                        id: latestStatus.id,
+                        role: latestStatus.role,
+                        type: latestStatus.message_type,
+                        sequence: latestStatus.sequence,
+                        content: latestStatus.content,
+                    });
+                }
+                
+                const userMessages = data.session.messages
+                    .filter(msg => msg.role === 'assistant' && msg.message_type === 'assistant_message')
+                    .sort((a, b) => b.sequence - a.sequence);
+                
+                if (userMessages.length > 0) {
+                    const lastUserMessage = userMessages[0];
+                    addMessage({
+                        id: lastUserMessage.id,
+                        role: lastUserMessage.role,
+                        type: lastUserMessage.message_type,
+                        sequence: lastUserMessage.sequence,
+                        content: lastUserMessage.formatted_content,
+                        content_original: lastUserMessage.content,
+                        feedback: lastUserMessage.feedback
                     });
                 }
                 
                 currentMessage = null;
+                currentStatusMessage = null;
                 streamedContent = '';
                 isLoading = false;
 
                 const session = data.session;
                 if (session) {
-                    sessionName = session.name;
-                    updateDocumentsFromFullSession(session.messages)
+                    sessionStore.update(store => ({
+                        ...store,
+                        sessionName: session.name
+                    }));
+                    updateDocumentsFromFullSession(session.messages);
                 } else {
                     console.error('Received full_session event but no session data:', data);
                 }
@@ -261,8 +284,9 @@
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
-                addStatusMessage({ 
-                    role: 'assistant', 
+                handleCurrentStatusMessage({ 
+                    role: 'system',
+                    message_type: 'status',
                     content: `Er ging iets mis bij het versturen van je vraag. Probeer het opnieuw.` 
                 });
                 isLoading = false;

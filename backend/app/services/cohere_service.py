@@ -14,13 +14,18 @@ class CohereService(BaseLLMService):
         
     def chat_stream(self, messages: list[ChatMessage], documents: list) -> Generator:
         logger.info(f"Starting chat stream with {len(messages)} messages and {len(documents)} documents...")
+        
+        # Filter out status messages
+        filtered_messages = [msg for msg in messages if msg.message_type != "status"]
+        logger.info(f"Filtered to {len(filtered_messages)} non-status messages")
+        
         try:
             return self.client.chat_stream(
                 model="command-r-plus",
                 messages=[{
                     'role': message.role, 
                     'content': message.formatted_content
-                    } for message in messages
+                    } for message in filtered_messages
                 ],
                 documents=documents
             )

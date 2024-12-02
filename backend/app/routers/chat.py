@@ -9,10 +9,11 @@ from ..services.cohere_service import CohereService
 from ..services.base_llm_service import BaseLLMService
 from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
-from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session
+from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session, MessageRole, MessageType
 from ..config import settings
 from typing import List, Dict, AsyncGenerator
 from ..text_utils import get_formatted_date_english, format_text
+import time
 
 router = APIRouter()
 
@@ -33,6 +34,9 @@ async def chat_endpoint(
     session_id: str = Query(None, description="The session ID"),
     db: Session = Depends(get_db)
 ):
+    # Start timer for request duration tracking
+    start_time = time.time()
+    
     llm_service = None
     if settings.LLM_SERVICE.lower() == "litellm":
         llm_service = LiteLLMService()
@@ -64,12 +68,17 @@ async def chat_endpoint(
         user_message.formatted_content = rewritten_query
         session = session_service.add_message(
             session_id=session.id, 
-            message=user_message
+            message=ChatMessage(
+                role=MessageRole.USER,
+                message_type=MessageType.USER_MESSAGE,
+                content=user_message.content,
+                formatted_content=rewritten_query
+            )
         )
         logger.info(f"Using existing session: {session.id}")
     
     return StreamingResponse(
-        event_generator(session, user_message, is_initial_message, session_service, llm_service, qdrant_service),
+        event_generator(session, user_message, is_initial_message, start_time, session_service, llm_service, qdrant_service),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -82,35 +91,48 @@ async def event_generator(
     session : Session, 
     user_message : ChatMessage, 
     is_initial_message : bool,
+    start_time : float,
     session_service : SessionService, 
     llm_service : BaseLLMService, 
     qdrant_service : QdrantService
 ):    
     try:
+        # Initialize status message content
+        status_content = []
+        
         yield 'data: ' + json.dumps({
             "type": "session",
             "session_id": session.id
         }) + "\n\n"
         await sleep(0)
         
+        # First status message
+        status_msg = "Uw verzoek wordt nu verwerkt"
+        status_content.append(status_msg)
         yield 'data: ' + json.dumps({
             "type": "status", 
-            "role": "assistant", 
-            "content": "Uw verzoek wordt nu verwerkt..."
+            "role": "system", 
+            "content": status_msg
         }) + "\n\n"
         await sleep(0)
                         
+        # Second status message
+        status_msg = f"Zoekopdracht herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
+        status_content.append(status_msg)
         yield 'data: ' + json.dumps({
             "type": "status", 
-            "role": "assistant", 
-            "content": f"Zoekopdracht herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
+            "role": "system", 
+            "content": status_msg
         }) + "\n\n"
         await sleep(0)
         
+        # Third status message
+        status_msg = "Documenten worden gezocht"
+        status_content.append(status_msg)
         yield 'data: ' + json.dumps({
             "type": "status", 
-            "role": "assistant", 
-            "content": "Documenten worden gezocht..."
+            "role": "system", 
+            "content": status_msg
         }) + "\n\n"
         await sleep(0)
         
@@ -135,26 +157,40 @@ async def event_generator(
                                 
         yield 'data: ' + json.dumps({
             "type": "documents",
-            "role": "assistant",
+            "role": "system",
             "documents": reordered_relevant_docs
         }) + "\n\n"
         await sleep(0)
         
         relevant_docs_count = len(relevant_docs)
         if relevant_docs_count > 0:
+            status_msg = f"{relevant_docs_count} nieuwe documenten gevonden"
+            status_content.append(status_msg)
             yield 'data: ' + json.dumps({
                 "type": "status", 
-                "role": "assistant", 
-                "content": f"{relevant_docs} nieuwe documenten gevonden."
+                "role": "system", 
+                "content": status_msg
             }) + "\n\n"
             await sleep(0)            
         
+            status_msg = "Bron genereert nu een antwoord op uw vraag"
+            status_content.append(status_msg)
             yield 'data: ' + json.dumps({
                 "type": "status", 
-                "role": "assistant", 
-                "content": "Bron genereert nu een antwoord op uw vraag..."
+                "role": "system", 
+                "content": status_msg
             }) + "\n\n"
             await sleep(0)
+            
+            # Save the status messages to the database
+            status_message = session_service.add_and_get_message(
+                session_id=session.id,
+                message=ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content="\n".join(status_content),
+                    message_type=MessageType.STATUS
+                )
+            )
             
             async for response in generate_full_response(
                 llm_service, 
@@ -163,17 +199,31 @@ async def event_generator(
                 relevant_docs, 
                 is_initial_message, 
                 session.id, 
-                user_message
+                user_message,
+                status_message,
+                start_time
             ):
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
         else:
+            status_msg = "Excuses, ik kon geen relevante documenten vinden om uw vraag te beantwoorden."
+            status_content.append(status_msg)
             yield 'data: ' + json.dumps({
                 "type": "status", 
-                "role": "assistant", 
-                "content": "Excuses, ik kon geen relevante documenten vinden om uw vraag te beantwoorden."
+                "role": "system", 
+                "content": status_msg
             }) + "\n\n"
             await sleep(0)
+            
+            # Save the status messages to the database
+            status_message = session_service.add_message(
+                session_id=session.id,
+                message=ChatMessage(
+                    role=MessageRole.SYSTEM,
+                    content="\n".join(status_content),
+                    message_type=MessageType.STATUS
+                )
+            )
  
     except Exception as e:
         logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
@@ -192,7 +242,9 @@ async def generate_full_response(
     relevant_docs: List[Dict], 
     is_initial_message: bool, 
     session_id: str, 
-    user_message: ChatMessage
+    user_message: ChatMessage,
+    status_message: ChatMessage,
+    start_time: float
 ):
     logger.debug(f"Generating full response for query: {user_message.content}, rewritten query: {user_message.formatted_content}")
     full_text = ""
@@ -226,17 +278,21 @@ async def generate_full_response(
             }
     
     if not full_text:
+        status_msg = "\nExcuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden."
+        status_message.content += status_msg
+        session_service.update_message(
+            session_id=session_id,
+            message=status_message
+        )
         yield {
             "type": "status",
-            "role": "assistant",
-            "content": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
-            "content_original": "Excuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden.",
-            "citations": []
+            "role": "system",
+            "content": status_msg
         }    
     else:
         if is_initial_message:
             try:
-                chat_name = llm_service.create_chat_session_name(user_message)
+                chat_name = llm_service.create_chat_session_name(user_message)     
                 session_service.update_session_name(session_id=session_id, name=chat_name)
             except Exception as e:
                 logger.error(f"Error creating session name: {e}", exc_info=True)
@@ -245,7 +301,8 @@ async def generate_full_response(
             session_service.add_message(
                 session_id=session_id,
                 message=ChatMessage(                                
-                    role="assistant",
+                    role=MessageRole.ASSISTANT,
+                    message_type=MessageType.ASSISTANT_MESSAGE,
                     content=full_text,
                     formatted_content=text_formatted,                                    
                     documents = [
@@ -262,12 +319,22 @@ async def generate_full_response(
             )
         except Exception as e:
             logger.error(f"Error updating session: {e}", exc_info=True)
-            
+                  
+        status_msg = f"\nAntwoord gegenereerd in {time.time() - start_time:.2f} seconden"
+        status_message.content += status_msg
+        session_service.update_message(message=status_message)
+        
+        yield {
+            "type": "status",
+            "role": "system",
+            "content": status_msg
+        } 
+        
         text_formatted = format_text(full_text, citations)    
         session = session_service.get_session_with_relations(session_id)    
         # Remove system messages from the session
-        session.messages = [msg for msg in session.messages if msg.role != "system"]              
-        
+        session.messages = [msg for msg in session.messages if msg.message_type != MessageType.SYSTEM_MESSAGE]              
+                         
         yield {
             "type": "full",
             "session": session.model_dump()
