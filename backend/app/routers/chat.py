@@ -45,7 +45,38 @@ async def chat_endpoint(
         
     qdrant_service = QdrantService(llm_service)    
     session_service = SessionService(db)
-            
+        
+    return StreamingResponse(
+        event_generator(session_id, query, start_time, session_service, llm_service, qdrant_service),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+async def event_generator(
+    session_id: str,
+    query: str,
+    start_time : float,
+    session_service : SessionService, 
+    llm_service : BaseLLMService, 
+    qdrant_service : QdrantService
+):      
+    # Initialize status message content
+    status_content = []   
+    
+    # First status message
+    status_msg = "Bron start met zoeken"
+    status_content.append(status_msg)
+    yield 'data: ' + json.dumps({
+        "type": "status", 
+        "role": "system", 
+        "content": status_msg
+    }) + "\n\n"
+    await sleep(0)
+    
     session = session_service.get_session_with_relations(session_id)
         
     if len(session.messages) == 0:
@@ -53,6 +84,16 @@ async def chat_endpoint(
         is_initial_message = True
         rag_system_message = llm_service.get_rag_system_message()
         user_message = llm_service.get_user_message(query)
+                                
+        # First status message
+        status_msg = "Zoekopdracht wordt herschreven"
+        status_content.append(status_msg)
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "system", 
+            "content": status_msg
+        }) + "\n\n"
+        
         rewritten_query = llm_service.rewrite_query(user_message)
         user_message.formatted_content = rewritten_query
                 
@@ -60,10 +101,21 @@ async def chat_endpoint(
             session_id=session.id,
             messages=[rag_system_message, user_message]
         )
+        
     else:
         is_initial_message = False
         # For follow-up messages, rewrite the query        
         user_message = llm_service.get_user_message(query)
+        
+        # First status message
+        status_msg = "Zoekopdracht wordt herschreven"
+        status_content.append(status_msg)
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "system", 
+            "content": status_msg
+        }) + "\n\n"
+        
         rewritten_query = llm_service.rewrite_query_with_history(user_message, session.messages)
         user_message.formatted_content = rewritten_query
         session = session_service.add_message(
@@ -76,56 +128,25 @@ async def chat_endpoint(
             )
         )
         logger.info(f"Using existing session: {session.id}")
-    
-    return StreamingResponse(
-        event_generator(session, user_message, is_initial_message, start_time, session_service, llm_service, qdrant_service),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        }
-    )
-
-async def event_generator(
-    session : Session, 
-    user_message : ChatMessage, 
-    is_initial_message : bool,
-    start_time : float,
-    session_service : SessionService, 
-    llm_service : BaseLLMService, 
-    qdrant_service : QdrantService
-):    
-    try:
-        # Initialize status message content
-        status_content = []
+        
+    try:        
+        # Second status message
+        status_msg = f"Zoekopdracht is herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
+        status_content.append(status_msg)
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "system", 
+            "content": status_msg
+        }) + "\n\n"
+        await sleep(0)
+        
         
         yield 'data: ' + json.dumps({
             "type": "session",
             "session_id": session.id
         }) + "\n\n"
         await sleep(0)
-        
-        # First status message
-        status_msg = "Uw verzoek wordt nu verwerkt"
-        status_content.append(status_msg)
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "system", 
-            "content": status_msg
-        }) + "\n\n"
-        await sleep(0)
                         
-        # Second status message
-        status_msg = f"Zoekopdracht herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
-        status_content.append(status_msg)
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "system", 
-            "content": status_msg
-        }) + "\n\n"
-        await sleep(0)
-        
         # Third status message
         status_msg = "Documenten worden gezocht"
         status_content.append(status_msg)
@@ -173,7 +194,7 @@ async def event_generator(
             }) + "\n\n"
             await sleep(0)            
         
-            status_msg = "Bron genereert nu een antwoord op uw vraag"
+            status_msg = "Antwoord op de vraag wordt gegenereerd"
             status_content.append(status_msg)
             yield 'data: ' + json.dumps({
                 "type": "status", 

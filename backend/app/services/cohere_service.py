@@ -15,16 +15,23 @@ class CohereService(BaseLLMService):
     def chat_stream(self, messages: list[ChatMessage], documents: list) -> Generator:
         logger.info(f"Starting chat stream with {len(messages)} messages and {len(documents)} documents...")
         
-        # Filter out status messages
-        filtered_messages = [msg for msg in messages if msg.message_type != "status"]
-        logger.info(f"Filtered to {len(filtered_messages)} non-status messages")
+        # Filter out status messages and validate message content
+        filtered_messages = []
+        for msg in messages:
+            if msg.message_type != "status":
+                # Ensure message has valid content
+                content = msg.get_param("formatted_content")
+                if content and content.strip():  # Check if content exists and is not just whitespace
+                    filtered_messages.append(msg)
+        
+        logger.info(f"Filtered to {len(filtered_messages)} valid non-status messages")
         
         try:
             return self.client.chat_stream(
                 model="command-r-plus",
                 messages=[{
                     'role': message.role, 
-                    'content': message.formatted_content
+                    'content': message.get_param("formatted_content")
                     } for message in filtered_messages
                 ],
                 documents=documents
