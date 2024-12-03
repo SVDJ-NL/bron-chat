@@ -121,10 +121,10 @@ class CohereService(BaseLLMService):
             role="user",
             content=f"""Chat history:
 {history_context}
-New query: {new_message.content}
+New query: {new_message.get_param("formatted_content")}
 
 Rewrite the New query to include relevant context from the other User queries for better search results."""
-            )
+        )
         
         try:
             response = self.client.chat(
@@ -160,7 +160,7 @@ Rewrite this query for better search results."""
         
         try:
             response = self.client.chat(
-                model="command-r-08-2024",
+                model="command-r",
                 messages=[{
                     'role': msg.role,
                     'content': msg.content

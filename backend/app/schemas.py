@@ -68,6 +68,7 @@ class ChatDocument(BaseModel):
     id: Optional[int] = None
     chunk_id: str
     score: float
+    rerank_score: Optional[float] = None
     content: Optional[str] = None
     title: Optional[str] = None
     url: Optional[str] = None

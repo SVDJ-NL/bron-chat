@@ -187,9 +187,6 @@ class QdrantService:
             logger.warning("No documents retrieved from Qdrant")
             return []
 
-        # Rerank documents using LiteLLM
-        logger.debug(f"Documents: {qdrant_document_candidates[0]}")               
-        
         # Step 2: Get relevance scores
         document_texts = [document['payload']['content'] for document in qdrant_document_candidates]
         reranked_documents = self.llm_service.rerank_documents(
@@ -199,17 +196,24 @@ class QdrantService:
             return_documents=False
         )
                
-        # logger.info(f"Qdrant candidates: {qdrant_document_candidate_dicts}")       
-        # logger.info(f"Reranked documents: {reranked_documents}")                
-        for candidate, reranked_doc in zip(qdrant_document_candidates, reranked_documents.results):
-            candidate['relevance_score'] = reranked_doc.relevance_score
+        # Initialize all documents with a default rerank score
+        for candidate in qdrant_document_candidates:
+            candidate['rerank_score'] = 0.0
         
+        # Update scores for documents that were reranked
+        for candidate, reranked_doc in zip(qdrant_document_candidates, reranked_documents.results):
+            try:
+                candidate['rerank_score'] = reranked_doc.relevance_score
+            except AttributeError as e:
+                logger.warning(f"Could not get relevance score for document: {e}")
+                # Keep default score of 0.0
+                
         # Step 3: Compute similarity matrix
         dense_embeddings = [candidate['vector']['text-dense'] for candidate in qdrant_document_candidates]
         similarity_matrix = cosine_similarity(dense_embeddings)    
             
         # Step 4: Apply MMR
-        relevance_scores = [candidate['relevance_score'] for candidate in qdrant_document_candidates]
+        relevance_scores = [candidate.get('rerank_score', 0.0) for candidate in qdrant_document_candidates]
         diversified_candidates = self._mmr(
             documents=qdrant_document_candidates,
             query_embedding=dense_embeddings,
@@ -219,9 +223,6 @@ class QdrantService:
             top_n=20
         )
             
-        # Response contains results list with document, index, and relevance_score
-        logger.debug(f"Reranked documents: {diversified_candidates[0]}")  
-        
         return self.prepare_documents(diversified_candidates)
     
     def prepare_documents(self, qdrant_documents):
@@ -230,6 +231,7 @@ class QdrantService:
     def _prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
         score_map = {str(doc.chunk_id): doc.score for doc in documents}
+        rerank_score_map = {str(doc.chunk_id): doc.rerank_score for doc in documents}
         feedback_map = {str(doc.chunk_id): doc.feedback for doc in documents}
         chunk_id_map = {str(doc.chunk_id): doc.id for doc in documents}
         
@@ -237,6 +239,7 @@ class QdrantService:
             self._prepare_document_dict(
                 doc, 
                 score_map.get(str(doc.id), 0), 
+                rerank_score_map.get(str(doc.id), 0),
                 feedback_map.get(str(doc.id), None), 
                 chunk_id_map.get(str(doc.id), None)
             ) for doc in qdrant_documents
@@ -261,13 +264,14 @@ class QdrantService:
             url = doc['payload']['meta']['url'] 
         return url
     
-    def _prepare_document_dict(self, doc, score=None, feedback=None, id=None):
+    def _prepare_document_dict(self, doc, score=None, rerank_score=None, feedback=None, id=None):
         """Helper method to prepare a single document dictionary"""
         
         return {
             'id': id,  
             'chunk_id': doc['id'],
             'score': score if score is not None else doc['score'],
+            'rerank_score': rerank_score if rerank_score is not None else doc['rerank_score'],
             'feedback': feedback,
             'data': {
                 'source_id': doc['payload']['meta']['source_id'],

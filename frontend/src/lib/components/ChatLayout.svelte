@@ -241,7 +241,7 @@
                             role: msg.role,
                             type: msg.message_type,
                             sequence: msg.sequence,
-                            content: msg.formatted_content || msg.content,
+                            content: msg.message_type === 'user_message' || msg.message_type === 'status' ? msg.content : msg.formatted_content,
                             content_original: msg.content,
                             feedback: msg.feedback,
                             citations: msg.citations
