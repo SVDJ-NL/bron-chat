@@ -25,7 +25,7 @@ class CohereService(BaseLLMService):
         
         try:
             return self.client.chat_stream(
-                model="command-r-plus-08-2024",
+                model="command-r-08-2024",
                 messages=[{
                     'role': message.role,
                     'content': message.content
