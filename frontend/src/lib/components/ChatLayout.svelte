@@ -33,8 +33,8 @@
         }
     }
 
-    function handleNewDocuments(event) {
-        const newDocs = Array.isArray(event.detail) ? event.detail : [];
+    function handleNewDocuments(documents) {
+        const newDocs = Array.isArray(documents) ? documents : [];
         sessionStore.update(store => ({
             ...store,
             documents: [...store.documents, ...newDocs].sort((a, b) => {
@@ -199,7 +199,8 @@
                 break;
             case 'documents':
                 if (Array.isArray(data.documents)) {
-                    handleNewDocuments({ detail: data.documents });
+                    handleNewDocuments(data.documents);
+
                     if (window.matchMedia('(min-width: 1024px)').matches) {
                         isDocumentsPanelOpen = true;
                     }
@@ -222,60 +223,41 @@
                 };
                 break;
             case 'full':
-                if( data.session?.messages?.length === 0 ) {
+                if (data.session?.messages?.length === 0) {
                     break;
                 }
 
-              
+                // Get documents from the last message
+                const messages = data.session.messages;
+                const lastMessage = messages[messages.length - 1];
+                const newDocuments = lastMessage?.documents || [];
 
-                const statusMessages = data.session.messages
-                    .filter(msg => msg.role === 'system' && msg.message_type === 'status')
-                    .sort((a, b) => b.sequence - a.sequence);
-                
-                if (statusMessages.length > 0) {
-                    const latestStatus = statusMessages[0];
-                    addMessage({
-                        id: latestStatus.id,
-                        role: latestStatus.role,
-                        type: latestStatus.message_type,
-                        sequence: latestStatus.sequence,
-                        content: latestStatus.content,
-                    });
-                }
-                
-                const userMessages = data.session.messages
-                    .filter(msg => msg.role === 'assistant' && msg.message_type === 'assistant_message')
-                    .sort((a, b) => b.sequence - a.sequence);
-                
-                if (userMessages.length > 0) {
-                    const lastUserMessage = userMessages[0];
-                    addMessage({
-                        id: lastUserMessage.id,
-                        role: lastUserMessage.role,
-                        type: lastUserMessage.message_type,
-                        sequence: lastUserMessage.sequence,
-                        content: lastUserMessage.formatted_content,
-                        content_original: lastUserMessage.content,
-                        feedback: lastUserMessage.feedback
-                    });
-                }
-                
+                // Update session store with messages
+                sessionStore.update(store => ({
+                    ...store,
+                    messages: messages
+                        .map(msg => ({
+                            id: msg.id,
+                            role: msg.role,
+                            type: msg.message_type,
+                            sequence: msg.sequence,
+                            content: msg.formatted_content || msg.content,
+                            content_original: msg.content,
+                            feedback: msg.feedback,
+                            citations: msg.citations
+                        })),
+                    sessionName: data.session.name
+                }));
+
                 currentMessage = null;
                 currentStatusMessage = null;
                 streamedContent = '';
                 isLoading = false;
 
-                const session = data.session;
-                if (session) {
-                    sessionStore.update(store => ({
-                        ...store,
-                        sessionName: session.name
-                    }));
-                    updateDocumentsFromFullSession(session.messages);
-                } else {
-                    console.error('Received full_session event but no session data:', data);
+                // Update document IDs if new documents are present
+                if (newDocuments.length > 0) {
+                    addDatabaseIdsToDocuments(newDocuments);
                 }
-
                 break;
             case 'end':   
                 console.debug('Received end event');
@@ -305,16 +287,26 @@
     }
 
     function addDatabaseIdsToDocuments(newDocuments) {
-        // Match documents by chunk_id and update ids
-        documents = documents.map(existingDoc => {
-            const matchingNewDoc = newDocuments.find(newDoc => newDoc.chunk_id === existingDoc.chunk_id);
-            if (matchingNewDoc && matchingNewDoc.id) {
-                return {
-                    ...existingDoc,
-                    id: matchingNewDoc.id
-                };
-            }
-            return existingDoc;
+        console.debug('Existing documents:', $sessionStore.documents);
+        console.debug('Adding database IDs to documents:', newDocuments);
+        
+        // Update documents in the store
+        sessionStore.update(store => {
+            const updatedDocs = store.documents.map(existingDoc => {
+                const matchingNewDoc = newDocuments.find(newDoc => newDoc.chunk_id === existingDoc.chunk_id);
+                if (matchingNewDoc && matchingNewDoc.id) {
+                    return {
+                        ...existingDoc,
+                        id: matchingNewDoc.id
+                    };
+                }
+                return existingDoc;
+            });
+            
+            return {
+                ...store,
+                documents: updatedDocs
+            };
         });
     }
 

@@ -85,7 +85,7 @@ class CohereService(BaseLLMService):
         
         try:
             response = self.client.chat(
-                model="command-light",
+                model="command-r-08-2024",
                 messages=[{
                     'role': message.role, 
                     'content': message.get_param("formatted_content")
