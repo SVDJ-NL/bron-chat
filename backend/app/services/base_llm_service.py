@@ -3,6 +3,16 @@ from typing import List, Dict, Generator
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
 from ..schemas import ChatMessage, MessageRole, MessageType
 
+HUMAN_READABLE_SOURCES = {
+    "openbesluitvorming": "Raadstuk",
+    "poliflw": "Politiek nieuwsbericht",
+    "openspending": "Begrotingsdata",
+    "woogle": "Woo-verzoek",
+    "obk": "Officiële bekendmaking",
+    "cvdr": "Rapport",
+    "oor": "Lokale wet- en regelgeving",
+}
+    
 class BaseLLMService(ABC):    
     RAG_SYSTEM_MESSAGE='''
 
@@ -95,16 +105,6 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
 
 '''
 
-    HUMAN_READABLE_SOURCES = {
-        "openbesluitvorming": "Raadstuk",
-        "poliflw": "Politiek nieuwsbericht",
-        "openspending": "Begrotingsdata",
-        "woogle": "Woo-verzoek",
-        "obk": "Officiële bekendmaking",
-        "cvdr": "Rapport",
-        "oor": "Lokale wet- en regelgeving",
-    }
-
     @abstractmethod
     def chat_stream(self, messages: list[ChatMessage], documents: list) -> Generator:
         pass
@@ -129,8 +129,9 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
     def rewrite_query_with_history(self, query: str, messages: list[ChatMessage]) -> str:
         pass
 
-    def get_human_readable_source(self, source: str) -> str: 
-        return self.HUMAN_READABLE_SOURCES.get(source, source)
+    @staticmethod
+    def get_human_readable_source(source: str) -> str: 
+        return HUMAN_READABLE_SOURCES.get(source, source)
 
     def get_user_message(self, content: str):
         return ChatMessage(

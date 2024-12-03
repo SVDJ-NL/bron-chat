@@ -20,7 +20,8 @@ from typing import Optional
 from .qdrant_pool import QdrantConnectionPool
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-
+import yaml
+from ..text_utils import get_formatted_date_english
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -188,11 +189,25 @@ class QdrantService:
             return []
 
         # Step 2: Get relevance scores
-        document_texts = [document['payload']['content'] for document in qdrant_document_candidates]
+        # document_texts = [document['payload']['content'] for document in qdrant_document_candidates]
+        # Extract document metadata
+        qdrant_document_candidates_with_payload = [{
+            'Title': doc['payload']['meta']['title'],
+            'Location': doc['payload']['meta']['location_name'],
+            'Published': get_formatted_date_english(doc['payload']['meta']['published']),
+            'Documents type': doc['payload']['meta']['type'],
+            'Data source': doc['payload']['meta']['source'],
+            'Document source': BaseLLMService.get_human_readable_source(doc['payload']['meta']['source']),
+            'Content': doc['payload']['content']
+        } for doc in qdrant_document_candidates]
+        
+        document_candidates_yaml = [yaml.dump(doc, sort_keys=False) for doc in qdrant_document_candidates_with_payload] 
+                
+        logger.debug(f"Reranking:\n\n {document_candidates_yaml[0]}...")
         reranked_documents = self.llm_service.rerank_documents(
             query=query,
-            documents=document_texts,
-            top_n=int(len(document_texts) / 2),
+            documents=document_candidates_yaml,
+            top_n=int(len(document_candidates_yaml) / 2),
             return_documents=False
         )
                
@@ -207,7 +222,22 @@ class QdrantService:
             except AttributeError as e:
                 logger.warning(f"Could not get relevance score for document: {e}")
                 # Keep default score of 0.0
-                
+        
+        logger.info(f"Reranked documents: {len(qdrant_document_candidates)}")
+        
+        relevance_threshold = 0.8
+        
+        # Filter out candidates with low rerank scores
+        qdrant_document_candidates = [
+            candidate for candidate in qdrant_document_candidates 
+            if candidate.get('rerank_score', 0.0) >= relevance_threshold
+        ]        
+        logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
+
+        # Return early if no documents meet the threshold
+        if not qdrant_document_candidates:
+            logger.warning(f"No documents met the minimum score threshold of {relevance_threshold}")
+            return []
         # Step 3: Compute similarity matrix
         dense_embeddings = [candidate['vector']['text-dense'] for candidate in qdrant_document_candidates]
         similarity_matrix = cosine_similarity(dense_embeddings)    

@@ -227,7 +227,7 @@ async def event_generator(
                 yield 'data: ' + json.dumps(response) + "\n\n"
                 await sleep(0)
         else:
-            status_msg = "Excuses, ik kon geen relevante documenten vinden om uw vraag te beantwoorden."
+            status_msg = "Excuses, er konden geen relevante documenten worden gevonden om uw vraag te beantwoorden."
             status_content.append(status_msg)
             yield 'data: ' + json.dumps({
                 "type": "status", 
@@ -373,7 +373,7 @@ async def generate_response(llm_service: BaseLLMService, messages: List[ChatMess
                 doc['data']['published']
             ),
             "municipality": doc['data']['location_name'],
-            "source": llm_service.get_human_readable_source(
+            "source": BaseLLMService.get_human_readable_source(
                 doc['data']['source']
             ),
             "type": doc['data']['type'],
