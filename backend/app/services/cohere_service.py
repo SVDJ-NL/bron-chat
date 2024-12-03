@@ -25,7 +25,7 @@ class CohereService(BaseLLMService):
         
         try:
             return self.client.chat_stream(
-                model="command-r-plus",
+                model="command-r-plus-08-2024",
                 messages=[{
                     'role': message.role,
                     'content': message.content
@@ -85,7 +85,7 @@ class CohereService(BaseLLMService):
         
         try:
             response = self.client.chat(
-                model="command-r",
+                model="command-light",
                 messages=[{
                     'role': message.role, 
                     'content': message.get_param("formatted_content")
@@ -128,7 +128,7 @@ Rewrite the New query to include relevant context from the other User queries fo
         
         try:
             response = self.client.chat(
-                model="command-r",
+                model="command-light",
                 messages=[{
                     'role': msg.role,
                     'content': msg.content
@@ -160,7 +160,7 @@ Rewrite this query for better search results."""
         
         try:
             response = self.client.chat(
-                model="command-r",
+                model="command-light",
                 messages=[{
                     'role': msg.role,
                     'content': msg.content
