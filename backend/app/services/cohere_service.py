@@ -128,7 +128,7 @@ Rewrite the New query to include relevant context from the other User queries fo
         
         try:
             response = self.client.chat(
-                model="command-light",
+                model="command-r-08-2024",
                 messages=[{
                     'role': msg.role,
                     'content': msg.content
@@ -160,7 +160,7 @@ Rewrite this query for better search results."""
         
         try:
             response = self.client.chat(
-                model="command-light",
+                model="command-r-08-2024",
                 messages=[{
                     'role': msg.role,
                     'content': msg.content
