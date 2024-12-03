@@ -23,7 +23,7 @@ export async function load({ params, fetch }) {
             sessionId,
             messages: sessionData.messages || [],
             documents: sessionData.documents || [],
-            sessionName: sessionData.name || ''
+            sessionName: sessionData.name || 'Bron chat'
         };
     } catch (err) {
         if (err.status) throw err;

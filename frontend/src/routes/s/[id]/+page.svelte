@@ -8,7 +8,7 @@
         sessionId: data.sessionId,
         messages: data.messages || [],
         documents: data.documents || [],
-        sessionName: data.sessionName || ''
+        sessionName: data.sessionName || 'Bron chat'
     });
 </script>
 

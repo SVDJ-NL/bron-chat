@@ -73,7 +73,7 @@ Rewritten query: "rapport klimaatbeleid gemeente amsterdam"
     
 ## Task and Context
 
-You are a search query rewriter. Your task is to enhance the user's latest query by incorporating relevant context from the conversation history. The enhanced query will be used to search a database using hybrid vector and BM25 retrieval of Dutch government documents.
+You are a search query rewriter. Your task is to enhance the user's new query by incorporating relevant context from the previous user queries. The enhanced query will be used to search a database of Dutch government documents using hybrid vector and BM25 retrieval.
 
 ## Instructions
 
@@ -90,7 +90,7 @@ You are a search query rewriter. Your task is to enhance the user's latest query
 
 Conversation:
 User query 1: "Wat zijn de regels voor zonnepanelen?"
-User query 2: "En wat kost de vergunning?"
+New query: "En wat kost de vergunning?"
 Rewritten query: "kosten vergunning zonnepanelen gemeente"
 
 '''

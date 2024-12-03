@@ -18,10 +18,7 @@ class CohereService(BaseLLMService):
         # Filter out status messages and validate message content
         filtered_messages = []
         for msg in messages:
-            if msg.message_type == MessageType.USER_MESSAGE:
-                msg.content = msg.get_param("formatted_content")
-                filtered_messages.append(msg)
-            elif msg.message_type == MessageType.SYSTEM_MESSAGE:
+            if msg.message_type == MessageType.USER_MESSAGE or msg.message_type == MessageType.SYSTEM_MESSAGE:
                 filtered_messages.append(msg)
         
         logger.info(f"Filtered to {len(filtered_messages)} valid non-status messages")
@@ -30,7 +27,7 @@ class CohereService(BaseLLMService):
             return self.client.chat_stream(
                 model="command-r-plus",
                 messages=[{
-                    'role': message.role, 
+                    'role': message.role,
                     'content': message.content
                     } for message in filtered_messages
                 ],
@@ -118,16 +115,15 @@ class CohereService(BaseLLMService):
         
         # Format chat history and new query
         history_context = "\n".join([
-            f"{msg.role}: {msg.get_param('formatted_content')}" for msg in chat_history
+            f"User query {i}: {msg.content}" for i, msg in enumerate(chat_history, start=1)
         ])
         user_message = ChatMessage(
             role="user",
             content=f"""Chat history:
 {history_context}
-
 New query: {new_message.content}
 
-Rewrite this query to include relevant context from the chat history."""
+Rewrite the New query to include relevant context from the other User queries for better search results."""
             )
         
         try:
@@ -159,7 +155,7 @@ Rewrite this query to include relevant context from the chat history."""
             content=f"""                
 Query: {new_message.content}
 
-Rewrite this query to optimize the search."""
+Rewrite this query for better search results."""
         )
         
         try:

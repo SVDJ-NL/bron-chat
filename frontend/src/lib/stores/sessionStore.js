@@ -16,9 +16,9 @@ function createSessionStore() {
             sessionId: null,
             messages: [],
             documents: [],
-            sessionName: ''
+            sessionName: 'Bron chat'
         })
     };
 }
 
-export const sessionStore = createSessionStore(); 
+export const sessionStore = createSessionStore();
