@@ -166,12 +166,23 @@
         }
     }
 
+    // Add a new reactive variable for the notification
+    let showNotification = false;
+    let notificationMessage = '';
+
+    // Function to show the notification
+    function showClipboardNotification(message) {
+        notificationMessage = message;
+        showNotification = true;
+        setTimeout(() => showNotification = false, 2000);
+    }
+
     function copyToClipboard(text) {
         if (navigator.clipboard) {
-            // Strip HTML tags from text
             const strippedText = text.replace(/<[^>]*>/g, '');
             navigator.clipboard.writeText(strippedText).then(() => {
                 copiedMessage = true;
+                showClipboardNotification('Tekst gekopieerd naar klembord');
                 setTimeout(() => copiedMessage = false, 2000);
                 console.debug(`Text ${strippedText} copied to clipboard`);
             }).catch(err => {
@@ -184,6 +195,7 @@
         if (navigator.clipboard) {
             navigator.clipboard.writeText(window.location.href).then(() => {
                 sharedMessage = true;
+                showClipboardNotification('Deelbare link gekopieerd naar klembord');
                 setTimeout(() => sharedMessage = false, 2000);
                 console.debug(`Shared link ${window.location.href} copied to clipboard`);
             }).catch(err => {
@@ -444,6 +456,14 @@
         max-width: calc(100vw - 2rem);
     }
 
+    .notification {
+        @apply fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300;
+        opacity: 0;
+    }
+
+    .notification.show {
+        opacity: 1;
+    }
 
 </style>
 
@@ -624,5 +644,12 @@
             </div>
         {/if}
     </div>
+
+    <!-- Notification popup -->
+    {#if showNotification}
+        <div class="notification show">
+            {notificationMessage}
+        </div>
+    {/if}
 </div>
 
