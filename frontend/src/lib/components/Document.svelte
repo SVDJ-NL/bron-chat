@@ -3,6 +3,7 @@
     import { marked } from 'marked';
     import DOMPurify from 'dompurify';
     import { API_BASE_URL } from '$lib/config';
+    import { showAllScores } from '$lib/stores/documentStore';
 
     export let doc;
     export let citationWords = [];
@@ -20,6 +21,10 @@
     let feedbackNotes = '';
 
     $: feedbackType = doc.feedback?.feedback_type;
+
+    function toggleScores() {
+        showAllScores.update(value => !value);
+    }
 
     onMount(() => {
         updateContent();
@@ -228,6 +233,7 @@
     :global(.document-content p:last-child) {
         @apply mb-0;
     }
+
 </style>
 
 <div class="shadow rounded-lg p-4 border border-gray-200 bg-gray-50 {doc.feedback != null && doc.feedback.feedback_type === 'irrelevant' ? 'opacity-50' : ''}" data-doc-id="{doc.chunk_id}">
@@ -263,13 +269,22 @@
                 </svg>                                        
                 <span bind:this={sourceElement}>{formatSource(doc.data.source)}</span>       
             </div>
-            <!-- <span class="hidden sm:inline mx-2">•</span>   
-            <div class="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clip-rule="evenodd" />
-                </svg>
-                {doc.score ? `${(doc.score * 100).toFixed(1)}%` : 'Onbekend'}
-            </div> -->
+            <span class="hidden sm:inline mx-2 cursor-pointer hover:text-gray-700" on:click={toggleScores}>•</span>   
+            {#if $showAllScores}
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clip-rule="evenodd" />
+                    </svg>
+                    {doc.score ? `${(doc.score * 100).toFixed(1)}%` : 'Onbekend'}
+                </div>
+                <span class="hidden sm:inline mx-2">•</span>   
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" clip-rule="evenodd" />
+                    </svg>
+                    {doc.rerank_score ? `${(doc.rerank_score * 100).toFixed(1)}%` : 'Onbekend'}
+                </div>
+            {/if}
         </div>
     </header>
     
