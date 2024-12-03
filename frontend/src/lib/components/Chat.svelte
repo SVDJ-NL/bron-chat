@@ -177,13 +177,17 @@
         setTimeout(() => showNotification = false, 2000);
     }
 
-    function copyToClipboard(text) {
+    // Add new state variables for the copy popup
+    let copyPopupMessage = null;
+    let copyPopupAnchor;
+
+    // Modify the copyToClipboard function
+    function copyToClipboard(message, event) {
         if (navigator.clipboard) {
-            const strippedText = text.replace(/<[^>]*>/g, '');
+            const strippedText = message.content.replace(/<[^>]*>/g, '');
             navigator.clipboard.writeText(strippedText).then(() => {
-                copiedMessage = true;
-                showClipboardNotification('Tekst gekopieerd naar klembord');
-                setTimeout(() => copiedMessage = false, 2000);
+                copyPopupAnchor = event.currentTarget;
+                showCopyPopup(message.id, 'Tekst gekopieerd naar klembord');
                 console.debug(`Text ${strippedText} copied to clipboard`);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
@@ -191,17 +195,77 @@
         }
     }
 
-    function shareLinkToClipboard() {
+    // Modify the shareLinkToClipboard function
+    function shareLinkToClipboard(message, event) {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(window.location.href).then(() => {
-                sharedMessage = true;
-                showClipboardNotification('Deelbare link gekopieerd naar klembord');
-                setTimeout(() => sharedMessage = false, 2000);
+                copyPopupAnchor = event.currentTarget;
+                showCopyPopup(message.id, 'Deelbare link gekopieerd naar klembord');
                 console.debug(`Shared link ${window.location.href} copied to clipboard`);
             }).catch(err => {
                 console.error('Could not copy text: ', err);
             });
         }
+    }
+
+    // Add messageId parameter to showCopyPopup function
+    async function showCopyPopup(messageId, message) {
+        // Close any existing popups first
+        closeCopyPopup();
+        closeFeedbackPopup();
+        
+        await tick();
+        
+        // Store both the message and its ID
+        copyPopupMessage = { id: messageId, text: message };
+        
+        await tick();
+        
+        if (popupElement && copyPopupAnchor) {
+            updateCopyPopupPosition();
+        }
+        
+        // Auto-close after 2 seconds
+        setTimeout(() => closeCopyPopup(), 2000);
+    }
+
+    // Add function to close copy popup
+    function closeCopyPopup() {
+        if (popupElement) {
+            Object.assign(popupElement.style, {
+                left: '',
+                top: '',
+                position: ''
+            });
+        }
+        copyPopupMessage = null;
+    }
+
+    // Add function to update copy popup position
+    async function updateCopyPopupPosition() {
+        if (!popupElement || !copyPopupAnchor) return;
+        
+        const { x, y } = await computePosition(copyPopupAnchor, popupElement, {
+            placement: 'top-start',
+            middleware: [
+                offset({ mainAxis: 30, crossAxis: 40 }), // Adjusted mainAxis to 30 to position 30px above
+                flip({
+                    fallbackPlacements: ['bottom-start'],
+                    padding: 8
+                }),
+                shift({
+                    padding: 8
+                })
+            ],
+        });
+
+        Object.assign(popupElement.style, {
+            left: `${x}px`,
+            top: `${y}px`,
+            position: 'absolute',
+            width: 'auto',
+            whiteSpace: 'nowrap'
+        });
     }
 
     async function submitFeedbackType(messageId, feedbackType) {
@@ -465,6 +529,11 @@
         opacity: 1;
     }
 
+    .copy-popup {
+        @apply bg-white rounded-lg shadow-lg p-2;
+        min-width: 12rem;
+    }
+
 </style>
 
 <div class="flex flex-col h-full transition-all duration-300 ease-in-out">
@@ -502,30 +571,30 @@
                             {:else if message.role === 'assistant'}
                                 {@html insertClickableCitations(message.content, message.type)}
                                         
-                                <div class="flex items-center mt-4">
-                                    <button on:click={() => copyToClipboard(message.content)} class="ml-0 text-sm text-blue-800 hover:text-blue-900">
-                                        {#if copiedMessage}
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                            </svg>
-                                        {:else}
+                                <div class="flex items-center mt-4 relative">
+                                    <div class="relative flex items-center">
+                                        <button on:click={(event) => copyToClipboard(message, event)} class="ml-0 text-sm text-blue-800 hover:text-blue-900">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.5V6.108c0-1.135.845-2.098 1.976-2.192.373-.03.748-.057 1.123-.08M15.75 18H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08M15.75 18.75v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5A3.375 3.375 0 0 0 6.375 7.5H5.25m11.9-3.664A2.251 2.251 0 0 0 15 2.25h-1.5a2.251 2.251 0 0 0-2.15 1.586m5.8 0c.065.21.1.433.1.664v.75h-6V4.5c0-.231.035-.454.1-.664M6.75 7.5H4.875c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V16.5a9 9 0 0 0-9-9Z" />
                                             </svg>
-                                        {/if}
-                                    </button>
+                                        </button>
 
-                                    <button on:click={() => shareLinkToClipboard()} class="ml-2 text-sm text-blue-800 hover:text-blue-900">
-                                        {#if sharedMessage}
+                                        <button on:click={(event) => shareLinkToClipboard(message, event)} class="ml-2 text-sm text-blue-800 hover:text-blue-900">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.251 2.251 0 0 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                                             </svg>
-                                        {:else}
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-                                            </svg>
+                                        </button>
+
+                                        {#if copyPopupMessage != null && copyPopupMessage.id === message.id}
+                                            <div 
+                                                bind:this={popupElement}
+                                                class="copy-popup absolute -top-16 bg-white rounded-lg shadow-lg p-2 z-50 text-sm"
+                                                on:click|stopPropagation
+                                            >
+                                                {copyPopupMessage.text}
+                                            </div>
                                         {/if}
-                                    </button>
+                                    </div>  
 
                                     <div class="relative">
                                         <div class="flex items-center">
@@ -651,5 +720,6 @@
             {notificationMessage}
         </div>
     {/if}
+
 </div>
 
