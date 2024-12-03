@@ -21,3 +21,5 @@ openinference-semantic-conventions
 openinference-instrumentation-litellm
 arize-phoenix-otel
 arize-phoenix-evals
+scikit-learn
+numpy

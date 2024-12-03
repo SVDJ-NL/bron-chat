@@ -18,6 +18,8 @@ from datetime import datetime
 import time
 from typing import Optional
 from .qdrant_pool import QdrantConnectionPool
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -86,12 +88,12 @@ class QdrantService:
                     collection_name=settings.QDRANT_COLLECTION,
                     ids=qdrant_document_chunk_ids,
                 )
-                return self.prepare_documents_with_scores_and_feedback(qdrant_documents, documents)
+                return self._prepare_documents_with_scores_and_feedback(qdrant_documents, documents)
         except Exception as e:
             logger.error(f"Error retrieving documents from Qdrant: {e}")
             return []
 
-    def hybrid_search(self, query):
+    def hybrid_search(self, query) -> List[Dict]:
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
@@ -122,7 +124,7 @@ class QdrantService:
                     limit=settings.QDRANT_HYBRID_RETRIEVE_LIMIT,
                     score_threshold=None,
                     with_payload=True,
-                    with_vectors=False,
+                    with_vectors=True,
                 ).points
                 
         except Exception as e:
@@ -132,7 +134,10 @@ class QdrantService:
         if not qdrant_documents:
             logger.warning("No documents found in Qdrant")
                     
-        return qdrant_documents
+        # Convert qdrant_document_candidates to a list of dictionaries
+        qdrant_documents_dicts = self._qdrant_documents_to_dicts(qdrant_documents)
+        
+        return qdrant_documents_dicts
 
     def dense_vector_search(self, query):   
         logger.debug(f"Retrieving documents from Qdrant for query: {query}")
@@ -159,74 +164,83 @@ class QdrantService:
             logger.error(f"Error retrieving documents from Qdrant: {e}")   
             return None
 
+    def _qdrant_documents_to_dicts(self, qdrant_documents):
+        return [
+            {
+                'id': candidate.id,
+                'version': candidate.version,
+                'score': candidate.score,
+                'payload': candidate.payload,
+                'vector': candidate.vector
+            }
+            for candidate in qdrant_documents
+        ]   
+
     def retrieve_relevant_documents(self, query: str) -> List[Dict]:          
         logger.debug(f"Retrieving relevant documents for query: {query}")
         
-        qdrant_documents = self.hybrid_search(query)
+        # Step 1: Retrieve initial candidates
+        qdrant_document_candidates = self.hybrid_search(query)
         
         # Check if qdrant_documents is None or empty
-        if not qdrant_documents:
+        if not qdrant_document_candidates:
             logger.warning("No documents retrieved from Qdrant")
             return []
 
         # Rerank documents using LiteLLM
-        logger.debug(f"Documents: {qdrant_documents[0]}")
-        document_texts = [document.payload['content'] for document in qdrant_documents]
+        logger.debug(f"Documents: {qdrant_document_candidates[0]}")               
+        
+        # Step 2: Get relevance scores
+        document_texts = [document['payload']['content'] for document in qdrant_document_candidates]
         reranked_documents = self.llm_service.rerank_documents(
-            query = query,
-            documents = document_texts,
+            query=query,
+            documents=document_texts,
+            top_n=int(len(document_texts) / 2),
+            return_documents=False
         )
+               
+        # logger.info(f"Qdrant candidates: {qdrant_document_candidate_dicts}")       
+        # logger.info(f"Reranked documents: {reranked_documents}")                
+        for candidate, reranked_doc in zip(qdrant_document_candidates, reranked_documents.results):
+            candidate['relevance_score'] = reranked_doc.relevance_score
         
-        qdrant_documents = [qdrant_documents[result.index] for result in reranked_documents.results]
+        # Step 3: Compute similarity matrix
+        dense_embeddings = [candidate['vector']['text-dense'] for candidate in qdrant_document_candidates]
+        similarity_matrix = cosine_similarity(dense_embeddings)    
+            
+        # Step 4: Apply MMR
+        relevance_scores = [candidate['relevance_score'] for candidate in qdrant_document_candidates]
+        diversified_candidates = self._mmr(
+            documents=qdrant_document_candidates,
+            query_embedding=dense_embeddings,
+            relevance_scores=relevance_scores,
+            similarity_matrix=similarity_matrix,
+            lambda_param=0.9,
+            top_n=20
+        )
+            
         # Response contains results list with document, index, and relevance_score
-        # qdrant_documents = [qdrant_documents[result['index']] for result in reranked_response.results]
-        logger.debug(f"Reranked documents: {qdrant_documents[0]}")  
+        logger.debug(f"Reranked documents: {diversified_candidates[0]}")  
         
-        return self.prepare_documents(qdrant_documents)
+        return self.prepare_documents(diversified_candidates)
     
-    def _get_best_url(self, doc):
-        url = ""
-        if doc.payload['meta']['doc_url']:
-            url = doc.payload['meta']['doc_url']
-        elif doc.payload['meta']['url']:
-            url = doc.payload['meta']['url'] 
-        return url
-    
-    def _prepare_document_dict(self, doc, score=None, feedback=None, id=None):
-        """Helper method to prepare a single document dictionary"""
-        
-        return {
-            'id': id,  
-            'chunk_id': doc.id,
-            'score': score if score is not None else doc.score,
-            'feedback': feedback,
-            'data': {
-                'source_id': doc.payload['meta']['source_id'],
-                'url': self._get_best_url(doc),
-                'title': doc.payload['meta']['title'],
-                'location': doc.payload['meta']['location'],
-                'location_name': doc.payload['meta']['location_name'],
-                # 'modified': doc.payload['meta']['modified'],
-                'published': doc.payload['meta']['published'],
-                'type': doc.payload['meta']['type'],
-                'source': doc.payload['meta']['source'],
-                # 'page_number': doc.payload['meta']['page_number'],
-                # 'page_count': doc.payload['meta']['page_count'],
-                'content': doc.payload['content']
-            }
-        }
-
     def prepare_documents(self, qdrant_documents):
         return [self._prepare_document_dict(doc) for doc in qdrant_documents]
 
-    def prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
+    def _prepare_documents_with_scores_and_feedback(self, qdrant_documents, documents: List[ChatDocument]):
         # Create a dictionary mapping document IDs to their scores
         score_map = {str(doc.chunk_id): doc.score for doc in documents}
         feedback_map = {str(doc.chunk_id): doc.feedback for doc in documents}
         chunk_id_map = {str(doc.chunk_id): doc.id for doc in documents}
         
-        return [self._prepare_document_dict(doc, score_map.get(str(doc.id), 0), feedback_map.get(str(doc.id), None), chunk_id_map.get(str(doc.id), None)) 
-                for doc in qdrant_documents]
+        return [
+            self._prepare_document_dict(
+                doc, 
+                score_map.get(str(doc.id), 0), 
+                feedback_map.get(str(doc.id), None), 
+                chunk_id_map.get(str(doc.id), None)
+            ) for doc in qdrant_documents
+        ]
     
     def reorder_documents_by_publication_date(self, documents: List[Dict]):
         # Filter out ChatDocument instances and convert them to the expected format
@@ -239,3 +253,70 @@ class QdrantService:
         
         return sorted(formatted_documents, key=lambda x: x['data']['published'], reverse=True)
     
+    def _get_best_url(self, doc):
+        url = ""
+        if doc['payload']['meta']['doc_url']:
+            url = doc['payload']['meta']['doc_url']
+        elif doc['payload']['meta']['url']:
+            url = doc['payload']['meta']['url'] 
+        return url
+    
+    def _prepare_document_dict(self, doc, score=None, feedback=None, id=None):
+        """Helper method to prepare a single document dictionary"""
+        
+        return {
+            'id': id,  
+            'chunk_id': doc['id'],
+            'score': score if score is not None else doc['score'],
+            'feedback': feedback,
+            'data': {
+                'source_id': doc['payload']['meta']['source_id'],
+                'url': self._get_best_url(doc),
+                'title': doc['payload']['meta']['title'],
+                'location': doc['payload']['meta']['location'],
+                'location_name': doc['payload']['meta']['location_name'],
+                # 'modified': doc['payload']['meta']['modified'],
+                'published': doc['payload']['meta']['published'],
+                'type': doc['payload']['meta']['type'],
+                'source': doc['payload']['meta']['source'],
+                # 'page_number': doc.payload['meta']['page_number'],
+                # 'page_count': doc['payload']['meta']['page_count'],
+                'content': doc['payload']['content']
+            }
+        }
+        
+    def _mmr(self, documents, query_embedding, relevance_scores, similarity_matrix, lambda_param=0.7, top_n=10):
+        selected = []
+        candidate_indices = list(range(len(documents)))
+        
+        # Normalize relevance scores
+        relevance_scores = np.array(relevance_scores)
+        if relevance_scores.max() > relevance_scores.min():
+            relevance_scores = (relevance_scores - relevance_scores.min()) / (relevance_scores.max() - relevance_scores.min())
+        else:
+            relevance_scores = np.ones_like(relevance_scores)
+
+        while len(selected) < top_n and candidate_indices:
+            mmr_scores = []
+            for idx in candidate_indices:
+                # Relevance to the query
+                relevance = relevance_scores[idx]
+                
+                # Max similarity to already selected documents
+                if selected:
+                    sim_to_selected = max([similarity_matrix[idx][sel_idx] for sel_idx in selected])
+                else:
+                    sim_to_selected = 0
+                
+                # Calculate MMR score
+                mmr_score = lambda_param * relevance - (1 - lambda_param) * sim_to_selected
+                mmr_scores.append((mmr_score, idx))
+            
+            # Select the document with the highest MMR score
+            mmr_scores.sort(reverse=True)
+            selected_idx = mmr_scores[0][1]
+            selected.append(selected_idx)
+            candidate_indices.remove(selected_idx)
+        
+        # Return the selected documents
+        return [documents[idx] for idx in selected]

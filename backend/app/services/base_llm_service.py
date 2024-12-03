@@ -110,7 +110,7 @@ Rewritten query: "kosten vergunning zonnepanelen gemeente"
         pass
     
     @abstractmethod
-    def rerank_documents(self, query: str, documents: list) -> Dict:
+    def rerank_documents(self, query: str, documents: list, top_n: int = 20, return_documents: bool = True) -> Dict:
         pass
     
     @abstractmethod

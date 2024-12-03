@@ -40,14 +40,14 @@ class CohereService(BaseLLMService):
             logger.error(f"Error in chat stream: {e}")
             raise
         
-    def rerank_documents(self, query: str, documents: list):
+    def rerank_documents(self, query: str, documents: list, top_n: int = 20, return_documents: bool = True):
         logger.info(f"Reranking {len(documents)} documents...")
         return self.client.rerank(
             query=query,
             documents=documents,
-            top_n=20,
+            top_n=top_n,
             model=settings.COHERE_RERANK_MODEL,
-            return_documents=True
+            return_documents=return_documents
         )
 
     def generate_dense_embedding(self, query: str):
