@@ -138,7 +138,7 @@
 
     function formatSource(source) {
         const human_readable_sources = {
-            "openbesluitvorming": "Raadstuk",
+            "openbesluitvorming": "Raadstuk of bijlage",
             "poliflw": "Politiek nieuwsbericht",
             "openspending": "Begrotingsdata",
             "woogle": "Woo-verzoek",
@@ -327,6 +327,9 @@
                         </svg>
                     {/if}
                 </button>
+                <span class="ml-2 text-sm text-gray-500">
+                    Is dit document relevant?
+                </span>
             {/if}
         </div>
 

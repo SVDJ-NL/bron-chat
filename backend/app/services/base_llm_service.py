@@ -4,7 +4,7 @@ from ..text_utils import get_formatted_current_date_english, get_formatted_curre
 from ..schemas import ChatMessage, MessageRole, MessageType
 
 HUMAN_READABLE_SOURCES = {
-    "openbesluitvorming": "Raadstuk",
+    "openbesluitvorming": "Raadstuk of bijlage",
     "poliflw": "Politiek nieuwsbericht",
     "openspending": "Begrotingsdata",
     "woogle": "Woo-verzoek",

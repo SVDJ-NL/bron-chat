@@ -11,6 +11,7 @@
     export let isLoading = false;
 
     import { createEventDispatcher, onMount, afterUpdate, tick } from 'svelte';
+    import { slide } from 'svelte/transition';
     import { computePosition, flip, shift, offset } from '@floating-ui/dom';
     const dispatch = createEventDispatcher();
 
@@ -44,7 +45,7 @@
     }
 
     function formatStatusMessage(content) {
-        return content.replace(/\n/g, '<br>');
+        return content.split('\n');
     }
 
     function handleStop() {
@@ -419,6 +420,7 @@
         }
         expandedStatusMessages = expandedStatusMessages; // trigger reactivity
     }
+
 </script>
 <style lang="postcss">
     :global(.citation-link) {
@@ -548,25 +550,27 @@
                                 <p>{message.content}</p>
                             {:else if message.role === 'system'}
                                 <div 
-                                    class="cursor-pointer flex items-start"
+                                    class="cursor-pointer flex justify-between items-start"
                                     on:click={() => toggleStatusMessage(message.id)}
                                 >
+                                    <ul class="list-disc pl-4 flex-1 !mb-0 !pl-4">
+                                        {#if expandedStatusMessages.has(message.id)}
+                                            {#each formatStatusMessage(message.content) as line}
+                                                <li transition:slide={{ duration: 500 }} class="!mb-0">{line}</li>
+                                            {/each}
+                                        {:else}
+                                            <li class="!mb-0">{formatStatusMessage(message.content).pop()}</li>
+                                        {/if}
+                                    </ul>
                                     <svg 
                                         xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-5 w-5 transition-transform duration-200 mr-1 mt-1"
+                                        class="h-5 w-5 transition-transform duration-200 ml-1 flex-shrink-0 rotate-90"
                                         viewBox="0 0 20 20" 
                                         fill="currentColor"
                                         class:-rotate-90={!expandedStatusMessages.has(message.id)}
                                     >
                                         <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                     </svg>
-                                    <div class="w-full">
-                                        {#if expandedStatusMessages.has(message.id)}
-                                            <p>{@html formatStatusMessage(message.content)}</p>
-                                        {:else}
-                                            <p>{@html formatStatusMessage(message.content.split('\n').pop())}</p>
-                                        {/if}
-                                    </div>
                                 </div>
                             {:else if message.role === 'assistant'}
                                 {@html insertClickableCitations(message.content, message.type)}
@@ -634,6 +638,9 @@
                                                     </svg>
                                                 {/if}
                                             </button>
+                                            <span class="ml-2 text-sm text-gray-500">
+                                                Wat vond je van dit antwoord?
+                                            </span>
                                         </div>
 
                                         {#if feedbackPopupMessage != null && feedbackPopupMessage.id === message.id}
@@ -683,21 +690,15 @@
                     </div>
                 {/each}
                 
-                {#if currentStatusMessage }
+                {#if currentStatusMessage}
                     <div class="flex justify-start">
-                        <div class="message-content p-3 rounded-lg status bg-gray-200 text-gray-900">
-                            <div class="flex items-start">
-                                <svg 
-                                    xmlns="http://www.w3.org/2000/svg" 
-                                    class="h-5 w-5 transition-transform duration-200 mr-1 mt-1 -rotate-90"
-                                    viewBox="0 0 20 20" 
-                                    fill="currentColor"
-                                >
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                                <span class="animate-pulse">
-                                    {@html (streamedStatusContent)}...
-                                </span>
+                        <div class="message-content p-3 rounded-lg status bg-gray-200 text-gray-900 w-full">
+                            <div class="flex justify-between items-start">
+                                <ul class="list-disc pl-4 flex-1 !mb-0 !pl-4">
+                                    {#each formatStatusMessage(streamedStatusContent) as line}
+                                        <li class="animate-pulse !mb-0">{line}...</li>
+                                    {/each}
+                                </ul>
                             </div>
                         </div>
                     </div>
