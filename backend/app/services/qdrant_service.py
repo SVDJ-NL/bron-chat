@@ -75,9 +75,14 @@ class QdrantService:
             return None
 
     def get_documents_by_ids(self, documents: List[ChatDocument]):
+        if not documents:
+            logger.debug("No documents provided to retrieve")
+            return []
+        
         qdrant_document_chunk_ids = []
         for doc in documents:
-            qdrant_document_chunk_ids.append(doc.chunk_id)
+            if doc and doc.chunk_id:  # Add null check
+                qdrant_document_chunk_ids.append(doc.chunk_id)
                     
         if not qdrant_document_chunk_ids:
             logger.warning("No valid document IDs found.")
@@ -88,10 +93,19 @@ class QdrantService:
                 qdrant_documents = client.retrieve(
                     collection_name=settings.QDRANT_COLLECTION,
                     ids=qdrant_document_chunk_ids,
+                    with_payload=True,
                 )
-                return self._prepare_documents_with_scores_and_feedback(qdrant_documents, documents)
+                
+                # Convert records to the expected dictionary format
+                qdrant_documents_dicts = [{
+                    'id': record.id,
+                    'payload': record.payload,
+                    'rerank_score': 0.0
+                } for record in qdrant_documents]
+                
+                return self._prepare_documents_with_scores_and_feedback(qdrant_documents_dicts, documents)
         except Exception as e:
-            logger.error(f"Error retrieving documents from Qdrant: {e}")
+            logger.error(f"Error retrieving documents from Qdrant using document IDs: {e}")
             return []
 
     def hybrid_search(self, query) -> List[Dict]:
@@ -129,14 +143,14 @@ class QdrantService:
                 ).points
                 
         except Exception as e:
-            logger.error(f"Error retrieving documents from Qdrant: {e}")   
+            logger.error(f"Error retrieving documents from Qdrant using hybrid search: {e}")   
             return None
         
         if not qdrant_documents:
             logger.warning("No documents found in Qdrant")
                     
         # Convert qdrant_document_candidates to a list of dictionaries
-        qdrant_documents_dicts = self._qdrant_documents_to_dicts(qdrant_documents)
+        qdrant_documents_dicts = self._qdrant_documents_searched_to_dicts(qdrant_documents)
         
         return qdrant_documents_dicts
 
@@ -162,10 +176,19 @@ class QdrantService:
             
             return qdrant_documents    
         except Exception as e:
-            logger.error(f"Error retrieving documents from Qdrant: {e}")   
+            logger.error(f"Error retrieving documents from Qdrant using dense vector search: {e}")   
             return None
 
-    def _qdrant_documents_to_dicts(self, qdrant_documents):
+    def _qdrant_documents_retrieved_to_dicts(self, qdrant_documents):
+        return [
+            {
+                'id': candidate.id,
+                'payload': candidate.payload
+            }
+            for candidate in qdrant_documents
+        ]  
+        
+    def _qdrant_documents_searched_to_dicts(self, qdrant_documents):
         return [
             {
                 'id': candidate.id,
@@ -268,10 +291,10 @@ class QdrantService:
         return [
             self._prepare_document_dict(
                 doc, 
-                score_map.get(str(doc.id), 0), 
-                rerank_score_map.get(str(doc.id), 0),
-                feedback_map.get(str(doc.id), None), 
-                chunk_id_map.get(str(doc.id), None)
+                score_map.get(str(doc['id']), 0), 
+                rerank_score_map.get(str(doc['id']), 0),
+                feedback_map.get(str(doc['id']), None), 
+                chunk_id_map.get(str(doc['id']), None)
             ) for doc in qdrant_documents
         ]
     

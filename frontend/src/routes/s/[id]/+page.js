@@ -23,7 +23,7 @@ export async function load({ params, fetch }) {
             sessionId,
             messages: sessionData.messages || [],
             documents: sessionData.documents || [],
-            sessionName: sessionData.name || 'Bron chat'
+            sessionName: sessionData.name || 'Bron chat - Doorzoek 3.5 miljoen overheidsdocumenten met AI'
         };
     } catch (err) {
         if (err.status) throw err;

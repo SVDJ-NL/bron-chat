@@ -144,7 +144,7 @@
                     <p>We waarderen je input.</p>
 
                     <p class="mt-4">
-                        Wil je een verhaal maken met behulp van Bron CHAT, of
+                        Wil je een verhaal maken met behulp van Bron chat, of
                         heb je meer vragen over deze tool?
                     </p>
 

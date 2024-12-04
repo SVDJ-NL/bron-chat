@@ -102,7 +102,7 @@
                 class="ml-2 text-sm font-normal text-blue-600 hover:underline flex items-center w-full justify-center flex-wrap flex-col"
             >           
             <span>
-                Over Bron CHAT
+                Over Bron chat
             </span>
         </button>
     </div>
@@ -120,7 +120,7 @@
         >
             <div class="bg-white rounded-lg p-6 max-w-2xl max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-start mb-4">
-                    <h2 class="text-xl font-bold">Over Bron CHAT</h2>
+                    <h2 class="text-xl font-bold">Over Bron chat</h2>
                     <button
                         on:click={() => showAboutDialog = false}
                         class="text-gray-500 hover:text-gray-700"
@@ -130,10 +130,10 @@
                 </div>
                 
                 <div class="space-y-4">
-                    <p>Bron CHAT is een tool voor journalisten en onderzoekers, ontwikkeld door SVDJ Incubator in samenwerking met Open State Foundation. Onze missie: alle openbare overheidsinformatie makkelijk en snel doorzoekbaar maken doormiddel van een AI chat. Dagelijks werken wij aan het uitbreiden en verbeteren van Bron CHAT.</p>
+                    <p>Bron chat is een tool voor journalisten en onderzoekers, ontwikkeld door SVDJ Incubator in samenwerking met Open State Foundation. Onze missie: alle openbare overheidsinformatie makkelijk en snel doorzoekbaar maken doormiddel van een AI chat. Dagelijks werken wij aan het uitbreiden en verbeteren van Bron chat.</p>
                     
                     <div>
-                        <h3 class="font-bold mb-2">Wat Bron CHAT biedt:</h3>
+                        <h3 class="font-bold mb-2">Wat Bron chat biedt:</h3>
                         <ul class="list-disc pl-5 space-y-1">
                             <li><strong>Toegang tot miljoenen documenten:</strong> Doorzoek 3,5 miljoen overheidsdocumenten op één centrale plek.</li>
                             <li><strong>Gebruiksvriendelijke bronverwijzingen:</strong> Directe links naar originele documenten en downloadbare pdf's.</li>
@@ -146,7 +146,7 @@
 
                     <div class="mt-4 text-center">
                         <p class="font-bold">
-                            Wil je een verhaal maken met behulp van Bron CHAT, <br>   
+                            Wil je een verhaal maken met behulp van Bron chat, <br>   
                             of heb je meer vragen over deze tool?
                         </p>
                         <p>Neem dan contact met ons op. Alle feedback is welkom!</p>

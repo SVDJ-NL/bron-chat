@@ -16,7 +16,7 @@ function createSessionStore() {
             sessionId: null,
             messages: [],
             documents: [],
-            sessionName: 'Bron chat'
+            sessionName: 'Bron chat - Doorzoek 3.5 miljoen overheidsdocumenten met AI'
         })
     };
 }
