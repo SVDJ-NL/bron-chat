@@ -248,19 +248,23 @@ class QdrantService:
         
         logger.info(f"Reranked documents: {len(qdrant_document_candidates)}")
         
-        relevance_threshold = 0.8
+        # relevance_threshold = 0.75
         
-        # Filter out candidates with low rerank scores
-        qdrant_document_candidates = [
-            candidate for candidate in qdrant_document_candidates 
-            if candidate.get('rerank_score', 0.0) >= relevance_threshold
-        ]        
-        logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
+        # # Filter out candidates with low rerank scores
+        # qdrant_document_candidates = [
+        #     candidate for candidate in qdrant_document_candidates 
+        #     if candidate.get('rerank_score', 0.0) >= relevance_threshold
+        # ]        
+        # logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
 
         # Return early if no documents meet the threshold
+        # if not qdrant_document_candidates:
+        #     logger.warning(f"No documents met the minimum score threshold of {relevance_threshold}")
+        #     return []
         if not qdrant_document_candidates:
-            logger.warning(f"No documents met the minimum score threshold of {relevance_threshold}")
-            return []
+            logger.warning(f"No documents found for query: {query}")
+            return []     
+        
         # Step 3: Compute similarity matrix
         dense_embeddings = [candidate['vector']['text-dense'] for candidate in qdrant_document_candidates]
         similarity_matrix = cosine_similarity(dense_embeddings)    
