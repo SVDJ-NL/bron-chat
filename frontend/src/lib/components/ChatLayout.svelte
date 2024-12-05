@@ -6,6 +6,7 @@
     import { goto } from '$app/navigation';
     import { API_BASE_URL } from '$lib/config';
     import ChatInput from './ChatInput.svelte';
+    import CloneSessionButton from './CloneSessionButton.svelte';
     import { sessionStore } from '$lib/stores/sessionStore';
 
     $: messages = $sessionStore.messages || [];
@@ -24,6 +25,8 @@
     let isLoading = false;
     let isDocumentsPanelOpen = false;
     let initialQuery = null;
+    let replayQueue = [];
+    let isReplaying = false;
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -112,12 +115,19 @@
                     content: streamedContent
                 });
             }
-            currentMessage = null;
-            currentStatusMessage = null;
-            streamedContent = '';
-            autoScroll = false;
-            isLoading = false;
         }
+        
+        // Also stop message replay if active
+        if (isReplaying) {
+            isReplaying = false;
+            replayQueue = [];
+        }
+        
+        currentMessage = null;
+        currentStatusMessage = null;
+        streamedContent = '';
+        autoScroll = false;
+        isLoading = false;
     }
 
     function handleNewQuestion({ detail }) {
@@ -327,6 +337,51 @@
         }
     }
 
+    async function handleMessageReplay(event) {
+        if (event.data?.type === 'REPLAY_MESSAGES' && event.origin === window.location.origin) {
+            replayQueue = event.data.messages;
+            if (!isReplaying) {
+                isReplaying = true;
+                await replayNextMessage();
+            }
+        }
+    }
+    
+    async function replayNextMessage() {
+        if (replayQueue.length === 0) {
+            isReplaying = false;
+            return;
+        }
+        
+        // Don't continue if replay was stopped
+        if (!isReplaying) {
+            replayQueue = [];
+            return;
+        }
+        
+        const nextMessage = replayQueue.shift();
+        
+        // Wait a moment before sending the next message
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Simulate the user sending a message
+        handleNewQuestion({
+            detail: {
+                query: nextMessage.content
+            }
+        });
+        
+        // Wait for the response to complete before sending the next message
+        const checkResponse = setInterval(() => {
+            if (!isLoading && isReplaying) {
+                clearInterval(checkResponse);
+                replayNextMessage();
+            } else if (!isReplaying) {
+                clearInterval(checkResponse);
+            }
+        }, 500);
+    }
+
     onMount(() => {
         if (sessionId) {
             openDocumentsPanel();
@@ -346,10 +401,14 @@
         document.addEventListener('click', closeDocumentsPanel);
         document.addEventListener('visibilitychange', openDocumentsPanel);
 
+        // Add message replay listener
+        window.addEventListener('message', handleMessageReplay);
+
         return () => {
             window.removeEventListener('initialQuery', handleInitialQuery);
             document.removeEventListener('click', closeDocumentsPanel);
             document.removeEventListener('visibilitychange', openDocumentsPanel);
+            window.removeEventListener('message', handleMessageReplay);
         };
     });
 </script>
@@ -397,6 +456,12 @@
         </div>
     {/if}
 </div>
+
+{#if messages.length > 0 && !isReplaying && !isLoading}
+    <div class="fixed top-12 lg:top-16 left-2 lg:left-8 z-50">
+        <CloneSessionButton {sessionId} />
+    </div>
+{/if}
 
 <style lang="postcss">    
     @tailwind base;

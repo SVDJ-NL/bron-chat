@@ -77,3 +77,38 @@ async def create_session(db: Session = Depends(get_db)):
             documents=[]
         )
     )
+
+@router.post(base_api_url + "sessions/{session_id}/clone")
+async def clone_session(session_id: str, db: Session = Depends(get_db)):
+    logger.debug(f"Cloning session with id: {session_id}")
+    session_service = SessionService(db)
+    
+    # Get the original session with messages
+    original_session = session_service.get_session_with_relations(session_id)
+    
+    # Create a new session with current timestamp
+    now = datetime.now()
+    new_session = session_service.create_session(
+        SessionCreate(
+            name=f"Copy of {original_session.name}",
+            messages=[],
+            documents=[]
+        )
+    )
+    
+    # Get messages in chronological order
+    sorted_messages = sorted(original_session.messages, key=lambda x: x.sequence)
+    
+    # Get only user messages in order
+    user_messages = [msg for msg in sorted_messages if msg.role == MessageRole.USER]
+    
+    # Return the new session ID and the messages to replay
+    return {
+        "session_id": new_session.id,
+        "messages": [
+            {
+                "content": msg.content,
+                "message_type": msg.message_type
+            } for msg in user_messages
+        ]
+    }
