@@ -210,7 +210,8 @@
                 streamedContent += data.content;
                 currentMessage = {
                     role: data.role,
-                    content: streamedContent
+                    content: streamedContent,
+                    content_original: streamedContent
                 };
                 break;
             case 'citation':
@@ -263,7 +264,6 @@
                 console.debug('Received end event');
                 isLoading = false;
                 currentMessage = null;
-                isLoading = false;
                 break;
             case 'error':
                 console.error('Received error event:', data.content);
@@ -274,7 +274,6 @@
                 });
                 isLoading = false;
                 currentMessage = null;
-                isLoading = false;
                 break;
         }
     }

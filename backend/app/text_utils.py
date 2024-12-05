@@ -66,6 +66,9 @@ def format_content(content):
     return to_markdown(content)
    
 def add_citations_to_text(text, citations):
+    if citations is None or len(citations) == 0:
+        return text
+    
     citations_list = sorted(citations, key=lambda x: x['start'])
     
     text_w_citations = ""
@@ -83,6 +86,9 @@ def add_citations_to_text(text, citations):
     return text_w_citations
 
 def format_text(text, citations):
+    if citations is None or len(citations) == 0:
+        return to_markdown(text)
+    
     text_w_citations = add_citations_to_text(text, citations)    
     html_text = to_markdown(text_w_citations)  # Change this line
     return html_text

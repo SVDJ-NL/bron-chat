@@ -553,7 +553,7 @@
                                     class="cursor-pointer flex justify-between items-start"
                                     on:click={() => toggleStatusMessage(message.id)}
                                 >
-                                    <ul class="list-disc pl-4 flex-1 !mb-0 !pl-4">
+                                    <ul class="!list-none pl-4 flex-1 !mb-0 !pl-2">
                                         {#if expandedStatusMessages.has(message.id)}
                                             {#each formatStatusMessage(message.content) as line}
                                                 <li transition:slide={{ duration: 500 }} class="!mb-0">{line}</li>
@@ -694,9 +694,9 @@
                     <div class="flex justify-start">
                         <div class="message-content p-3 rounded-lg status bg-gray-200 text-gray-900 w-full">
                             <div class="flex justify-between items-start">
-                                <ul class="list-disc pl-4 flex-1 !mb-0 !pl-4">
+                                <ul class="!list-none pl-4 flex-1 !mb-0 !pl-2">
                                     {#each formatStatusMessage(streamedStatusContent) as line}
-                                        <li class="animate-pulse !mb-0">{line}...</li>
+                                        <li class="{isLoading ? 'animate-pulse' : ''} !mb-0">{line}...</li>
                                     {/each}
                                 </ul>
                             </div>

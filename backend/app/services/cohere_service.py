@@ -119,11 +119,8 @@ class CohereService(BaseLLMService):
         ])
         user_message = ChatMessage(
             role="user",
-            content=f"""Chat history:
-{history_context}
-New query: {new_message.get_param("formatted_content")}
-
-Rewrite the New query to include relevant context from the other User queries for better search results."""
+            content=f"""{history_context}
+New query: {new_message.get_param("formatted_content")}"""
         )
         
         try:
@@ -152,10 +149,7 @@ Rewrite the New query to include relevant context from the other User queries fo
     
         user_message = ChatMessage(
             role="user",
-            content=f"""                
-Query: {new_message.content}
-
-Rewrite this query for better search results."""
+            content=f"""Query: {new_message.content}"""
         )
         
         try:

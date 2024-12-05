@@ -165,6 +165,7 @@ async def event_generator(
             logger.error(f"Error retrieving relevant documents: {e}")
             raise e
         
+        
         session_documents = session_service.get_documents(session)
         if not session_documents:
             combined_relevant_docs = relevant_docs
@@ -184,67 +185,48 @@ async def event_generator(
         await sleep(0)
         
         relevant_docs_count = len(relevant_docs)
-        if relevant_docs_count > 0:
-            status_msg = f"{relevant_docs_count} nieuwe documenten gevonden"
-            status_content.append(status_msg)
-            yield 'data: ' + json.dumps({
-                "type": "status", 
-                "role": "system", 
-                "content": status_msg
-            }) + "\n\n"
-            await sleep(0)            
+            
+        status_msg = f"{relevant_docs_count} nieuwe documenten gevonden"
+        status_content.append(status_msg)
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "system", 
+            "content": status_msg
+        }) + "\n\n"
+        await sleep(0)            
+    
+        status_msg = "Antwoord op de vraag wordt gegenereerd"
+        status_content.append(status_msg)
+        yield 'data: ' + json.dumps({
+            "type": "status", 
+            "role": "system", 
+            "content": status_msg
+        }) + "\n\n"
+        await sleep(0)
         
-            status_msg = "Antwoord op de vraag wordt gegenereerd"
-            status_content.append(status_msg)
-            yield 'data: ' + json.dumps({
-                "type": "status", 
-                "role": "system", 
-                "content": status_msg
-            }) + "\n\n"
-            await sleep(0)
-            
-            # Save the status messages to the database
-            status_message = session_service.add_and_get_message(
-                session_id=session.id,
-                message=ChatMessage(
-                    role=MessageRole.SYSTEM,
-                    content="\n".join(status_content),
-                    message_type=MessageType.STATUS
-                )
+        # Save the status messages to the database
+        status_message = session_service.add_and_get_message(
+            session_id=session.id,
+            message=ChatMessage(
+                role=MessageRole.SYSTEM,
+                content="\n".join(status_content),
+                message_type=MessageType.STATUS
             )
-            
-            async for response in generate_full_response(
-                llm_service, 
-                session_service, 
-                session.messages, 
-                relevant_docs, 
-                is_initial_message, 
-                session.id, 
-                user_message,
-                status_message,
-                start_time
-            ):
-                yield 'data: ' + json.dumps(response) + "\n\n"
-                await sleep(0)
-        else:
-            status_msg = "Excuses, er konden geen relevante documenten worden gevonden om uw vraag te beantwoorden."
-            status_content.append(status_msg)
-            yield 'data: ' + json.dumps({
-                "type": "status", 
-                "role": "system", 
-                "content": status_msg
-            }) + "\n\n"
+        )
+        
+        async for response in generate_full_response(
+            llm_service, 
+            session_service, 
+            session.messages, 
+            relevant_docs, 
+            is_initial_message, 
+            session.id, 
+            user_message,
+            status_message,
+            start_time
+        ):
+            yield 'data: ' + json.dumps(response) + "\n\n"
             await sleep(0)
-            
-            # Save the status messages to the database
-            status_message = session_service.add_message(
-                session_id=session.id,
-                message=ChatMessage(
-                    role=MessageRole.SYSTEM,
-                    content="\n".join(status_content),
-                    message_type=MessageType.STATUS
-                )
-            )
  
     except Exception as e:
         logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
@@ -269,7 +251,7 @@ async def generate_full_response(
 ):
     logger.debug(f"Generating full response for query: {user_message.content}, rewritten query: {user_message.formatted_content}")
     full_text = ""
-    text_formatted = ""
+    text_formatted_with_citations = ""
     citations = []
     
     async for event in generate_response(llm_service, session_messages, relevant_docs):
@@ -289,17 +271,17 @@ async def generate_full_response(
             }
         elif event["type"] == "citation":
             citations.append(event["content"])
-            text_formatted = format_text(full_text, citations)
+            text_formatted_with_citations = format_text(full_text, citations)
             yield {
                 "type": "citation",
                 "role": "assistant",
-                "content": text_formatted,
+                "content": text_formatted_with_citations,
                 "content_original": full_text,
                 "citations": citations,
             }
     
     if not full_text:
-        status_msg = "\nExcuses, ik kon geen relevante informatie vinden om uw vraag te beantwoorden."
+        status_msg = "\nEr konden geen relevante documenten worden gevonden om de vraag te beantwoorden"
         status_message.content += status_msg
         session_service.update_message(
             session_id=session_id,
@@ -307,8 +289,9 @@ async def generate_full_response(
         )
         yield {
             "type": "status",
-            "role": "system",
-            "content": status_msg
+            "role": "assistant",
+            "content": status_msg,
+            "content_original": status_msg
         }    
     else:
         if is_initial_message:
@@ -319,6 +302,11 @@ async def generate_full_response(
                 logger.error(f"Error creating session name: {e}", exc_info=True)
              
         try:      
+            if text_formatted_with_citations:
+                text_formatted = text_formatted_with_citations
+            else:
+                text_formatted = format_text(full_text, [])
+                
             session_service.add_message(
                 session_id=session_id,
                 message=ChatMessage(                                
@@ -351,7 +339,7 @@ async def generate_full_response(
             "content": status_msg
         } 
         
-        text_formatted = format_text(full_text, citations)    
+        text_formatted_with_citations = format_text(full_text, citations)    
         session = session_service.get_session_with_relations(session_id)    
         # Remove system messages from the session
         session.messages = [msg for msg in session.messages if msg.message_type != MessageType.SYSTEM_MESSAGE]              
