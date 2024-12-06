@@ -11,6 +11,32 @@
     let error = null;
     let showAboutDialog = false;
 
+    let samplePrompts = [
+        "Stikstofbeleid 2023",
+        "Uitgaven klimaatbeleid",
+        "Toeslagenaffaire",
+        "Aanpak cybercriminaliteit",
+        "Windenergie op zee",
+        "Stand van zaken woningmarkt",
+        "Coronasteun bedrijven",
+        "Problemen jeugdzorg",
+        "Rapport drugscriminaliteit",
+        "Personeelstekort onderwijs"
+    ];
+    
+    let displayedPrompts = [];
+    
+    function getRandomPrompts() {
+        let shuffled = [...samplePrompts].sort(() => 0.5 - Math.random());
+        displayedPrompts = shuffled.slice(0, 3);
+    }
+    
+    function handlePromptClick(prompt) {
+        query = prompt;
+        // Trigger the search
+        handleSearch({ detail: { query: prompt } });
+    }
+    
     async function handleSearch({ detail }) {
         isLoading = true;
         error = null;
@@ -58,6 +84,8 @@
             showCursor: false,
         });
 
+        getRandomPrompts();
+
         return () => {
             typedTitle.destroy();
         };
@@ -94,6 +122,17 @@
             {isLoading}
             on:submit={handleSearch}
         />
+    </div>
+
+    <div class="w-full max-w-2xl mt-4 flex flex-wrap gap-2 justify-center">
+        {#each displayedPrompts as prompt}
+            <button
+                on:click={() => handlePromptClick(prompt)}
+                class="text-sm text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+            >
+                {prompt}
+            </button>
+        {/each}
     </div>
 
     <div class="w-full max-w-2xl text-center mt-4 md:mt-6">
