@@ -138,13 +138,13 @@
 
     function formatSource(source) {
         const human_readable_sources = {
-            "openbesluitvorming": "Raadstuk of bijlage",
+            "openbesluitvorming": "Raadsstuk of bijlage",
             "poliflw": "Politiek nieuwsbericht",
             "openspending": "Begrotingsdata",
             "woogle": "Woo-verzoek",
             "obk": "Officiële bekendmaking",
-            "cvdr": "Rapport",
-            "oor": "Lokale wet- en regelgeving",
+            "cvdr": "Lokale wet- en regelgeving",
+            "oor": "Rapport",
         }
         return human_readable_sources[source] || source;
     }

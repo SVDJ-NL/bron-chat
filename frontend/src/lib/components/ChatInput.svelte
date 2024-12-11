@@ -1,13 +1,23 @@
 <script>
+    import { createEventDispatcher } from 'svelte';
     import BaseInput from './BaseInput.svelte';
+    
+    const dispatch = createEventDispatcher();
     export let isLoading = false;
     export let value = '';
+
+    function handleSubmit(event) {
+        console.debug('chat input handleSubmit', event.detail);
+        // Forward all details from BaseInput
+        const { query, searchFilters } = event.detail;
+        dispatch('submit', { query, searchFilters });
+    }
 </script>
 
 <BaseInput
     bind:value
     {isLoading}
-    on:submit
+    on:submit={handleSubmit}
     on:stop
 >
     <div slot="button" let:isLoading let:handleStop>

@@ -131,17 +131,26 @@
     }
 
     function handleNewQuestion({ detail }) {
+        console.debug('handleNewQuestion', detail);
         isLoading = true;
         addMessage({
             role: 'user',
-            content: detail.query
+            content: detail.query,
+            filters: detail.searchFilters
         });
 
         try {
+            // Start with basic query parameters
             const params = new URLSearchParams({ 
                 query: detail.query,
                 session_id: sessionId
             });
+
+            // Add search filters if they exist
+            if (detail.searchFilters) {
+                // Append the search filters to the URL parameters
+                params.append(...new URLSearchParams(detail.searchFilters));
+            }
 
             const url = `${API_BASE_URL}/chat?${params}`;
             console.debug('Connecting to EventSource URL:', url);
@@ -367,7 +376,8 @@
         // Simulate the user sending a message
         handleNewQuestion({
             detail: {
-                query: nextMessage.content
+                query: nextMessage.content,
+                searchFilters: nextMessage.filters
             }
         });
         
@@ -392,7 +402,10 @@
             const query = event.detail.query;
             if (query) {
                 handleNewQuestion({
-                    detail: { query }
+                    detail: { 
+                        query,
+                        searchFilters: event.detail.searchFilters
+                    }
                 });
             }
         };

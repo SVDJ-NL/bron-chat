@@ -38,6 +38,7 @@
     }
     
     async function handleSearch({ detail }) {
+        console.debug('page handleSearch', detail);
         isLoading = true;
         error = null;
 
@@ -48,6 +49,7 @@
             });
 
             if (!sessionResponse.ok) {
+                console.error('Failed to create new session', sessionResponse);
                 throw new Error('Failed to create new session');
             }
 
@@ -57,9 +59,12 @@
             // Navigate to the session page
             await goto(`/s/${sessionId}`);
 
-            // The chat page will automatically handle the query once loaded
+            // Pass both query and searchFilters to the chat page
             const searchEvent = new CustomEvent('initialQuery', {
-                detail: { query: detail.query }
+                detail: { 
+                    query: detail.query,
+                    searchFilters: detail.searchFilters // Forward the searchFilters
+                }
             });
             window.dispatchEvent(searchEvent);
 

@@ -1,14 +1,23 @@
 <script>
     import BaseInput from './BaseInput.svelte';
+    import { createEventDispatcher } from 'svelte';
+    const dispatch = createEventDispatcher();
     export let isLoading = false;
     export let value = '';
+
+    function handleSubmit(event) {
+        console.debug('search input handleSubmit', event.detail);
+        // Forward all details from BaseInput
+        const { query, searchFilters } = event.detail;
+        dispatch('submit', { query, searchFilters });
+    }
 </script>
 
 <BaseInput
     bind:value
     {isLoading}
     placeholder="Stel een vraag..."
-    on:submit
+    on:submit={handleSubmit}
 >
     <div slot="button">
         <button 
