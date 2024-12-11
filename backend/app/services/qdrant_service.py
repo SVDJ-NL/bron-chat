@@ -108,11 +108,40 @@ class QdrantService:
             logger.error(f"Error retrieving documents from Qdrant using document IDs: {e}")
             return []
 
-    def hybrid_search(self, query) -> List[Dict]:
+    def hybrid_search(self, query, locations: List[str] = None, date_range: List[datetime] = None) -> List[Dict]:
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
         dense_vector = self.llm_service.generate_dense_embedding(query)        
+        
+        # Build filter conditions
+        filter_conditions = []
+        
+        if locations and len(locations) > 0:
+            filter_conditions.append(
+                models.FieldCondition(
+                    key="meta.location",
+                    match=models.MatchAny(any=locations)
+                )
+            )
+        
+        if date_range and len(date_range) == 2:
+            filter_conditions.append(
+                models.FieldCondition(
+                    key="meta.published",
+                    range=models.Range(
+                        gte=date_range[0].isoformat(),
+                        lte=date_range[1].isoformat()
+                    )
+                )
+            )
+        
+        # Combine filters if any exist
+        search_filter = None
+        if filter_conditions:
+            search_filter = models.Filter(
+                must=filter_conditions
+            )
         
         try:            
             with self.pool.get_client() as client:
@@ -125,13 +154,13 @@ class QdrantService:
                                 values=sparse_vector.values,
                             ),
                             using=self.SPARSE_VECTORS_NAME,
-                            filter=None,
+                            filter=search_filter,  # Apply filter to sparse search
                             limit=settings.QDRANT_SPARSE_RETRIEVE_LIMIT
                         ),
                         models.Prefetch(
                             query=dense_vector,
                             using=self.DENSE_VECTORS_NAME,
-                            filter=None,
+                            filter=search_filter,  # Apply filter to dense search
                             limit=settings.QDRANT_DENSE_RETRIEVE_LIMIT
                         ),
                     ],
@@ -200,11 +229,11 @@ class QdrantService:
             for candidate in qdrant_documents
         ]   
 
-    def retrieve_relevant_documents(self, query: str) -> List[Dict]:          
+    def retrieve_relevant_documents(self, query: str, locations: List[str] = None, date_range: List[datetime] = None) -> List[Dict]:          
         logger.debug(f"Retrieving relevant documents for query: {query}")
         
-        # Step 1: Retrieve initial candidates
-        qdrant_document_candidates = self.hybrid_search(query)
+        # Step 1: Retrieve initial candidates with filters
+        qdrant_document_candidates = self.hybrid_search(query, locations, date_range)
         
         # Check if qdrant_documents is None or empty
         if not qdrant_document_candidates:

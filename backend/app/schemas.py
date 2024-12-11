@@ -232,3 +232,8 @@ class DocumentFeedbackCreate(DocumentFeedbackBase):
 
 class DocumentFeedbackUpdate(DocumentFeedbackBase):
     pass
+
+class SearchFilter(BaseModel):
+    locations: Optional[List[str]] = []
+    date_range: Optional[List[datetime]] = []
+    rewrite_query: bool = True

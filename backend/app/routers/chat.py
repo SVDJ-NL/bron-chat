@@ -9,11 +9,12 @@ from ..services.cohere_service import CohereService
 from ..services.base_llm_service import BaseLLMService
 from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
-from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session, MessageRole, MessageType
+from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session, MessageRole, MessageType, SearchFilter
 from ..config import settings
 from typing import List, Dict, AsyncGenerator
 from ..text_utils import get_formatted_date_english, format_text
 import time
+from datetime import date
 
 router = APIRouter()
 
@@ -32,6 +33,9 @@ if ENVIRONMENT == "development":
 async def chat_endpoint(
     query: str = Query(..., description="The chat message content"),
     session_id: str = Query(None, description="The session ID"),
+    locations: List[str] = Query(None, description="List of location IDs to filter by"),
+    date_range: List[date] = Query(None, description="Date range to filter by [start_date, end_date]"),
+    rewrite_query: bool = Query(True, description="Whether to enable query rewriting"),
     db: Session = Depends(get_db)
 ):
     # Start timer for request duration tracking
@@ -46,8 +50,29 @@ async def chat_endpoint(
     qdrant_service = QdrantService(llm_service)    
     session_service = SessionService(db)
         
+    search_filters=SearchFilter(
+        locations=locations,
+        date_range=date_range,
+        rewrite_query=rewrite_query
+    )
+    # Create user message with search filters
+    user_message = llm_service.get_user_message(query)
+    user_message = session_service.add_message_with_filters(
+        session_id=session_id,
+        message=user_message,
+        search_filters=search_filters
+    )
+   
     return StreamingResponse(
-        event_generator(session_id, query, start_time, session_service, llm_service, qdrant_service),
+        event_generator(
+            session_id, 
+            query, 
+            start_time, 
+            session_service, 
+            llm_service, 
+            qdrant_service,
+            search_filters
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -59,10 +84,11 @@ async def chat_endpoint(
 async def event_generator(
     session_id: str,
     query: str,
-    start_time : float,
-    session_service : SessionService, 
-    llm_service : BaseLLMService, 
-    qdrant_service : QdrantService
+    start_time: float,
+    session_service: SessionService, 
+    llm_service: BaseLLMService, 
+    qdrant_service: QdrantService,
+    search_filters: SearchFilter
 ):      
     # Initialize status message content
     status_content = []   
@@ -94,8 +120,11 @@ async def event_generator(
             "content": status_msg
         }) + "\n\n"
         
-        rewritten_query = llm_service.rewrite_query(user_message)
-        user_message.formatted_content = rewritten_query
+        if search_filters.rewrite_query:
+            rewritten_query = llm_service.rewrite_query(user_message)
+            user_message.formatted_content = rewritten_query
+        else:
+            user_message.formatted_content = query
                 
         session = session_service.add_messages(
             session_id=session.id,
@@ -159,7 +188,11 @@ async def event_generator(
         
         try: 
             # Use the formatted_content (rewritten query) from the last message
-            relevant_docs = qdrant_service.retrieve_relevant_documents(user_message.formatted_content)
+            relevant_docs = qdrant_service.retrieve_relevant_documents(
+                user_message.formatted_content,
+                locations=search_filters.locations,
+                date_range=search_filters.date_range
+            )
             logger.debug(f"Relevant documents: {relevant_docs}")
         except Exception as e:
             logger.error(f"Error retrieving relevant documents: {e}")
