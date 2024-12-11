@@ -12,6 +12,7 @@ RUN sed -i '/nl_NL.UTF-8/s/^# //g' /etc/locale.gen && \
 ENV LANG nl_NL.UTF-8
 ENV LANGUAGE nl_NL:nl
 ENV LC_ALL nl_NL.UTF-8
+ENV PYTHONPATH=/app/backend
 
 WORKDIR /app/backend
 

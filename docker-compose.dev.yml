@@ -8,6 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - PYTHONPATH=/app/backend
       - QDRANT_HOST=${QDRANT_HOST}
       - QDRANT_PORT=${QDRANT_PORT}
       - COHERE_API_KEY=${COHERE_API_KEY}
@@ -19,7 +20,6 @@ services:
       - ./backend:/app/backend
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: /entrypoint.sh
     depends_on:
       - mysql
     healthcheck:
@@ -27,6 +27,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    command: /entrypoint.sh
 
   frontend:
     env_file:
