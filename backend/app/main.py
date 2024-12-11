@@ -22,12 +22,12 @@ sentry_sdk.init(
     },
 )
 
-tracer_provider = register(
-  project_name=settings.PHOENIX_PROJECT_NAME,
-  endpoint=settings.PHOENIX_TRACER_ENDPOINT
-)
+# tracer_provider = register(
+#   project_name=settings.PHOENIX_PROJECT_NAME,
+#   endpoint=settings.PHOENIX_TRACER_ENDPOINT
+# )
 
-LiteLLMInstrumentor().instrument(tracer_provider=tracer_provider)
+# LiteLLMInstrumentor().instrument(tracer_provider=tracer_provider)
 
 app = FastAPI()
 

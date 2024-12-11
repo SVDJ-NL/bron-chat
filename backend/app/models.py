@@ -59,6 +59,7 @@ class Message(Base):
     formatted_content = Column(Text, nullable=True)
     message_type = Column(String(50), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    search_filters = Column(JSON, nullable=True)
 
     session = relationship("Session", back_populates="messages")
     documents = relationship(

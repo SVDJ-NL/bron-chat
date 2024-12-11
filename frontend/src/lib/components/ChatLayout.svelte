@@ -130,29 +130,18 @@
         isLoading = false;
     }
 
-    function handleNewQuestion({ detail }) {
-        console.debug('handleNewQuestion', detail);
+    function handleNewQuestion(urlSearchParams) {
+        console.debug('handleNewQuestion', urlSearchParams);
         isLoading = true;
         addMessage({
             role: 'user',
-            content: detail.query,
-            filters: detail.searchFilters
+            content: urlSearchParams.get('query'),
+            filters: Object.fromEntries(urlSearchParams.entries())
         });
 
         try {
             // Start with basic query parameters
-            const params = new URLSearchParams({ 
-                query: detail.query,
-                session_id: sessionId
-            });
-
-            // Add search filters if they exist
-            if (detail.searchFilters) {
-                // Append the search filters to the URL parameters
-                params.append(...new URLSearchParams(detail.searchFilters));
-            }
-
-            const url = `${API_BASE_URL}/chat?${params}`;
+            const url = `${API_BASE_URL}/chat?${urlSearchParams.toString()}`;
             console.debug('Connecting to EventSource URL:', url);
             
             eventSource = new EventSource(url);
@@ -399,14 +388,9 @@
         
         // Listen for initial query from the home page
         const handleInitialQuery = (event) => {
-            const query = event.detail.query;
-            if (query) {
-                handleNewQuestion({
-                    detail: { 
-                        query,
-                        searchFilters: event.detail.searchFilters
-                    }
-                });
+            console.debug('handleInitialQuery', event);
+            if (event.detail) {
+                handleNewQuestion(event.detail);
             }
         };
 

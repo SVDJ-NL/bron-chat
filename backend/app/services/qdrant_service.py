@@ -14,7 +14,7 @@ from ..schemas import ChatDocument
 import threading
 import queue
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, date
 import time
 from typing import Optional
 from .qdrant_pool import QdrantConnectionPool
@@ -129,9 +129,9 @@ class QdrantService:
             filter_conditions.append(
                 models.FieldCondition(
                     key="meta.published",
-                    range=models.Range(
-                        gte=date_range[0].isoformat(),
-                        lte=date_range[1].isoformat()
+                    range=models.DatetimeRange(
+                        gte=date_range[0].strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        lte=date_range[1].strftime("%Y-%m-%dT%H:%M:%SZ")
                     )
                 )
             )
@@ -140,7 +140,7 @@ class QdrantService:
         search_filter = None
         if filter_conditions:
             search_filter = models.Filter(
-                must=filter_conditions
+                must=filter_conditions,
             )
         
         try:            
@@ -229,7 +229,7 @@ class QdrantService:
             for candidate in qdrant_documents
         ]   
 
-    def retrieve_relevant_documents(self, query: str, locations: List[str] = None, date_range: List[datetime] = None) -> List[Dict]:          
+    def retrieve_relevant_documents(self, query: str, locations: List[str] = None, date_range: List[date] = None) -> List[Dict]:          
         logger.debug(f"Retrieving relevant documents for query: {query}")
         
         # Step 1: Retrieve initial candidates with filters

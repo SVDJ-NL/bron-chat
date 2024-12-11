@@ -14,7 +14,8 @@ from ..config import settings
 from typing import List, Dict, AsyncGenerator
 from ..text_utils import get_formatted_date_english, format_text
 import time
-from datetime import date
+from datetime import date, datetime
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
@@ -34,52 +35,65 @@ async def chat_endpoint(
     query: str = Query(..., description="The chat message content"),
     session_id: str = Query(None, description="The session ID"),
     locations: List[str] = Query(None, description="List of location IDs to filter by"),
-    date_range: List[date] = Query(None, description="Date range to filter by [start_date, end_date]"),
+    start_date: date = Query(None, description="Start date to filter by"),
+    end_date: date = Query(None, description="End date to filter by"),
     rewrite_query: bool = Query(True, description="Whether to enable query rewriting"),
     db: Session = Depends(get_db)
 ):
-    # Start timer for request duration tracking
-    start_time = time.time()
-    
-    llm_service = None
-    if settings.LLM_SERVICE.lower() == "litellm":
-        llm_service = LiteLLMService()
-    else:
-        llm_service = CohereService()
+    try:
+        # Start timer for request duration tracking
+        start_time = time.time()
         
-    qdrant_service = QdrantService(llm_service)    
-    session_service = SessionService(db)
+        llm_service = None
+        if settings.LLM_SERVICE.lower() == "litellm":
+            llm_service = LiteLLMService()
+        else:
+            llm_service = CohereService()
+            
+        qdrant_service = QdrantService(llm_service)    
+        session_service = SessionService(db)
         
-    search_filters=SearchFilter(
-        locations=locations,
-        date_range=date_range,
-        rewrite_query=rewrite_query
-    )
-    # Create user message with search filters
-    user_message = llm_service.get_user_message(query)
-    user_message = session_service.add_message_with_filters(
-        session_id=session_id,
-        message=user_message,
-        search_filters=search_filters
-    )
-   
-    return StreamingResponse(
-        event_generator(
-            session_id, 
-            query, 
-            start_time, 
-            session_service, 
-            llm_service, 
-            qdrant_service,
-            search_filters
-        ),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        }
-    )
+        logger.info(f"query: {query}")
+        logger.info(f"locations: {locations}")
+        logger.info(f"start_date: {start_date}")
+        logger.info(f"end_date: {end_date}")
+        logger.info(f"rewrite_query: {rewrite_query}")  
+        
+        if start_date and end_date:
+            date_range = [
+                datetime.combine(start_date, datetime.min.time()),
+                datetime.combine(end_date, datetime.max.time())
+            ]
+        else:
+            date_range = None
+
+        search_filters = SearchFilter(
+            locations=locations,
+            date_range=date_range,
+            rewrite_query=rewrite_query
+        )
+        logger.info(f"search_filters: {search_filters}")  
+       
+        return StreamingResponse(
+            event_generator(
+                session_id, 
+                query, 
+                start_time, 
+                session_service, 
+                llm_service, 
+                qdrant_service,
+                search_filters
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in chat_endpoint: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
 
 async def event_generator(
     session_id: str,
@@ -109,7 +123,7 @@ async def event_generator(
         # Create new session with initial messages
         is_initial_message = True
         rag_system_message = llm_service.get_rag_system_message()
-        user_message = llm_service.get_user_message(query)
+        user_message = llm_service.get_user_message(query, search_filters)
                                 
         # First status message
         status_msg = "Zoekopdracht wordt herschreven"
@@ -134,7 +148,7 @@ async def event_generator(
     else:
         is_initial_message = False
         # For follow-up messages, rewrite the query        
-        user_message = llm_service.get_user_message(query)
+        user_message = llm_service.get_user_message(query, search_filters)
         
         # First status message
         status_msg = "Zoekopdracht wordt herschreven"

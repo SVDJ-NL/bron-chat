@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_serializer, ConfigDict
 from typing import List, Dict, Optional, Any
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 
 class FeedbackType(str, Enum):
@@ -110,7 +110,13 @@ class MessageFeedbackCreate(MessageFeedbackBase):
 class MessageFeedbackUpdate(MessageFeedbackBase):
     pass
 
-       
+     
+class SearchFilter(BaseModel):
+    locations: Optional[List[str]] = []
+    date_range: Optional[List[datetime]] = []
+    rewrite_query: bool = True
+
+  
 class ChatMessage(BaseModel):
     id: Optional[int] = None
     role: MessageRole
@@ -120,6 +126,7 @@ class ChatMessage(BaseModel):
     formatted_content: Optional[str] = None
     feedback: Optional[MessageFeedback] = None
     documents: Optional[List[ChatDocument]] = []
+    search_filters: Optional[SearchFilter] = None
 
     def get_param(self, param_name: str) -> Any:
         """
@@ -232,8 +239,3 @@ class DocumentFeedbackCreate(DocumentFeedbackBase):
 
 class DocumentFeedbackUpdate(DocumentFeedbackBase):
     pass
-
-class SearchFilter(BaseModel):
-    locations: Optional[List[str]] = []
-    date_range: Optional[List[datetime]] = []
-    rewrite_query: bool = True

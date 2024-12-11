@@ -80,30 +80,34 @@
         
         console.log('handleSubmit', event);
         event.preventDefault();
+
         if (!value.trim()) return;
         
         // Create search filters object
-        const searchFilters = new URLSearchParams({
-            rewrite_query: rewriteQuery.toString()
+        const urlSearchParams = new URLSearchParams({
+            query: value.trim(),
         });
+
+        if (rewriteQuery) {
+            urlSearchParams.append('rewrite_query', 'true');
+        }
 
         // Add locations if any are selected
         if (selectedLocations.length > 0) {
             selectedLocations.forEach(loc => {
                 if (loc && loc.value) {  // Check if location object is valid
-                    searchFilters.append('location', loc.value);
+                    urlSearchParams.append('locations', loc.value);
                 }
             });
         }
-
-        // Add year range
-        yearRange.forEach(year => {
-            searchFilters.append('year_range', year.toString());
-        });
+       
+        if (yearRange) {
+            urlSearchParams.append('start_date', yearRange[0].toString() + '-01-01');
+            urlSearchParams.append('end_date', yearRange[1].toString() + '-12-31');
+        }
 
         dispatch('submit', {
-            query: value.trim(),
-            searchFilters: searchFilters.toString()
+            urlSearchParams
         });
     }
 

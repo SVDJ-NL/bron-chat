@@ -31,14 +31,15 @@
         displayedPrompts = shuffled.slice(0, 3);
     }
     
-    function handlePromptClick(prompt) {
-        query = prompt;
-        // Trigger the search
-        handleSearch({ detail: { query: prompt } });
+    function handlePromptClick(value) {
+        const urlSearchParams = new URLSearchParams({
+            query: value.trim(),
+        });
+        handleSearch({ detail: urlSearchParams });
     }
     
-    async function handleSearch({ detail }) {
-        console.debug('page handleSearch', detail);
+    async function handleSearch(event) {        
+        console.debug('page handleSearch', event);
         isLoading = true;
         error = null;
 
@@ -59,14 +60,15 @@
             // Navigate to the session page
             await goto(`/s/${sessionId}`);
 
-            // Pass both query and searchFilters to the chat page
-            const searchEvent = new CustomEvent('initialQuery', {
-                detail: { 
-                    query: detail.query,
-                    searchFilters: detail.searchFilters // Forward the searchFilters
-                }
-            });
-            window.dispatchEvent(searchEvent);
+            event.detail.urlSearchParams.append('session_id', sessionId);
+
+            // Get the URLSearchParams from the event detail
+            const urlSearchParams = event.detail.urlSearchParams;
+
+            // Dispatch the event with the search parameters
+            window.dispatchEvent(new CustomEvent('initialQuery', {
+                detail: urlSearchParams
+            }));
 
         } catch (err) {
             console.error('Error:', err);

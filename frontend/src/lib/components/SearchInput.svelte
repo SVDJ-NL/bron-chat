@@ -6,10 +6,7 @@
     export let value = '';
 
     function handleSubmit(event) {
-        console.debug('search input handleSubmit', event.detail);
-        // Forward all details from BaseInput
-        const { query, searchFilters } = event.detail;
-        dispatch('submit', { query, searchFilters });
+        dispatch('submit', event.detail);
     }
 </script>
 

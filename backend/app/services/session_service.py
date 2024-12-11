@@ -1,11 +1,10 @@
 from .database_service import DatabaseService
 from ..models import Session as SessionModel, DocumentFeedback as DocumentFeedbackModel, Message, Document, MessageFeedback as MessageFeedbackModel, MessageDocument
-from ..schemas import SessionCreate, SessionUpdate, ChatMessage, ChatDocument, Session, DocumentFeedback, MessageFeedback
+from ..schemas import SessionCreate, ChatMessage, ChatDocument, Session, DocumentFeedback, MessageFeedback, SearchFilter
 from fastapi import HTTPException
-from datetime import datetime
 import uuid
 import logging  
-from typing import List
+from typing import List, Dict
 from sqlalchemy.orm import joinedload
 
 
@@ -232,6 +231,7 @@ class SessionService(DatabaseService):
         if message is None:
             return None
 
+            
         return Message(
             sequence=sequence,
             role=message.role,
@@ -239,6 +239,7 @@ class SessionService(DatabaseService):
             content=message.content,
             formatted_content=message.formatted_content,
             documents=self._documents_schema_to_db_model(message.documents),
+            search_filters=self._prepare_search_filters_for_db(message.search_filters)
         )
 
     def _document_schema_to_db_model(self, document: ChatDocument) -> Document:
@@ -252,4 +253,13 @@ class SessionService(DatabaseService):
             title=document.title,
             url=document.url,
         )        
-        
+
+    def _prepare_search_filters_for_db(self, search_filters: SearchFilter) -> Dict:
+        if not search_filters:
+            return None
+            
+        return {
+            "locations": search_filters.locations,
+            "date_range": [date.isoformat() if date else None for date in search_filters.date_range],
+            "rewrite_query": search_filters.rewrite_query
+        }

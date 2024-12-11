@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Generator
 from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
-from ..schemas import ChatMessage, MessageRole, MessageType
+from ..schemas import ChatMessage, MessageRole, MessageType, SearchFilter
 
 HUMAN_READABLE_SOURCES = {
     "openbesluitvorming": "Raadsstuk of bijlage",
@@ -174,11 +174,12 @@ Rewritten query: "klimaatbeleid Almere"
     def get_human_readable_source(source: str) -> str: 
         return HUMAN_READABLE_SOURCES.get(source, source)
 
-    def get_user_message(self, content: str):
+    def get_user_message(self, content: str, search_filters: SearchFilter):
         return ChatMessage(
             role=MessageRole.USER,
             message_type=MessageType.USER_MESSAGE,
             content=content,
+            search_filters=search_filters
         )        
 
     def get_rag_system_message(self):
