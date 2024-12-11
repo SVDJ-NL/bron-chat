@@ -79,8 +79,10 @@ class SessionService(DatabaseService):
     def add_message(self, session_id: int, message: ChatMessage) -> Session:     
         db_session = self._get_session(session_id)
         db_message = self._message_schema_to_db_model(message, len(db_session.messages))
+        
+        logger.info(f"Adding message with search_filters: {db_message.search_filters}")
+        
         db_session.messages.append(db_message)
-
         self.db.commit()
         self.db.refresh(db_session, ['messages'])        
   
@@ -206,8 +208,22 @@ class SessionService(DatabaseService):
             sequence=db_message.sequence,
             content=db_message.content,
             formatted_content=db_message.formatted_content,
+            user_query=db_message.user_query,
+            rewritten_query_for_vector_base=db_message.rewritten_query_for_vector_base,
+            rewritten_query_for_llm=db_message.rewritten_query_for_llm,
+            search_filters=self._search_filters_db_model_to_schema(db_message.search_filters),
             feedback=self._message_feedback_db_model_to_schema(db_message.feedback),
             documents=self._documents_db_model_to_schema(db_message.documents)
+        )
+     
+    def _search_filters_db_model_to_schema(self, db_search_filters: Dict) -> SearchFilter:
+        if db_search_filters is None:
+            return None
+        
+        return SearchFilter(
+            locations=db_search_filters.get("locations", []),
+            date_range=db_search_filters.get("date_range", []),
+            rewrite_query=db_search_filters.get("rewrite_query", True)
         )
      
     # Convert schemas to DB models
@@ -230,17 +246,23 @@ class SessionService(DatabaseService):
     def _message_schema_to_db_model(self, message: ChatMessage, sequence: int) -> Message:
         if message is None:
             return None
-
-            
-        return Message(
+         
+        db_message = Message(
             sequence=sequence,
             role=message.role,
             message_type=message.message_type,
             content=message.content,
             formatted_content=message.formatted_content,
+            user_query=message.user_query,
+            rewritten_query_for_vector_base=message.rewritten_query_for_vector_base,
+            rewritten_query_for_llm=message.rewritten_query_for_llm,
             documents=self._documents_schema_to_db_model(message.documents),
-            search_filters=self._prepare_search_filters_for_db(message.search_filters)
         )
+        
+        if message.search_filters:
+            db_message.search_filters = self._prepare_search_filters_for_db(message.search_filters)
+
+        return db_message
 
     def _document_schema_to_db_model(self, document: ChatDocument) -> Document:
         if document is None:

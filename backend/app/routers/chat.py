@@ -97,7 +97,7 @@ async def chat_endpoint(
 
 async def event_generator(
     session_id: str,
-    query: str,
+    user_query: str,
     start_time: float,
     session_service: SessionService, 
     llm_service: BaseLLMService, 
@@ -118,27 +118,29 @@ async def event_generator(
     await sleep(0)
     
     session = session_service.get_session_with_relations(session_id)
+    user_message = llm_service.get_user_message(user_query, search_filters)
+    rewritten_query_for_llm = llm_service.rewrite_query_for_llm(user_message)
         
     if len(session.messages) == 0:
         # Create new session with initial messages
         is_initial_message = True
         rag_system_message = llm_service.get_rag_system_message()
-        user_message = llm_service.get_user_message(query, search_filters)
-                                
-        # First status message
-        status_msg = "Zoekopdracht wordt herschreven"
-        status_content.append(status_msg)
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "system", 
-            "content": status_msg
-        }) + "\n\n"
-        
+        user_message = llm_service.get_user_message(user_query, search_filters)
+       
         if search_filters.rewrite_query:
-            rewritten_query = llm_service.rewrite_query(user_message)
-            user_message.formatted_content = rewritten_query
+            rewritten_query_for_vector_base = llm_service.rewrite_query_for_vector_base(user_message)
+            user_message.formatted_content = rewritten_query_for_vector_base
+            
+            # new fields
+            user_message.user_query = user_query
+            user_message.rewritten_query_for_vector_base = rewritten_query_for_vector_base
+            user_message.rewritten_query_for_llm = rewritten_query_for_llm
         else:
-            user_message.formatted_content = query
+            user_message.formatted_content = user_query
+            
+            # new fields
+            user_message.user_query = user_query
+            user_message.rewritten_query_for_llm = rewritten_query_for_llm
                 
         session = session_service.add_messages(
             session_id=session.id,
@@ -146,21 +148,16 @@ async def event_generator(
         )
         
     else:
-        is_initial_message = False
-        # For follow-up messages, rewrite the query        
-        user_message = llm_service.get_user_message(query, search_filters)
+        is_initial_message = False   
         
-        # First status message
-        status_msg = "Zoekopdracht wordt herschreven"
-        status_content.append(status_msg)
-        yield 'data: ' + json.dumps({
-            "type": "status", 
-            "role": "system", 
-            "content": status_msg
-        }) + "\n\n"
-        
-        rewritten_query = llm_service.rewrite_query_with_history(user_message, session.messages)
+        rewritten_query = llm_service.rewrite_query_with_history_for_vector_base(user_message, session.messages)
         user_message.formatted_content = rewritten_query
+        
+        # new fields
+        user_message.rewritten_query_for_vector_base = rewritten_query
+        user_message.rewritten_query_for_llm = llm_service.rewrite_query_for_llm(user_message)
+        user_message.user_query = user_query
+        
         session = session_service.add_message(
             session_id=session.id, 
             message=ChatMessage(
@@ -174,7 +171,7 @@ async def event_generator(
         
     try:        
         # Second status message
-        status_msg = f"Zoekopdracht is herschreven van '{user_message.content}' naar '{user_message.formatted_content}'"
+        status_msg = f"Zoekopdracht herschreven van '{user_message.user_query}' naar '{user_message.rewritten_query_for_vector_base}'"
         status_content.append(status_msg)
         yield 'data: ' + json.dumps({
             "type": "status", 
@@ -242,7 +239,8 @@ async def event_generator(
         }) + "\n\n"
         await sleep(0)            
     
-        status_msg = "Antwoord op de vraag wordt gegenereerd"
+
+        status_msg = f"Antwoord op deze vraag wordt gegenereerd door AI: '{user_message.rewritten_query_for_llm}'"
         status_content.append(status_msg)
         yield 'data: ' + json.dumps({
             "type": "status", 

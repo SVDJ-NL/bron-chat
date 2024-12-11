@@ -163,11 +163,15 @@ Rewritten query: "klimaatbeleid Almere"
         pass   
 
     @abstractmethod
-    def rewrite_query(self, query: str) -> str:
+    def rewrite_query_for_vector_base(self, message: ChatMessage) -> str:
         pass
 
     @abstractmethod
-    def rewrite_query_with_history(self, query: str, messages: list[ChatMessage]) -> str:
+    def rewrite_query_for_llm(self, message: ChatMessage) -> str:
+        pass
+
+    @abstractmethod
+    def rewrite_query_with_history_for_vector_base(self, message: ChatMessage, messages: list[ChatMessage]) -> str:
         pass
 
     @staticmethod

@@ -115,7 +115,12 @@ class SearchFilter(BaseModel):
     locations: Optional[List[str]] = []
     date_range: Optional[List[datetime]] = []
     rewrite_query: bool = True
-
+    
+    @field_serializer('date_range')
+    def serialize_dt(self, date_range: List[datetime], _info):  
+        if date_range:
+            return [dt.timestamp() for dt in date_range]
+        return None
   
 class ChatMessage(BaseModel):
     id: Optional[int] = None
@@ -124,6 +129,9 @@ class ChatMessage(BaseModel):
     sequence: Optional[int] = 0
     content: str
     formatted_content: Optional[str] = None
+    user_query: Optional[str] = None
+    rewritten_query_for_vector_base: Optional[str] = None
+    rewritten_query_for_llm: Optional[str] = None
     feedback: Optional[MessageFeedback] = None
     documents: Optional[List[ChatDocument]] = []
     search_filters: Optional[SearchFilter] = None

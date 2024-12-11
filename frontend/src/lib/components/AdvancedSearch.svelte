@@ -3,14 +3,16 @@
     import 'svelte-select/tailwind.css';
     import RangeSlider from 'svelte-range-slider-pips';
     import { slide } from 'svelte/transition';
-    
+    import { onMount } from 'svelte';
+    import { API_BASE_URL } from '$lib/config';
+
     export let isOpen;
     export let rewriteQuery = true;
     export let selectedLocations = [];
     export let yearRange = [2010, new Date().getFullYear()];
     export let locations = [];
     
-    let placeholder = 'Zoek locaties...';
+    let placeholder = 'Gemeentes, provincies of ministeries...';
 
     let floatingConfig = {
         strategy: 'fixed'
@@ -33,6 +35,18 @@
     let ariaFocused = () => {
         return `Select is gefocused, typ om de lijst te verfijnen, druk op de pijl omlaag om het menu te openen.`;
     }
+
+    onMount(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/locations`);
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.status}`);
+            }
+            locations = await response.json();
+        } catch (error) {
+            console.error('Error fetching locations:', error);
+        }
+    });
 </script>
 
 {#if isOpen}
@@ -45,7 +59,7 @@
     
                 <!-- Year Range Slider -->
                 <div class="flex-1">
-                    <label class="text-sm font-medium text-gray-700 block mb-1 text-center">
+                    <label class="text-sm font-medium text-gray-700 block mb-1">
                         Jaren
                     </label>
                     <div class="mt-4 px-2">
@@ -70,7 +84,7 @@
                 </div>
 
                 <!-- Query Rewrite Toggle -->
-                <div class="flex flex-col items-center self-start">
+                <!-- <div class="flex flex-col items-center self-start">
                     <label for="query-rewrite" class="ml-3 text-sm font-medium text-gray-700 mb-2">
                         Zoekopdracht herschrijven
                     </label>
@@ -85,12 +99,12 @@
                                 ${rewriteQuery ? 'translate-x-6' : 'translate-x-1'}`}
                         />
                     </button>
-                </div>
+                </div> -->
             </div>
             <!-- Location Filter -->
             <div class="w-full">
                 <label class="text-sm font-medium text-gray-700 block mb-1">
-                    Locaties
+                    Locatie
                 </label>
                 <Select
                     items={locations}

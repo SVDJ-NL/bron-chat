@@ -146,12 +146,12 @@ class LiteLLMService(BaseLLMService):
         else:
             return None
         
-    def rewrite_query(self, new_message: ChatMessage) -> str:
+    def rewrite_query_for_vector_base(self, new_message: ChatMessage) -> str:
         logger.info("Rewriting query...")
         pass
        
 
-    def rewrite_query_with_history(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
+    def rewrite_query_with_history_for_vector_base(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")
         
         # Filter out system messages and get last few messages for context

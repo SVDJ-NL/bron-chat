@@ -51,7 +51,16 @@ class CohereService(BaseLLMService):
         )
 
     def generate_dense_embedding(self, query: str):
-        logger.info(f"Generating dense embedding for query: {query}")
+        logger.info(f"Generating dense embedding for query: {query}")        
+        
+        # HACK TO FIX COHERE'S DIACRITIC ISSUES
+        # Replace diacritics with base characters using unicode normalization
+        import unicodedata
+        query = ''.join(c for c in unicodedata.normalize('NFKD', query)
+                       if not unicodedata.combining(c))
+        # END HACK
+        
+        logger.info(f"Generated dense embedding for query: {query}")
         
         if settings.EMBEDDING_QUANTIZATION == "float":
             return self.client.embed(
@@ -101,7 +110,7 @@ class CohereService(BaseLLMService):
         else:
             return None
 
-    def rewrite_query_with_history(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
+    def rewrite_query_with_history_for_vector_base(self, message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")
 
         # Filter out system messages and get last few messages for context
@@ -120,7 +129,7 @@ class CohereService(BaseLLMService):
         user_message = ChatMessage(
             role="user",
             content=f"""{history_context}
-New query: {new_message.get_param("formatted_content")}"""
+New query: {message.get_param("formatted_content")}"""
         )
         
         try:
@@ -134,24 +143,33 @@ New query: {new_message.get_param("formatted_content")}"""
             )
             
             rewritten_query = response.message.content[0].text
-            logger.info(f"Original query: {new_message.content}")
+            logger.info(f"Original query: {message.content}")
             logger.info(f"Rewritten query: {rewritten_query}")
             return rewritten_query
         except Exception as e:
             logger.error(f"Error rewriting query: {e}")
-            return new_message.content  # Fall back to original query if rewriting fails
+            return message.content  # Fall back to original query if rewriting fails
 
-    def rewrite_query(self, new_message: ChatMessage) -> str:       
+    def rewrite_query_for_llm(self, message: ChatMessage) -> str:
+        if message.search_filters.locations:
+            locations_str = ", ".join(message.search_filters.locations)
+            message.content += f" in {locations_str}"
+                
+        if message.search_filters.date_range:
+            message.content += f" van {message.search_filters.date_range[0].strftime('%d-%m-%Y')} tot {message.search_filters.date_range[1].strftime('%d-%m-%Y')}"
+        
+        return message.content
+
+    def rewrite_query_for_vector_base(self, message: ChatMessage) -> str:       
         system_message = ChatMessage(
             role="system",
             content=self.QUERY_REWRITE_SYSTEM_MESSAGE
         )
-    
         user_message = ChatMessage(
             role="user",
-            content=f"""Query: {new_message.content}"""
+            content=f"""Query: {message.content}"""
         )
-        
+
         try:
             response = self.client.chat(
                 model="command-r",
@@ -163,9 +181,9 @@ New query: {new_message.get_param("formatted_content")}"""
             )
             
             rewritten_query = response.message.content[0].text
-            logger.info(f"Original query: {new_message.content}")
+            logger.info(f"Original query: {message.content}")
             logger.info(f"Rewritten query: {rewritten_query}")
             return rewritten_query
         except Exception as e:
             logger.error(f"Error rewriting query: {e}")
-            return new_message.content  # Fall back to original query if rewriting fails
+            return message.content  # Fall back to original query if rewriting fails

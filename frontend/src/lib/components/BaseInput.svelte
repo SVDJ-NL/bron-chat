@@ -14,62 +14,6 @@
     let yearRange = [2010, new Date().getFullYear()];
     let locations = [];
     
-    // Fetch locations when component mounts
-    onMount(async () => {
-
-        const locationsUrl = 'https://api.bron.live/locations/search?includes=id,name,kind&limit=999';
-
-        fetch(locationsUrl)
-            .then(response => {
-                if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Data structure:
-                // data.hits.hits is an array of items. Each item has _source: {id, kind, name}
-                const hits = data.hits?.hits || [];
-
-                // Transform the data into the desired format
-                const items = hits.map(hit => {
-                    const source = hit._source;
-                    // Skip items where name contains 'type:'
-                    if (source.id.includes('type:') || source.id.includes('*')) {
-                        return null;
-                    }
-
-                    let kind = '';
-                    if (source.kind === 'municipality') {
-                        kind = 'Gemeente';
-                    } else if (source.kind === 'province') {
-                        kind = 'Provincie';
-                    } else {
-                        kind = 'Ministerie';
-                    }
-
-                    return {
-                        value: source.id,
-                        label: source.name, 
-                        group: kind
-                    };
-                }).filter(item => item !== null);
-
-                // Now you have an array like:
-                // [
-                //   {value: 'GM0363', label: 'Amsterdam', group: 'municipality'},
-                //   {value: 'PV28', label: 'Provincie Zuid-Holland', group: 'province'},
-                //   ...
-                // ]
-
-                locations = items;
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            });
-
-    });
-
     function handleSubmit(event) {
         if (!Array.isArray(selectedLocations)) {
             console.error('selectedLocations is not an array:', selectedLocations);
@@ -153,7 +97,6 @@
             <AdvancedSearch
                 isOpen={isAdvancedSearchOpen}
                 bind:rewriteQuery
-                bind:selectedLocations
                 bind:yearRange
                 {locations}
             />
