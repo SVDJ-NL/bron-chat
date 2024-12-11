@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import chat, sessions, feedback
+from .routers import chat, sessions, feedback, data
 from .config import settings
 from .database import init_db
 import asyncio
@@ -29,10 +29,10 @@ tracer_provider = register(
 
 LiteLLMInstrumentor().instrument(tracer_provider=tracer_provider)
 
-fast_api_app = FastAPI()
+app = FastAPI()
 
 # Configure CORS
-fast_api_app.add_middleware(
+app.add_middleware(
     CORSMiddleware,    
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
@@ -41,28 +41,30 @@ fast_api_app.add_middleware(
 )
 
 # Include routers
-fast_api_app.include_router(chat.router)
-fast_api_app.include_router(sessions.router)
-fast_api_app.include_router(feedback.router)
-
-@fast_api_app.on_event("startup")
-async def startup_event():
-    # await asyncio.sleep(10)
-    init_db()
-
-@fast_api_app.get("/")
-async def root():
-    return {"message": "Welcome to the API"}
-
-@fast_api_app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+app.include_router(data.router)
+app.include_router(chat.router)
+app.include_router(sessions.router)
+app.include_router(feedback.router)
 
 
 base_api_url = "/"
 if settings.ENVIRONMENT == "development":
     base_api_url = "/api/"
+    
 
-@fast_api_app.get(base_api_url + "sentry-debug")
+@app.on_event("startup")
+async def startup_event():
+    # await asyncio.sleep(10)
+    init_db()
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to the API"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+@app.get(base_api_url + "sentry-debug")
 async def trigger_error():
     division_by_zero = 1 / 0

@@ -23,3 +23,4 @@ arize-phoenix-otel
 arize-phoenix-evals
 scikit-learn
 numpy
+alembic

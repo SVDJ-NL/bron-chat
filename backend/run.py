@@ -1,5 +1,5 @@
-from backend.app.main import fast_api_app
+from backend.app.main import app
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(fast_api_app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
