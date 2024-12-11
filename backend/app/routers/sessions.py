@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as SQLAlchemySession
 from ..schemas import SessionCreate, MessageType, MessageRole
 from ..services.session_service import SessionService
 from ..database import get_db
@@ -22,7 +22,7 @@ if ENVIRONMENT == "development":
     base_api_url = "/api/"
 
 @router.get(base_api_url + "sessions/{session_id}")
-async def get_session(session_id: str, db: Session = Depends(get_db)):
+async def get_session(session_id: str, db: SQLAlchemySession = Depends(get_db)):
     logger.debug(f"Getting session with id: {session_id}")
     session_service = SessionService(db)
 
@@ -67,7 +67,8 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
     return response
 
 @router.post(base_api_url + "new_session")
-async def create_session(db: Session = Depends(get_db)):
+async def create_session(db: SQLAlchemySession = Depends(get_db)):
+    logger.debug("Creating new session")
     now = datetime.now()
     session_service = SessionService(db)
     return session_service.create_session(
@@ -79,7 +80,7 @@ async def create_session(db: Session = Depends(get_db)):
     )
 
 @router.post(base_api_url + "sessions/{session_id}/clone")
-async def clone_session(session_id: str, db: Session = Depends(get_db)):
+async def clone_session(session_id: str, db: SQLAlchemySession = Depends(get_db)):
     logger.debug(f"Cloning session with id: {session_id}")
     session_service = SessionService(db)
     
