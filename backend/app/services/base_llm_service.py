@@ -4,13 +4,13 @@ from ..text_utils import get_formatted_current_date_english, get_formatted_curre
 from ..schemas import ChatMessage, MessageRole, MessageType
 
 HUMAN_READABLE_SOURCES = {
-    "openbesluitvorming": "Raadstuk of bijlage",
+    "openbesluitvorming": "Raadsstuk of bijlage",
     "poliflw": "Politiek nieuwsbericht",
     "openspending": "Begrotingsdata",
     "woogle": "Woo-verzoek",
     "obk": "Officiële bekendmaking",
-    "cvdr": "Rapport",
-    "oor": "Lokale wet- en regelgeving",
+    "cvdr": "Lokale wet- en regelgeving",
+    "oor": "Rapport",
 }
     
 class BaseLLMService(ABC):    
@@ -26,7 +26,7 @@ The Bron corpus contains 3.5 million open government documents from various Dutc
 
 The document categories and their corresponding datasets are:
 
-- Raadstukken en bijlages
+- Raadsstukken en bijlages
 - Politiek nieuwsberichten
 - Begrotingsdata
 - Woo-verzoeken
