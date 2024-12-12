@@ -79,7 +79,7 @@
         const formattedText = text_formatted.replace(citationRegex, (match, documentIds, citationText) => {
             let formattedCitationText = citationText
                 .trim()
-                .replace(/[^a-zA-Z0-9\s$€%\-.,]/g, '') // Remove unwanted characters but keep dots and commas for now
+                .replace(/[^a-zA-ZÀ-ÿ0-9\s$€%\-.,]/g, '') // Remove unwanted characters but keep letters with accents, dots and commas for now
                 .replace(/[.,]/g, function(match, offset, string) {
                     // Check if the dot or comma is between digits
                     if (/\d/.test(string[offset - 1]) && /\d/.test(string[offset + 1])) {

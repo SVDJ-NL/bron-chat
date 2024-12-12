@@ -45,6 +45,7 @@ class DocumentBase(BaseModel):
     content: str
     meta: Optional[Dict] = None
     score: float
+    rerank_score: Optional[float] = None
     title: Optional[str] = None
     url: Optional[str] = None
 
@@ -111,8 +112,14 @@ class MessageFeedbackUpdate(MessageFeedbackBase):
     pass
 
      
+class Location(BaseModel):
+    id: str
+    name: str
+    type: str
+    
+    
 class SearchFilter(BaseModel):
-    locations: Optional[List[str]] = []
+    locations: Optional[List[Location]] = []
     date_range: Optional[List[datetime]] = []
     rewrite_query: bool = True
     

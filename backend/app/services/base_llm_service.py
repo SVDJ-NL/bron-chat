@@ -92,7 +92,7 @@ Rewritten query: "rapport klimaatbeleid gemeente amsterdam"
 
 '''
 
-    QUERY_REWRITE_SYSTEM_MESSAGE_WITH_HISTORY = '''
+    QUERY_REWRITE_SYSTEM_MESSAGE_WITH_HISTORY_FOR_DB = '''
     
 ## Task and Context
 
@@ -101,10 +101,10 @@ You are a query rewriter specializing in Dutch search queries for government doc
 
 1. Focus on the Latest Query: Concentrate on the user's most recent query.
 2. Analyze Previous Queries:
-    - If the latest query is a follow-up:
+    - If the latest query is a follow-up (examples 1, 2 and 3):
         - Incorporate essential context from previous queries to improve search results.
         - Maintain the original intent of the latest query.
-    - If the latest query is new:
+    - If the latest query is new (examples 4 and 5):
         - Do not add context from previous queries.
         - Keep the query concise and focused.
 3. Language: Write the query in Dutch.
@@ -115,7 +115,7 @@ You are a query rewriter specializing in Dutch search queries for government doc
 
 User query 1: "Wat zijn de regels voor zonnepanelen?"
 New query: "En wat kost de vergunning?"
-Rewritten query: "kosten vergunning zonnepanelen gemeente"
+Rewritten query: "kosten vergunning zonnepanelen"
 
 ## Example 2
 

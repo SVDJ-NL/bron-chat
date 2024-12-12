@@ -150,7 +150,10 @@ class LiteLLMService(BaseLLMService):
         logger.info("Rewriting query...")
         pass
        
-
+    def rewrite_query_for_llm(self, new_message: ChatMessage) -> str:
+        logger.info("Rewriting query...")
+        pass
+            
     def rewrite_query_with_history_for_vector_base(self, new_message: ChatMessage, messages: list[ChatMessage]) -> str:
         logger.info("Rewriting query based on chat history...")
         

@@ -1,6 +1,6 @@
 from .database_service import DatabaseService
 from ..models import Session as SessionModel, DocumentFeedback as DocumentFeedbackModel, Message, Document, MessageFeedback as MessageFeedbackModel, MessageDocument
-from ..schemas import SessionCreate, ChatMessage, ChatDocument, Session, DocumentFeedback, MessageFeedback, SearchFilter
+from ..schemas import SessionCreate, ChatMessage, ChatDocument, Session, DocumentFeedback, MessageFeedback, SearchFilter, Location
 from fastapi import HTTPException
 import uuid
 import logging  
@@ -168,6 +168,7 @@ class SessionService(DatabaseService):
             chunk_id=db_document.chunk_id,
             content=db_document.content,
             score=db_document.score,
+            rerank_score=db_document.rerank_score,
             title=db_document.title,
             url=db_document.url,
             feedback=self._document_feedback_db_model_to_schema(db_document.feedback)
@@ -268,10 +269,13 @@ class SessionService(DatabaseService):
         if document is None:
             return None
 
+        logger.info(f"Document: {document}")
+
         return Document(
             chunk_id=document.chunk_id,
             content=document.content,
             score=document.score,
+            rerank_score=document.rerank_score,
             title=document.title,
             url=document.url,
         )        
@@ -281,7 +285,10 @@ class SessionService(DatabaseService):
             return None
             
         return {
-            "locations": search_filters.locations,
+            "locations": self._locations_to_db_model(search_filters.locations),
             "date_range": [date.isoformat() if date else None for date in search_filters.date_range],
             "rewrite_query": search_filters.rewrite_query
         }
+        
+    def _locations_to_db_model(self, locations: List[Location]):
+        return [{"id": location.id, "name": location.name, "type": location.type} for location in locations]    

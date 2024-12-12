@@ -87,8 +87,6 @@ async def clone_session(session_id: str, db: SQLAlchemySession = Depends(get_db)
     # Get the original session with messages
     original_session = session_service.get_session_with_relations(session_id)
     
-    # Create a new session with current timestamp
-    now = datetime.now()
     new_session = session_service.create_session(
         SessionCreate(
             name=f"Copy of {original_session.name}",

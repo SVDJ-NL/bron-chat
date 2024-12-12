@@ -10,7 +10,7 @@ from ..services.base_llm_service import BaseLLMService
 from ..text_utils import format_content
 from fastembed.sparse import SparseTextEmbedding
 from qdrant_client.http import models
-from ..schemas import ChatDocument
+from ..schemas import ChatDocument, Location
 import threading
 import queue
 from contextlib import contextmanager
@@ -108,7 +108,7 @@ class QdrantService:
             logger.error(f"Error retrieving documents from Qdrant using document IDs: {e}")
             return []
 
-    def hybrid_search(self, query, locations: List[str] = None, date_range: List[datetime] = None) -> List[Dict]:
+    def hybrid_search(self, query, locations: List[Location] = None, date_range: List[datetime] = None) -> List[Dict]:
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
@@ -121,7 +121,7 @@ class QdrantService:
             filter_conditions.append(
                 models.FieldCondition(
                     key="meta.location",
-                    match=models.MatchAny(any=locations)
+                    match=models.MatchAny(any=[location.id for location in locations])
                 )
             )
         
@@ -229,7 +229,7 @@ class QdrantService:
             for candidate in qdrant_documents
         ]   
 
-    def retrieve_relevant_documents(self, query: str, locations: List[str] = None, date_range: List[date] = None) -> List[Dict]:          
+    def retrieve_relevant_documents(self, query: str, locations: List[Location] = None, date_range: List[date] = None) -> List[Dict]:          
         logger.debug(f"Retrieving relevant documents for query: {query}")
         
         # Step 1: Retrieve initial candidates with filters
@@ -259,7 +259,7 @@ class QdrantService:
         reranked_documents = self.llm_service.rerank_documents(
             query=query,
             documents=document_candidates_yaml,
-            top_n=int(len(document_candidates_yaml) / 2),
+            top_n=settings.RERANK_DOC_RETRIEVE_LIMIT,
             return_documents=False
         )
                
@@ -303,7 +303,7 @@ class QdrantService:
             relevance_scores=relevance_scores,
             similarity_matrix=similarity_matrix,
             lambda_param=0.9,
-            top_n=20
+            top_n=int(settings.RERANK_DOC_RETRIEVE_LIMIT - 2) # remove 2 most similar documents
         )
             
         return self.prepare_documents(diversified_candidates)

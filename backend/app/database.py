@@ -28,7 +28,9 @@ def init_db():
         Message,
         Document,
         MessageFeedback,
-        # Add any other models here
+        DocumentFeedback,
+        MessageDocument
+        
     )
     
     def table_exists(table_name):

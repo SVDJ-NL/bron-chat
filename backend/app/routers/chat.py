@@ -4,11 +4,13 @@ import logging
 import json
 from asyncio import sleep
 from ..database import get_db
+from sqlalchemy.orm import Session as SQLAlchemySession
 from ..services.session_service import SessionService
 from ..services.cohere_service import CohereService
 from ..services.base_llm_service import BaseLLMService
 from ..services.litellm_service import LiteLLMService
 from ..services.qdrant_service import QdrantService
+from ..services.bron_service import BronService
 from ..schemas import ChatMessage, ChatDocument, SessionCreate, SessionUpdate, Session, MessageRole, MessageType, SearchFilter
 from ..config import settings
 from typing import List, Dict, AsyncGenerator
@@ -38,7 +40,7 @@ async def chat_endpoint(
     start_date: date = Query(None, description="Start date to filter by"),
     end_date: date = Query(None, description="End date to filter by"),
     rewrite_query: bool = Query(True, description="Whether to enable query rewriting"),
-    db: Session = Depends(get_db)
+    db: SQLAlchemySession = Depends(get_db)
 ):
     try:
         # Start timer for request duration tracking
@@ -52,6 +54,7 @@ async def chat_endpoint(
             
         qdrant_service = QdrantService(llm_service)    
         session_service = SessionService(db)
+        bron_service = BronService()
         
         logger.info(f"query: {query}")
         logger.info(f"locations: {locations}")
@@ -59,16 +62,18 @@ async def chat_endpoint(
         logger.info(f"end_date: {end_date}")
         logger.info(f"rewrite_query: {rewrite_query}")  
         
-        if start_date and end_date:
+        date_range = None
+        if start_date is not None and end_date is not None:
             date_range = [
                 datetime.combine(start_date, datetime.min.time()),
                 datetime.combine(end_date, datetime.max.time())
             ]
-        else:
-            date_range = None
 
+        locations_objects = await bron_service.get_locations_by_ids(location_ids=locations)
+
+        logger.info(f"location_names: {locations_objects}")
         search_filters = SearchFilter(
-            locations=locations,
+            locations=locations_objects,
             date_range=date_range,
             rewrite_query=rewrite_query
         )
@@ -125,23 +130,21 @@ async def event_generator(
         # Create new session with initial messages
         is_initial_message = True
         rag_system_message = llm_service.get_rag_system_message()
-        user_message = llm_service.get_user_message(user_query, search_filters)
        
-        if search_filters.rewrite_query:
-            rewritten_query_for_vector_base = llm_service.rewrite_query_for_vector_base(user_message)
-            user_message.formatted_content = rewritten_query_for_vector_base
+        # if search_filters.rewrite_query:
+        user_message.user_query = user_query
+        user_message.rewritten_query_for_llm = rewritten_query_for_llm
+        
+        rewritten_query_for_vector_base = llm_service.rewrite_query_for_vector_base(user_message)
+        user_message.formatted_content = rewritten_query_for_vector_base
+        user_message.rewritten_query_for_vector_base = rewritten_query_for_vector_base
+        # else:
+        #     user_message.formatted_content = user_query
             
-            # new fields
-            user_message.user_query = user_query
-            user_message.rewritten_query_for_vector_base = rewritten_query_for_vector_base
-            user_message.rewritten_query_for_llm = rewritten_query_for_llm
-        else:
-            user_message.formatted_content = user_query
-            
-            # new fields
-            user_message.user_query = user_query
-            user_message.rewritten_query_for_llm = rewritten_query_for_llm
-                
+        #     # new fields
+        #     user_message.user_query = user_query
+        #     user_message.rewritten_query_for_llm = rewritten_query_for_llm
+        logger.info(f"user_message: {user_message}")        
         session = session_service.add_messages(
             session_id=session.id,
             messages=[rag_system_message, user_message]
@@ -150,22 +153,16 @@ async def event_generator(
     else:
         is_initial_message = False   
         
-        rewritten_query = llm_service.rewrite_query_with_history_for_vector_base(user_message, session.messages)
-        user_message.formatted_content = rewritten_query
-        
-        # new fields
-        user_message.rewritten_query_for_vector_base = rewritten_query
-        user_message.rewritten_query_for_llm = llm_service.rewrite_query_for_llm(user_message)
         user_message.user_query = user_query
+        user_message.rewritten_query_for_llm = rewritten_query_for_llm
+        
+        rewritten_query_for_vector_base = llm_service.rewrite_query_with_history_for_vector_base(user_message, session.messages)
+        user_message.formatted_content = rewritten_query_for_vector_base
+        user_message.rewritten_query_for_vector_base = rewritten_query_for_vector_base
         
         session = session_service.add_message(
             session_id=session.id, 
-            message=ChatMessage(
-                role=MessageRole.USER,
-                message_type=MessageType.USER_MESSAGE,
-                content=user_message.content,
-                formatted_content=rewritten_query
-            )
+            message=user_message
         )
         logger.info(f"Using existing session: {session.id}")
         
@@ -200,7 +197,7 @@ async def event_generator(
         try: 
             # Use the formatted_content (rewritten query) from the last message
             relevant_docs = qdrant_service.retrieve_relevant_documents(
-                user_message.formatted_content,
+                user_message.rewritten_query_for_vector_base,
                 locations=search_filters.locations,
                 date_range=search_filters.date_range
             )
@@ -209,6 +206,16 @@ async def event_generator(
             logger.error(f"Error retrieving relevant documents: {e}")
             raise e
         
+        if not relevant_docs:
+            status_msg = "Er konden geen relevante documenten worden gevonden"
+            status_content.append(status_msg)
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "system", 
+                "content": status_msg
+            }) + "\n\n"
+            await sleep(0)
+            return
         
         session_documents = session_service.get_documents(session)
         if not session_documents:
@@ -363,6 +370,7 @@ async def generate_full_response(
                         ChatDocument(
                             chunk_id=doc.get('chunk_id'),
                             score=doc.get('score'),
+                            rerank_score=doc.get('rerank_score'),
                             content=doc.get('content', ''),
                             title=doc.get('title', ''),
                             url=doc.get('url', '')
