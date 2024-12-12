@@ -1,22 +1,24 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
     import BaseInput from './BaseInput.svelte';
-    
+    import { createEventDispatcher } from 'svelte';    
     const dispatch = createEventDispatcher();
+    
     export let isLoading = false;
     export let value = '';
 
     function handleSubmit(event) {
-        console.debug('chat input handleSubmit', event.detail);
-        // Forward all details from BaseInput
-        const { query, searchFilters } = event.detail;
-        dispatch('submit', { query, searchFilters });
+        const searchParams = {
+            ...event.detail,
+            value
+        };
+        dispatch('submit', searchParams);
     }
 </script>
 
 <BaseInput
     bind:value
     {isLoading}
+    placeholder="Stel een vervolg vraag..."
     on:submit={handleSubmit}
     on:stop
 >

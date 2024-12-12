@@ -6,7 +6,7 @@ from ..schemas import ChatMessage, MessageRole, MessageType, SearchFilter
 HUMAN_READABLE_SOURCES = {
     "openbesluitvorming": "Raadsstuk of bijlage",
     "poliflw": "Politiek nieuwsbericht",
-    "openspending": "Begrotingsdata",
+    # "openspending": "Begrotingsdata",
     "woogle": "Woo-verzoek",
     "obk": "Officiële bekendmaking",
     "cvdr": "Lokale wet- en regelgeving",
@@ -28,7 +28,6 @@ The document categories and their corresponding datasets are:
 
 - Raadsstukken en bijlages
 - Politiek nieuwsberichten
-- Begrotingsdata
 - Woo-verzoeken
 - Officiële bekendmakingen
 - Rapporten

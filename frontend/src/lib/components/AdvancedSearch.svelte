@@ -5,13 +5,16 @@
     import { slide } from 'svelte/transition';
     import { onMount } from 'svelte';
     import { API_BASE_URL } from '$lib/config';
+    import { createEventDispatcher } from 'svelte';
+
+    const dispatch = createEventDispatcher();
 
     export let isOpen;
     export let rewriteQuery = true;
     export let selectedLocations = [];
     export let yearRange = [2010, new Date().getFullYear()];
-    export let locations = [];
     
+    let locations = [];
     let placeholder = 'Gemeentes, provincies of ministeries...';
 
     let floatingConfig = {
@@ -34,6 +37,13 @@
 
     let ariaFocused = () => {
         return `Select is gefocused, typ om de lijst te verfijnen, druk op de pijl omlaag om het menu te openen.`;
+    }
+
+    // Handle location selection changes
+    function handleLocationChange(event) {
+        console.debug('handleLocationChange', event);
+        selectedLocations = event;
+        dispatch('locationsUpdate', selectedLocations);
     }
 
     onMount(async () => {
@@ -109,6 +119,8 @@
                 <Select
                     items={locations}
                     multiple={true}
+                    bind:value={selectedLocations}
+                    on:change={handleLocationChange}
                     floatingConfig={floatingConfig}
                     groupBy={groupBy}
                     ariaValues={ariaValues}
@@ -116,7 +128,6 @@
                     ariaFocused={ariaFocused}
                     class="location-select"
                     placeholder={placeholder}
-                    bind:value={selectedLocations}
                 />
             </div>
 

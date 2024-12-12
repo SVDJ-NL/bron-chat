@@ -130,8 +130,19 @@
         isLoading = false;
     }
 
-    function handleNewQuestion(urlSearchParams) {
-        console.debug('handleNewQuestion', urlSearchParams);
+    function handleFollowUpQuestion(event) {
+        console.debug('handleFollowUpQuestion', event);
+
+        if (event.detail) {
+
+            const urlSearchParams = event.detail.urlSearchParams;
+            urlSearchParams.append('session_id', sessionId);
+            handleQuery(urlSearchParams);
+        }
+    }
+
+    function handleQuery(urlSearchParams) {
+        console.debug('handleQuery', urlSearchParams);
         isLoading = true;
         addMessage({
             role: 'user',
@@ -363,7 +374,7 @@
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Simulate the user sending a message
-        handleNewQuestion({
+        handleQuery({
             detail: {
                 query: nextMessage.content,
                 searchFilters: nextMessage.filters
@@ -390,7 +401,7 @@
         const handleInitialQuery = (event) => {
             console.debug('handleInitialQuery', event);
             if (event.detail) {
-                handleNewQuestion(event.detail);
+                handleQuery(event.detail);
             }
         };
 
@@ -429,7 +440,7 @@
             <div class="mt-4 px-4">
                 <ChatInput
                     {isLoading}
-                    on:submit={handleNewQuestion}
+                    on:submit={handleFollowUpQuestion}
                     on:stop={handleStopMessageFlow}
                 />
             </div>

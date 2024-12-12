@@ -12,7 +12,6 @@
     let rewriteQuery = true;
     let selectedLocations = [];
     let yearRange = [2010, new Date().getFullYear()];
-    let locations = [];
     
     function handleSubmit(event) {
         if (!Array.isArray(selectedLocations)) {
@@ -62,6 +61,12 @@
     function toggleAdvancedSearch() {
         isAdvancedSearchOpen = !isAdvancedSearchOpen;
     }
+
+    // Add handler for location updates
+    function handleLocationsUpdate(event) {
+        console.debug('handleLocationsUpdate', event);
+        selectedLocations = event.detail.detail;
+    }
 </script>
 
 <div class="rounded-lg border border-gray-300 overflow-hidden">
@@ -98,7 +103,8 @@
                 isOpen={isAdvancedSearchOpen}
                 bind:rewriteQuery
                 bind:yearRange
-                {locations}
+                bind:selectedLocations
+                on:locationsUpdate={handleLocationsUpdate}
             />
 
             <div class="flex p-4  space-x-2  flex-row">

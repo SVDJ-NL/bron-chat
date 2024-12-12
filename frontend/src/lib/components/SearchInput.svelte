@@ -6,7 +6,11 @@
     export let value = '';
 
     function handleSubmit(event) {
-        dispatch('submit', event.detail);
+        const searchParams = {
+            ...event.detail,
+            value
+        };
+        dispatch('submit', searchParams);
     }
 </script>
 
