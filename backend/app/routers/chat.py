@@ -56,11 +56,11 @@ async def chat_endpoint(
         session_service = SessionService(db)
         bron_service = BronService()
         
-        logger.info(f"query: {query}")
-        logger.info(f"locations: {locations}")
-        logger.info(f"start_date: {start_date}")
-        logger.info(f"end_date: {end_date}")
-        logger.info(f"rewrite_query: {rewrite_query}")  
+        logger.debug(f"query: {query}")
+        logger.debug(f"locations: {locations}")
+        logger.debug(f"start_date: {start_date}")
+        logger.debug(f"end_date: {end_date}")
+        logger.debug(f"rewrite_query: {rewrite_query}")  
         
         date_range = None
         if start_date is not None and end_date is not None:
@@ -71,7 +71,7 @@ async def chat_endpoint(
 
         locations_objects = await bron_service.get_locations_by_ids(location_ids=locations)
 
-        logger.info(f"location_names: {locations_objects}")
+        logger.debug(f"location_names: {locations_objects}")
         search_filters = SearchFilter(
             locations=locations_objects,
             date_range=date_range,
@@ -144,7 +144,7 @@ async def event_generator(
         #     # new fields
         #     user_message.user_query = user_query
         #     user_message.rewritten_query_for_llm = rewritten_query_for_llm
-        logger.info(f"user_message: {user_message}")        
+        logger.debug(f"user_message: {user_message}")        
         session = session_service.add_messages(
             session_id=session.id,
             messages=[rag_system_message, user_message]

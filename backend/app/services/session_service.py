@@ -269,8 +269,6 @@ class SessionService(DatabaseService):
         if document is None:
             return None
 
-        logger.info(f"Document: {document}")
-
         return Document(
             chunk_id=document.chunk_id,
             content=document.content,
