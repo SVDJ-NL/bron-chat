@@ -12,6 +12,9 @@
     let showAboutDialog = false;
 
     let samplePrompts = [
+        // "Jeugdzorg sector analyse: Waarom heeft Inspectie Gezondheidszorg en Jeugd de Mutsaersstichting onder verscherpt toezicht geplaatst in Limburg en Noord-Brabant?",
+        // "Parkeerbeheer: Wat speelt er in Utrecht rond foutparkeren bij invalideparkeerplaatsen?",
+        // "Pesticiden in landbouw: Welke maatregelen neemt Gelderland tegen de gevolgen van gewasbescherming?",
         "Stikstofbeleid 2023",
         "Uitgaven klimaatbeleid",
         "Toeslagenaffaire",
@@ -34,8 +37,13 @@
     function handlePromptClick(value) {
         const urlSearchParams = new URLSearchParams({
             query: value.trim(),
+            rewrite_query: 'true',
+            locations: [],
+            start_date: '2010-01-01',
+            end_date: new Date().getFullYear().toString() + '-12-31',
         });
-        handleSearch({ detail: urlSearchParams });
+
+        handleSearch({ detail: { urlSearchParams } });
     }
     
     async function handleSearch(event) {        
