@@ -2,10 +2,12 @@
     import BaseInput from './BaseInput.svelte';
     import { createEventDispatcher } from 'svelte';
     const dispatch = createEventDispatcher();
+    
     export let isLoading = false;
     export let value = '';
 
     function handleSubmit(event) {
+        console.log('search input handleSubmit', event);
         const searchParams = {
             ...event.detail,
             value
@@ -22,7 +24,7 @@
 >
     <div slot="button">
         <button 
-            type="submit" 
+            type="submit"
             class="cursor-pointer p-0.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 scale-110 rotate-90"
             disabled={!value.trim() || isLoading}
         >

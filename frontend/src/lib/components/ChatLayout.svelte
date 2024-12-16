@@ -58,8 +58,11 @@
     }
 
     function closeDocumentsPanel(event) {
+        // If there's no documents panel, return early
+        const documentsPanel = document.querySelector('.documents-panel');
+        if (!documentsPanel) return;
+        
         // Check if the click target is a citation link
-        // Start of Selection
         if (
             window.matchMedia('(min-width: 1024px)').matches ||
             event.target.classList.contains('citation-link') || 
@@ -68,8 +71,7 @@
             return; // Don't close the panel if clicking on a citation
         }
 
-        const documentsPanel = document.querySelector('.documents-panel');
-        if (documentsPanel && !documentsPanel.contains(event.target)) {
+        if (!documentsPanel.contains(event.target)) {
             isDocumentsPanelOpen = false;
         }
     }
@@ -437,7 +439,7 @@
                 isLoading={isLoading}
                 on:citationClick={handleCitationClick} 
             />
-            <div class="mt-4 px-4">
+            <div class="mt-4 px-4 pb-4 sm:pb-6">
                 <ChatInput
                     {isLoading}
                     on:submit={handleFollowUpQuestion}
