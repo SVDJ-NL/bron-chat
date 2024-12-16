@@ -75,7 +75,7 @@ class QdrantService:
             return None
 
     def get_documents_by_ids(self, documents: List[ChatDocument]):
-        if not documents:
+        if not documents or len(documents) == 0:
             logger.debug("No documents provided to retrieve")
             return []
         
@@ -279,12 +279,12 @@ class QdrantService:
         
         relevance_threshold = 0.25
         
-        # Filter out candidates with low rerank scores
-        qdrant_document_candidates = [
-            candidate for candidate in qdrant_document_candidates 
-            if candidate.get('rerank_score', 0.0) >= relevance_threshold
-        ]        
-        logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
+        # # Filter out candidates with low rerank scores
+        # qdrant_document_candidates = [
+        #     candidate for candidate in qdrant_document_candidates 
+        #     if candidate.get('rerank_score', 0.0) >= relevance_threshold
+        # ]        
+        # logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
 
         # Return early if no documents meet the threshold
         if not qdrant_document_candidates:

@@ -97,6 +97,9 @@ class BronService:
     
     async def get_locations_by_ids(self, location_ids: List[str]) -> List[Location]:
         # Use cache if available, otherwise fetch data
+        if location_ids is None or len(location_ids) == 0:
+            return []
+        
         locations = await self.get_locations()
         
         # Create a lookup dictionary for faster access
