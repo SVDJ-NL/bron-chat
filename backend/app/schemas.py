@@ -126,7 +126,7 @@ class SearchFilter(BaseModel):
     @field_serializer('date_range')
     def serialize_dt(self, date_range: List[datetime], _info):  
         if date_range:
-            return [dt.timestamp() for dt in date_range]
+            return [dt.strftime("%Y-%m-%d") for dt in date_range]
         return None
   
 class ChatMessage(BaseModel):

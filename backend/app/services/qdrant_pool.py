@@ -18,6 +18,7 @@ class QdrantConnectionPool:
     _pool = None
     _last_health_check = None
     _health_check_interval = 60  # seconds
+    _timeout = settings.QDRANT_TIMEOUT  # Ensure this is set to a higher value if needed
     
     def __init__(self):
         self._pool = queue.Queue(maxsize=settings.QDRANT_POOL_SIZE)
@@ -37,7 +38,7 @@ class QdrantConnectionPool:
             client = QdrantClient(
                 host=settings.QDRANT_HOST,
                 port=settings.QDRANT_PORT,
-                timeout=settings.QDRANT_TIMEOUT,
+                timeout=self._timeout,
                 prefer_grpc=True
             )
             # Test connection

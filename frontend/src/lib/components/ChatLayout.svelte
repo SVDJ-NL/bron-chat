@@ -13,6 +13,7 @@
     $: documents = Array.isArray($sessionStore.documents) ? $sessionStore.documents : [];
     $: sessionId = $sessionStore.sessionId;
     $: sessionName = $sessionStore.sessionName;
+    $: locations = $sessionStore.locations;
 
     let currentStatusMessage = null;
     let selectedDocuments = null;
@@ -27,8 +28,8 @@
     let initialQuery = null;
     let replayQueue = [];
     let isReplaying = false;
-    let initialLocations = [];
-    let initialYearRange = [2010, new Date().getFullYear()];
+    let selectedLocations = [];
+    let selectedYearRange = [];
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -67,8 +68,8 @@
         // Check if the click target is a citation link
         if (
             window.matchMedia('(min-width: 1024px)').matches ||
-            event.target.classList.contains('citation-link') || 
-            event.target.parentElement.classList.contains('show-all-documents-btn')
+            event.target?.classList?.contains('citation-link') || 
+            event.target?.parentElement?.classList?.contains('show-all-documents-btn')
         ) {
             return; // Don't close the panel if clicking on a citation
         }
@@ -396,10 +397,33 @@
         }, 500);
     }
 
+    function handleInitialFilters() {
+        const lastUserMessage = messages.findLast(m => m.role === 'user');
+        if (lastUserMessage?.search_filters) {
+            if (lastUserMessage.search_filters.locations) {
+                selectedLocations = lastUserMessage.search_filters.locations;
+            }
+            
+            if (lastUserMessage.search_filters.date_range) {
+                const [startDate, endDate] = lastUserMessage.search_filters.date_range;
+
+                // Parse dates to get years
+                if (startDate && endDate) {
+                    selectedYearRange = [
+                        parseInt(startDate.split('-')[0]),
+                        parseInt(endDate.split('-')[0])
+                    ];
+                }
+                console.debug('handleInitialFilter selectedYearRange', selectedYearRange);
+            }
+        }
+    }
+
     onMount(() => {
         if (sessionId) {
             openDocumentsPanel();
         }
+        handleInitialFilters();
         
         // Listen for initial query from the home page
         const handleInitialQuery = (event) => {
@@ -418,15 +442,16 @@
 
                 // Parse dates to get years
                 if (startDate && endDate) {
-                    initialYearRange = [
+                    selectedYearRange = [
                         parseInt(startDate.split('-')[0]),
                         parseInt(endDate.split('-')[0])
                     ];
+                    console.debug('handleInitialQuery selectedYearRange', selectedYearRange);
                 }
 
                 // Convert locations to the expected format
                 if (event.detail.selectedLocations.length > 0) {
-                    initialLocations = event.detail.selectedLocations;
+                    selectedLocations = event.detail.selectedLocations;
                 }
 
                 handleQuery(event.detail.urlSearchParams);
@@ -436,8 +461,6 @@
         window.addEventListener('initialQuery', handleInitialQuery);
         document.addEventListener('click', closeDocumentsPanel);
         document.addEventListener('visibilitychange', openDocumentsPanel);
-
-        // Add message replay listener
         window.addEventListener('message', handleMessageReplay);
 
         return () => {
@@ -468,8 +491,9 @@
             <div class="mt-4 px-4 pb-4 sm:pb-6">
                 <ChatInput
                     {isLoading}
-                    initialLocations={initialLocations}
-                    initialYearRange={initialYearRange}
+                    locations={locations}
+                    initialLocations={selectedLocations}
+                    initialYearRange={selectedYearRange}
                     on:submit={handleFollowUpQuestion}
                     on:stop={handleStopMessageFlow}
                 />

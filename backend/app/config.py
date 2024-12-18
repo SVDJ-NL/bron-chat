@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # Qdrant settings
     QDRANT_POOL_SIZE: int = 20
     QDRANT_POOL_TIMEOUT: int = 30
-    QDRANT_TIMEOUT: int = 10
+    QDRANT_TIMEOUT: int = 60
     SENTRY_DSN: str = os.getenv("SENTRY_DSN")
 
     OTEL_EXPORTER_OTLP_HEADER: str = os.getenv("OTEL_EXPORTER_OTLP_HEADER")

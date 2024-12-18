@@ -9,6 +9,7 @@ from datetime import datetime
 from ..config import settings
 from ..services.cohere_service import CohereService
 from ..services.litellm_service import LiteLLMService
+from ..services.bron_service import BronService
 
 router = APIRouter()
 
@@ -34,6 +35,7 @@ async def get_session(session_id: str, db: SQLAlchemySession = Depends(get_db)):
         llm_service = CohereService()
         
     qdrant_service = QdrantService(llm_service)
+    bron_service = BronService()
     
     session = session_service.get_session_with_relations(session_id)    
     documents = []
@@ -56,12 +58,15 @@ async def get_session(session_id: str, db: SQLAlchemySession = Depends(get_db)):
             message.content = message.get_param("formatted_content")
             
         messages.append(message)
-                                     
+                   
+    locations = await bron_service.get_locations()
+            
     response = {
         "id": session.id,
         "name": session.name,
         "messages": messages,
-        "documents": qdrant_documents
+        "documents": qdrant_documents,
+        "locations": locations
     }
     
     return response

@@ -5,6 +5,7 @@ from fastapi import HTTPException
 import uuid
 import logging  
 from typing import List, Dict
+from datetime import datetime
 from sqlalchemy.orm import joinedload
 
 
@@ -281,10 +282,10 @@ class SessionService(DatabaseService):
     def _prepare_search_filters_for_db(self, search_filters: SearchFilter) -> Dict:
         if not search_filters:
             return None
-            
+        
         return {
             "locations": self._locations_to_db_model(search_filters.locations),
-            "date_range": [date.isoformat() if date else None for date in search_filters.date_range],
+            "date_range": [date.isoformat() for date in search_filters.date_range] if search_filters.date_range else [],
             "rewrite_query": search_filters.rewrite_query
         }
         

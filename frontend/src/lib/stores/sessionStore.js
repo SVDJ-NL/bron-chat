@@ -5,7 +5,8 @@ function createSessionStore() {
         sessionId: null,
         messages: [],
         documents: [],
-        sessionName: ''
+        sessionName: '',
+        locations: []
     });
 
     return {
@@ -16,7 +17,8 @@ function createSessionStore() {
             sessionId: null,
             messages: [],
             documents: [],
-            sessionName: 'Bron chat - Doorzoek 3.5 miljoen overheidsdocumenten met AI'
+            sessionName: 'Bron chat - Doorzoek 3.5 miljoen overheidsdocumenten met AI',
+            locations: []
         })
     };
 }

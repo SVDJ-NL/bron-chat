@@ -8,15 +8,15 @@
     export let isLoading = false;
     export let value = '';
     export let placeholder = 'Chat met Bron...';
+    export let locations = [];
     export let initialLocations = [];
-    export let initialYearRange = [2010, new Date().getFullYear()];
+    export let initialYearRange = [];
     
     const dispatch = createEventDispatcher();
     
     let rewriteQuery = true;
     let selectedLocations = [];
-    let yearRange = [2010, new Date().getFullYear()];
-    let locations = [];
+    let selectedYearRange = [];
     let showLocationFilter = false;
     let showYearFilter = false;
     let locationButton;
@@ -30,17 +30,16 @@
     };
 
     $: {
-        if (initialLocations.length > 0 && selectedLocations.length === 0) {
+        if (initialLocations.length > 0 && selectedLocations && selectedLocations.length === 0) {
             selectedLocations = initialLocations;
         }
-        if (initialYearRange && 
-            (initialYearRange[0] !== 2010 || initialYearRange[1] !== new Date().getFullYear())) {
-            yearRange = initialYearRange;
+        if (initialYearRange.length > 0 && selectedYearRange && selectedYearRange.length === 0) {
+            selectedYearRange = initialYearRange;
         }
     }
 
     function handleSubmit(event) {
-        console.debug('base input handleSubmit', event, value, rewriteQuery, selectedLocations, yearRange);
+        console.debug('base input handleSubmit', event, value, rewriteQuery, selectedLocations, selectedYearRange);
         
         if (event?.preventDefault) {
             event.preventDefault();
@@ -64,9 +63,9 @@
             });
         }
        
-        if (yearRange) {
-            urlSearchParams.append('start_date', yearRange[0].toString() + '-01-01');
-            urlSearchParams.append('end_date', yearRange[1].toString() + '-12-31');
+        if (selectedYearRange && selectedYearRange.length > 0) {
+            urlSearchParams.append('start_date', selectedYearRange[0].toString() + '-01-01');
+            urlSearchParams.append('end_date', selectedYearRange[1].toString() + '-12-31');
         }
 
         dispatch('submit', {
@@ -84,8 +83,9 @@
     }
 
     function handleYearUpdate(event) {
-        console.debug('base input handleYearUpdate', event);
-        yearRange = event.detail;
+        selectedYearRange = event.detail;
+        console.debug('selectedYearRange', selectedYearRange);
+        // dispatch('yearUpdate', yearRange);
     }
 
     async function updatePopupPosition(button, popup, placement = 'top-start') {
@@ -172,12 +172,16 @@
     }
 
     function removeYearFilter() {
-        yearRange = [2010, new Date().getFullYear()];
+        selectedYearRange = [];
     }
 
     onMount(() => {
         document.addEventListener('click', handleClickOutside);
-        fetchLocations();
+
+        if (locations.length === 0) {
+            fetchLocations();
+        }
+
         return () => document.removeEventListener('click', handleClickOutside);
     });
 </script>
@@ -234,7 +238,7 @@
                         on:click={toggleYearFilter}
                         type="button"
                     >
-                        {#if yearRange[0] !== 2010 || yearRange[1] !== new Date().getFullYear()}
+                        {#if selectedYearRange.length > 0}
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
                                 <path d="M12.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM7.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM8.25 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM9.75 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM10.5 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12.75 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM14.25 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 17.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 15.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM15 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM16.5 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
                                 <path fill-rule="evenodd" d="M6.75 2.25A.75.75 0 0 1 7.5 3v1.5h9V3A.75.75 0 0 1 18 3v1.5h.75a3 3 0 0 1 3 3v11.25a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V7.5a3 3 0 0 1 3-3H6V3a.75.75 0 0 1 .75-.75Zm13.5 9a1.5 1.5 0 0 0-1.5-1.5H5.25a1.5 1.5 0 0 0-1.5 1.5v7.5a1.5 1.5 0 0 0 1.5 1.5h13.5a1.5 1.5 0 0 0 1.5-1.5v-7.5Z" clip-rule="evenodd" />
@@ -248,8 +252,8 @@
                     </button>
 
                     <div class="pl-2 flex items-center space-x-1 text-sm text-gray-400">
-                        {#if selectedLocations.length === 0 && yearRange[0] === 2010 && yearRange[1] === new Date().getFullYear()}
-                            <span>Filter op locatie of jaar</span>
+                        {#if selectedLocations.length === 0 && selectedYearRange.length === 0 }
+                            <span>Filter op locatie of jaar</span> 
                         {:else}
                             {#if selectedLocations.length > 0}
                                 <span>in</span>
@@ -314,16 +318,16 @@
                                 {/if}
                             {/if}
 
-                            {#if yearRange[0] !== 2010 || yearRange[1] !== new Date().getFullYear()}
+                            {#if selectedYearRange.length > 0 }
                                 <span>
                                     tussen 
                                     <button class="text-gray-500 cursor-pointer" type="button" on:click={e => { e.stopPropagation(); toggleYearFilter(); }}>
-                                        {yearRange[0]}
+                                        {selectedYearRange[0]}
                                     </button>
                                      en 
                                     <span class="inline-flex items-center">
                                         <button class="text-gray-500 cursor-pointer" type="button"  on:click={e => { e.stopPropagation(); toggleYearFilter(); }}>
-                                            {yearRange[1]}
+                                            {selectedYearRange[1]}
                                         </button>
                                         <button class="cursor-pointer -mt-3" type="button" on:click={() => removeYearFilter()}>
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
@@ -367,7 +371,7 @@
             class:invisible={!popupsReady.year}
         >
             <YearFilter
-                bind:yearRange
+                yearRange={selectedYearRange}
                 on:yearUpdate={handleYearUpdate}
                 on:close={() => showYearFilter = false}
             />

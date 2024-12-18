@@ -1,28 +1,59 @@
 <script>
-    import RangeSlider from 'svelte-range-slider-pips';
-    import { createEventDispatcher } from 'svelte';
+    import noUiSlider from 'nouislider';
+    import 'nouislider/dist/nouislider.css';
+    import { createEventDispatcher, onMount } from 'svelte';
 
-    const dispatch = createEventDispatcher();
-    
-    export let yearRange = [2010, new Date().getFullYear()];
+    const dispatch = createEventDispatcher();    
+
+    export let yearRange = [];
+    let minYear = 2010;
+    let maxYear = parseInt(new Date().getFullYear());
+    let slider;
 
     function formatYear(value) {
         return value.toString();
     }
 
-    function handleYearChange(event) {
-        yearRange = event.detail.values;
+    function handleYearChange(values) {
+        yearRange = values.map(Number);
         dispatch('yearUpdate', yearRange);
     }
 
     function handleClose() {
         dispatch('close');
     }
+
+    onMount(() => {
+        if (yearRange.length === 0) {
+            yearRange = [minYear, maxYear];
+        } 
+
+        // Initialize noUiSlider
+        noUiSlider.create(slider, {
+            start: yearRange,
+            connect: true,
+            range: {
+                'min': minYear,
+                'max': maxYear
+            },
+            step: 1,
+            tooltips: true,
+            format: {
+                to: formatYear,
+                from: value => parseInt(value)
+            }
+        });
+
+        // Event listener for slider updates
+        slider.noUiSlider.on('set', (values) => {
+            handleYearChange(values);
+        });
+    });
 </script>
 
 <div class="bg-white rounded-lg shadow-lg p-4 w-[500px] max-w-[calc(100vw-2rem)]">
     <div class="flex justify-between items-center mb-4">
-        <h3 class="text-sm font-medium text-gray-700">Jaar filter</h3>
+        <h3 class="text-sm font-medium text-gray-700">Jaren</h3>
         <button 
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -33,39 +64,24 @@
         </button>
     </div>
     <div class="px-2">
-        <RangeSlider
-            min={2010}
-            max={new Date().getFullYear()}
-            values={yearRange}
-            range
-            pushy
-            float
-            step={1}
-            pips
-            pipstep={2}
-            formatter={formatYear}
-            handleFormatter={formatYear}
-            first="label"
-            last="label"
-            all={false}
-            hoverable
-            on:change={handleYearChange}
-        />
+        <div id="year-slider" bind:this={slider}></div>
     </div>
 </div>
 
-<style>
-    :global(.rangeSlider) {
-        --range-handle-inactive: theme(colors.gray.200);
-        --range-handle: theme(colors.blue.600);
-        --range-handle-focus: theme(colors.blue.700);
-        --range-handle-border: theme(colors.white);
-        --range-float-text: theme(colors.white);
-        --range-float-bg: theme(colors.blue.600);
-        --range-float-border: theme(colors.blue.600);
-        --range-track-inactive: theme(colors.gray.200);
-        --range-track: theme(colors.blue.600);
-        --range-pip-text-active: theme(colors.gray.700);
-        --range-pip-text: theme(colors.gray.400);
+<style lang="postcss">    
+    :global(#year-slider) {
+        @apply mt-14 mb-3 mx-3;
+    }
+
+    :global(.noUi-target) {
+        @apply bg-gray-200;
+    }
+
+    :global(.noUi-connect) {
+        @apply bg-blue-500;
+    }
+
+    :global(.noUi-handle) {
+        @apply bg-white border-2 border-blue-500;
     }
 </style> 

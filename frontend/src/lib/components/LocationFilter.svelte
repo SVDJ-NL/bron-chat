@@ -15,7 +15,7 @@
         strategy: 'fixed'
     }
 
-    const groupBy = (item) => item.group;
+    const groupBy = (item) => item.type;
     const itemId = 'id';
     const label = 'name';
 
@@ -48,7 +48,7 @@
 
 <div class="bg-white rounded-lg shadow-lg p-4 w-[500px] max-w-[calc(100vw-2rem)]">
     <div class="flex justify-between items-center mb-4">
-        <h3 class="text-sm font-medium text-gray-700">Locatie filter</h3>
+        <h3 class="text-sm font-medium text-gray-700">Locatie(s)</h3>
         <button 
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -75,7 +75,7 @@
     />
 </div>
 
-<style>
+<style lang="postcss">
     :global(.location-select .selectContainer) {
         @apply border border-gray-300 rounded-md;
     }

@@ -109,7 +109,6 @@ class QdrantService:
             return []
 
     def hybrid_search(self, query, locations: List[Location] = None, date_range: List[datetime] = None) -> List[Dict]:
-        logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
         
@@ -151,6 +150,8 @@ class QdrantService:
                 must=filter_conditions,
             )
         
+        logger.info(f"Retrieving documents from Qdrant for query using hybrid search: {query}, and filters: {search_filter}")        
+        
         try:            
             logger.info(f"Querying vector database with query: '{query}'")
             with self.pool.get_client() as client:
@@ -178,6 +179,7 @@ class QdrantService:
                     score_threshold=None,
                     with_payload=True,
                     with_vectors=True,
+                    timeout=120,  # Increase timeout to 120 seconds
                 ).points
                 
         except Exception as e:

@@ -3,10 +3,11 @@
     import { createEventDispatcher } from 'svelte';    
     const dispatch = createEventDispatcher();
     
+    export let locations = [];
     export let isLoading = false;
     export let value = '';
     export let initialLocations = [];
-    export let initialYearRange = [2010, new Date().getFullYear()];
+    export let initialYearRange = [];
 
     function handleSubmit(event) {
         const searchParams = {
@@ -20,6 +21,7 @@
 <BaseInput
     bind:value
     {isLoading}
+    {locations}            
     {initialLocations}
     {initialYearRange}
     placeholder="Stel een vervolg vraag..."
