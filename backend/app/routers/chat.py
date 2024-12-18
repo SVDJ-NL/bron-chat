@@ -203,8 +203,17 @@ async def event_generator(
             )
             logger.debug(f"Relevant documents: {relevant_docs}")
         except Exception as e:
-            logger.error(f"Error retrieving relevant documents: {e}")
-            raise e
+            logger.error(f"Error retrieving documents: {e}")
+            
+            status_msg = "Er is een fout opgetreden bij het zoeken naar documenten"
+            status_content.append(status_msg)
+            yield 'data: ' + json.dumps({
+                "type": "status", 
+                "role": "system", 
+                "content": status_msg
+            }) + "\n\n"
+            await sleep(0)
+            return
         
         if not relevant_docs:
             status_msg = "Er konden geen relevante documenten worden gevonden"

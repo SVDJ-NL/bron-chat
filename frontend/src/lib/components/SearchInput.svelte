@@ -7,7 +7,7 @@
     export let value = '';
 
     function handleSubmit(event) {
-        console.log('search input handleSubmit', event);
+        console.debug('search input handleSubmit', event);
         const searchParams = {
             ...event.detail,
             value

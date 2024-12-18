@@ -70,13 +70,17 @@ class BronService:
                 continue
 
             # Use get to safely access 'kind'
-            kind = source.get('kind', 'Ministerie')  # Default to 'Ministerie' if 'kind' is not present
+            kind = source.get('kind', 'ministry')  # Default to 'ministry' if 'kind' is not present
 
             # Map the kind to the desired format
             if kind == 'municipality':
                 kind_label = 'Gemeente'
             elif kind == 'province':
                 kind_label = 'Provincie'
+            elif kind == 'ministry':
+                kind_label = 'Ministerie'
+            else:
+                kind_label = 'Ministerie'
             
             if source.get('name', '') == '':
                 continue

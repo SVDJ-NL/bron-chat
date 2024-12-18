@@ -75,7 +75,10 @@
 
             // Dispatch the event with the search parameters
             window.dispatchEvent(new CustomEvent('initialQuery', {
-                detail: urlSearchParams
+                detail: { 
+                    urlSearchParams: urlSearchParams,
+                    selectedLocations: event.detail.selectedLocations 
+                }
             }));
 
         } catch (err) {

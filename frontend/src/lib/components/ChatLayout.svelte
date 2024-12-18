@@ -27,6 +27,8 @@
     let initialQuery = null;
     let replayQueue = [];
     let isReplaying = false;
+    let initialLocations = [];
+    let initialYearRange = [2010, new Date().getFullYear()];
 
     function handleNewMessage(event) {
         addMessage(event.detail);
@@ -403,7 +405,31 @@
         const handleInitialQuery = (event) => {
             console.debug('handleInitialQuery', event);
             if (event.detail) {
-                handleQuery(event.detail);
+                // Extract locations and year range from URL params
+                const params = event.detail.urlSearchParams;
+                const location_ids = params.getAll('locations');
+                const startDate = params.get('start_date');
+                const endDate = params.get('end_date');
+
+                console.debug('handleInitialQuery locations', location_ids);
+                console.debug('handleInitialQuery selectedLocations', event.detail.selectedLocations);
+                console.debug('handleInitialQuery startDate', startDate);
+                console.debug('handleInitialQuery endDate', endDate);
+
+                // Parse dates to get years
+                if (startDate && endDate) {
+                    initialYearRange = [
+                        parseInt(startDate.split('-')[0]),
+                        parseInt(endDate.split('-')[0])
+                    ];
+                }
+
+                // Convert locations to the expected format
+                if (event.detail.selectedLocations.length > 0) {
+                    initialLocations = event.detail.selectedLocations;
+                }
+
+                handleQuery(event.detail.urlSearchParams);
             }
         };
 
@@ -442,6 +468,8 @@
             <div class="mt-4 px-4 pb-4 sm:pb-6">
                 <ChatInput
                     {isLoading}
+                    initialLocations={initialLocations}
+                    initialYearRange={initialYearRange}
                     on:submit={handleFollowUpQuestion}
                     on:stop={handleStopMessageFlow}
                 />

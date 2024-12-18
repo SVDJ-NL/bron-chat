@@ -5,6 +5,8 @@
     
     export let isLoading = false;
     export let value = '';
+    export let initialLocations = [];
+    export let initialYearRange = [2010, new Date().getFullYear()];
 
     function handleSubmit(event) {
         const searchParams = {
@@ -18,6 +20,8 @@
 <BaseInput
     bind:value
     {isLoading}
+    {initialLocations}
+    {initialYearRange}
     placeholder="Stel een vervolg vraag..."
     on:submit={handleSubmit}
     on:stop

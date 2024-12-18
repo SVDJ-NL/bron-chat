@@ -112,10 +112,18 @@ class QdrantService:
         logger.debug(f"Retrieving documents from Qdrant for query using hybrid search: {query}")
         
         sparse_vector = self.generate_sparse_embedding(query)
-        dense_vector = self.llm_service.generate_dense_embedding(query)        
+        
+        try:
+            # Generate dense embeddings
+            dense_vector = self.llm_service.generate_dense_embedding(query)
+        except Exception as e:
+            logger.error(f"Error creating dense vector from query using Cohere: {e}")
+            raise   
         
         # Build filter conditions
         filter_conditions = []
+        
+        logger.debug("Adding location filters")
         
         if locations and len(locations) > 0:
             filter_conditions.append(
@@ -144,6 +152,7 @@ class QdrantService:
             )
         
         try:            
+            logger.info(f"Querying vector database with query: '{query}'")
             with self.pool.get_client() as client:
                 qdrant_documents = client.query_points(
                     collection_name=settings.QDRANT_COLLECTION,
@@ -239,7 +248,7 @@ class QdrantService:
         if not qdrant_document_candidates:
             logger.warning("No documents retrieved from Qdrant")
             return []
-
+               
         # Step 2: Get relevance scores
         # document_texts = [document['payload']['content'] for document in qdrant_document_candidates]
         # Extract document metadata
@@ -262,7 +271,7 @@ class QdrantService:
             top_n=settings.RERANK_DOC_RETRIEVE_LIMIT,
             return_documents=False
         )
-               
+        
         # Initialize all documents with a default rerank score
         for candidate in qdrant_document_candidates:
             candidate['rerank_score'] = 0.0
@@ -296,6 +305,7 @@ class QdrantService:
         similarity_matrix = cosine_similarity(dense_embeddings)    
             
         # Step 4: Apply MMR
+        logger.info(f"Applying MMR to {len(qdrant_document_candidates)} documents, and removing {int(settings.RERANK_DOC_RETRIEVE_LIMIT - 2)} most similar documents")
         relevance_scores = [candidate.get('rerank_score', 0.0) for candidate in qdrant_document_candidates]
         diversified_candidates = self._mmr(
             documents=qdrant_document_candidates,

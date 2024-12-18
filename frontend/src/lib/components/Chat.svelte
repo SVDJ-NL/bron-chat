@@ -30,7 +30,7 @@
     }
 
     $: if (currentStatusMessage) {
-        console.log('currentStatusMessage', currentStatusMessage);
+        console.debug('currentStatusMessage', currentStatusMessage);
         streamedStatusContent = currentStatusMessage.content;
     }
 

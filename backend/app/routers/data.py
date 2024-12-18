@@ -23,21 +23,8 @@ async def get_locations(db: SQLAlchemySession = Depends(get_db)):
     """Return a list of available locations"""
    
     bron_service = BronService()
-    locations = []
-    locations_options = []
     try:
-        locations = await bron_service.get_locations()
+        return await bron_service.get_locations()
     except Exception as e:
         logger.error(f"Error fetching locations: {e}")
         raise HTTPException(status_code=500, detail="Error fetching locations")
-    
-    locations_options = list(map(
-        lambda location: {
-            'value': location.id,
-            'label': location.name,
-            'group': location.type
-        },
-        locations
-    ))
-    
-    return locations_options

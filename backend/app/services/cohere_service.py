@@ -31,29 +31,44 @@ class CohereService(BaseLLMService):
         
         logger.info(f"Filtered to {len(system_and_user_messages)} valid non-status messages")
         
-        try:
-            return self.client.chat_stream(
-                model="command-r-08-2024",
-                messages=system_and_user_messages,
-                documents=documents
-            )
-        except GeneratorExit:
-            logger.info("Chat stream generator closed")
-            return
-        except Exception as e:
-            logger.error(f"Error in chat stream: {e}")
-            raise
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return self.client.chat_stream(
+                    model="command-r-08-2024",
+                    messages=system_and_user_messages,
+                    documents=documents
+                )                
+            except Exception as e:
+                logger.error(f"Error in chat stream (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
+
         
     def rerank_documents(self, query: str, documents: list, top_n: int = 20, return_documents: bool = True):
-        logger.info(f"Reranking {len(documents)} documents...")
-        return self.client.rerank(
-            query=query,
-            documents=documents,
-            top_n=top_n,
-            model=settings.COHERE_RERANK_MODEL,
-            return_documents=return_documents
-        )
-
+        logger.info(f"Reranking {len(documents)} documents, and returning {top_n} documents...")
+        
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return self.client.rerank(
+                    query=query,
+                    documents=documents,
+                    top_n=top_n,
+                    model=settings.COHERE_RERANK_MODEL,
+                    return_documents=return_documents
+                )
+            except Exception as e:
+                logger.error(f"Error reranking documents (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
+                
     def generate_dense_embedding(self, query: str):
         logger.info(f"Generating dense embedding for query: {query}")        
         
@@ -61,32 +76,49 @@ class CohereService(BaseLLMService):
         # Replace diacritics with base characters using unicode normalization
         import unicodedata
         query = ''.join(c for c in unicodedata.normalize('NFKD', query)
-                       if not unicodedata.combining(c))
+                         if not unicodedata.combining(c))
         # END HACK
         
-        logger.info(f"Generated dense embedding for query: {query}")
-        
-        if settings.EMBEDDING_QUANTIZATION == "float":
-            return self.client.embed(
-                texts=[query], 
-                input_type="search_query", 
-                model=settings.COHERE_EMBED_MODEL,
-                embedding_types=["float"]
-            ).embeddings.float[0]
-        elif settings.EMBEDDING_QUANTIZATION == "uint8":
-            return self.client.embed(
-                texts=[query], 
-                input_type="search_query", 
-                model=settings.COHERE_EMBED_MODEL,
-                embedding_types=["uint8"]
-            ).embeddings.uint8[0]
-        else:
-            return self.client.embed(
-                texts=[query], 
-                input_type="search_query", 
-                model=settings.COHERE_EMBED_MODEL,
-                embedding_types=["float"]
-            ).embeddings.float[0]
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if settings.EMBEDDING_QUANTIZATION == "float":
+                    embeddings = self.client.embed(
+                        texts=[query], 
+                        input_type="search_query", 
+                        model=settings.COHERE_EMBED_MODEL,
+                        embedding_types=["float"]
+                    ).embeddings.float[0]
+                    
+                    logger.info("Generated dense embeddings")
+                    return embeddings
+                elif settings.EMBEDDING_QUANTIZATION == "uint8":
+                    embeddings = self.client.embed(
+                        texts=[query], 
+                        input_type="search_query", 
+                        model=settings.COHERE_EMBED_MODEL,
+                        embedding_types=["uint8"]
+                    ).embeddings.uint8[0]
+                    
+                    logger.info("Generated dense embeddings")
+                    return embeddings
+                else:
+                    embeddings = self.client.embed(
+                        texts=[query], 
+                        input_type="search_query", 
+                        model=settings.COHERE_EMBED_MODEL,
+                        embedding_types=["float"]
+                    ).embeddings.float[0]
+                    
+                    logger.info("Generated dense embeddings")
+                    return embeddings
+            except Exception as e:
+                logger.error(f"Error generating dense embedding (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
         
     def create_chat_session_name(self, user_message: ChatMessage):      
         logger.info(f"Creating chat session name for query: {user_message.content}, using rewritten query: {user_message.formatted_content}")
@@ -95,23 +127,30 @@ class CohereService(BaseLLMService):
         
         response = None
         
-        try:
-            response = self.client.chat(
-                model="command-r-08-2024",
-                messages=[
-                    {
-                        'role': system_message.role,
-                        'content': system_message.content
-                    },
-                    {
-                        'role': user_message.role,
-                        'content': user_message.rewritten_query_for_llm
-                    }
-                ],
-                temperature=0.1
-            )
-        except Exception as e:
-            logger.error(f"Error creating chat session name: {e}")
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat(
+                    model="command-r-08-2024",
+                    messages=[
+                        {
+                            'role': system_message.role,
+                            'content': system_message.content
+                        },
+                        {
+                            'role': user_message.role,
+                            'content': user_message.rewritten_query_for_llm
+                        }
+                    ],
+                    temperature=0.1
+                )
+            except Exception as e:
+                logger.error(f"Error creating chat session name (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
         
         if response:
             name = response.message.content[0].text
@@ -141,29 +180,37 @@ class CohereService(BaseLLMService):
 New query: {message.user_query}"""
         )
         
-        try:
-            response = self.client.chat(
-                model="command-r-08-2024",
-                messages=[
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat(
+                    model="command-r-08-2024",
+                    messages=[
                     {
                         'role': system_message.role,
                         'content': system_message.content
                     },
                     {
-                        'role': user_message.role,
-                        'content': user_message.content
-                    }
-                ],
-                temperature=0.1
-            )
-            
-            rewritten_query = response.message.content[0].text
-            logger.info(f"Original query: {message.user_query}")
-            logger.info(f"Rewritten query: {rewritten_query}")
-            return rewritten_query
-        except Exception as e:
-            logger.error(f"Error rewriting query with history: {e}")
-            return message.user_query  # Fall back to original query if rewriting fails
+                            'role': user_message.role,
+                            'content': user_message.content
+                        }
+                    ],
+                    temperature=0.1
+                )
+                
+                rewritten_query = response.message.content[0].text
+                logger.info(f"Original query: {message.user_query}")
+                logger.info(f"Rewritten query: {rewritten_query}")
+                return rewritten_query
+            except Exception as e:
+                logger.error(f"Error rewriting query with history (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
+                
+        return message.user_query  # Fall back to original query if rewriting fails
 
     def rewrite_query_for_llm(self, message: ChatMessage) -> str:
         rewritten_query = message.content
@@ -187,26 +234,33 @@ New query: {message.user_query}"""
             content=f"""Query: {message.user_query}"""
         )
 
-        try:
-            response = self.client.chat(
-                model="command-r",
-                messages=[
-                    {
-                        'role': system_message.role,
-                        'content': system_message.content
-                    },
-                    {
-                        'role': user_message.role,
-                        'content': user_message.content
-                    }
-                ],
-                temperature=0.1
-            )
-            
-            rewritten_query = response.message.content[0].text
-            logger.info(f"Original query: {message.user_query}")
-            logger.info(f"Rewritten query: {rewritten_query}")
-            return rewritten_query
-        except Exception as e:
-            logger.error(f"Error rewriting query for vector base: {e}")
-            return message.content  # Fall back to original query if rewriting fails
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat(
+                    model="command-r",
+                    messages=[
+                        {
+                            'role': system_message.role,
+                            'content': system_message.content
+                        },
+                        {
+                            'role': user_message.role,
+                            'content': user_message.content
+                        }
+                    ],
+                    temperature=0.1
+                )
+                
+                rewritten_query = response.message.content[0].text
+                logger.info(f"Original query: {message.user_query}")
+                logger.info(f"Rewritten query: {rewritten_query}")
+                return rewritten_query
+            except Exception as e:
+                logger.error(f"Error rewriting query for vector base (attempt {attempt + 1}): {e}")
+                if attempt < max_retries - 1:
+                    logger.info("Retrying...")
+                else:
+                    logger.error("Max retries reached. Raising exception.")
+                    raise
+        return message.content  # Fall back to original query if rewriting fails

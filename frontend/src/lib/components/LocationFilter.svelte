@@ -2,13 +2,13 @@
     import Select from 'svelte-select';
     import 'svelte-select/tailwind.css';
     import { onMount } from 'svelte';
-    import { API_BASE_URL } from '$lib/config';
     import { createEventDispatcher } from 'svelte';
 
     const dispatch = createEventDispatcher();
 
     export let selectedLocations = [];
-    let locations = [];
+    export let locations = [];
+
     let placeholder = 'Gemeentes, provincies of ministeries...';
 
     let floatingConfig = {
@@ -16,6 +16,8 @@
     }
 
     const groupBy = (item) => item.group;
+    const itemId = 'id';
+    const label = 'name';
 
     let ariaValues = (values) => {
         return `Optie ${values}, geselecteerd.`;
@@ -40,17 +42,7 @@
     }
 
     onMount(async () => {
-        selectedLocations = Array.isArray(selectedLocations) ? selectedLocations : [];
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/locations`);
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.status}`);
-            }
-            locations = await response.json();
-        } catch (error) {
-            console.error('Error fetching locations:', error);
-        }
+        selectedLocations = Array.isArray(selectedLocations) ? selectedLocations : [];        
     });
 </script>
 
@@ -68,11 +60,13 @@
     </div>
     <Select
         items={locations}
+        itemId={itemId}
+        label={label}
+        groupBy={groupBy}
         multiple={true}
         bind:value={selectedLocations}
         on:change={handleLocationChange}
         floatingConfig={floatingConfig}
-        groupBy={groupBy}
         ariaValues={ariaValues}
         ariaListOpen={ariaListOpen}
         ariaFocused={ariaFocused}
