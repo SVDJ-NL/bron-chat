@@ -179,7 +179,7 @@ class QdrantService:
                     score_threshold=None,
                     with_payload=True,
                     with_vectors=True,
-                    timeout=120,  # Increase timeout to 120 seconds
+                    timeout=settings.QDRANT_HYBRID_SEARCH_TIMEOUT,  # Increase timeout to 120 seconds
                 ).points
                 
         except Exception as e:
@@ -287,19 +287,17 @@ class QdrantService:
                 # Keep default score of 0.0
         
         logger.info(f"Reranked documents: {len(qdrant_document_candidates)}")
-        
-        relevance_threshold = 0.25
-        
-        # # Filter out candidates with low rerank scores
-        # qdrant_document_candidates = [
-        #     candidate for candidate in qdrant_document_candidates 
-        #     if candidate.get('rerank_score', 0.0) >= relevance_threshold
-        # ]        
-        # logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
+                
+        # Filter out candidates with low rerank scores
+        qdrant_document_candidates = [
+            candidate for candidate in qdrant_document_candidates 
+            if candidate.get('rerank_score', 0.0) >= settings.RERANK_RELEVANCE_THRESHOLD
+        ]        
+        logger.info(f"Filtered documents: {len(qdrant_document_candidates)}")
 
         # Return early if no documents meet the threshold
         if not qdrant_document_candidates:
-            logger.warning(f"No documents met the minimum score threshold of {relevance_threshold}")
+            logger.warning(f"No documents met the minimum score threshold of {settings.RERANK_RELEVANCE_THRESHOLD}")
             return []
         
         # Step 3: Compute similarity matrix
@@ -307,15 +305,15 @@ class QdrantService:
         similarity_matrix = cosine_similarity(dense_embeddings)    
             
         # Step 4: Apply MMR
-        logger.info(f"Applying MMR to {len(qdrant_document_candidates)} documents, and removing {int(settings.RERANK_DOC_RETRIEVE_LIMIT - 2)} most similar documents")
+        logger.info(f"Applying MMR to {len(qdrant_document_candidates)} documents, to remove most similar documents, and keep {settings.MMR_DOC_RETRIEVE_LIMIT} documents")
         relevance_scores = [candidate.get('rerank_score', 0.0) for candidate in qdrant_document_candidates]
         diversified_candidates = self._mmr(
             documents=qdrant_document_candidates,
             query_embedding=dense_embeddings,
             relevance_scores=relevance_scores,
             similarity_matrix=similarity_matrix,
-            lambda_param=0.9,
-            top_n=int(settings.RERANK_DOC_RETRIEVE_LIMIT - 2) # remove 2 most similar documents
+            lambda_param=settings.MMR_DOC_LAMBDA_PARAM,
+            top_n=settings.MMR_DOC_RETRIEVE_LIMIT
         )
             
         return self.prepare_documents(diversified_candidates)

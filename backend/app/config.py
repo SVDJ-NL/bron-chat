@@ -9,18 +9,24 @@ class Settings(BaseSettings):
     COHERE_EMBED_MODEL: str = os.getenv("COHERE_EMBED_MODEL")
     COHERE_RERANK_MODEL: str = os.getenv("COHERE_RERANK_MODEL")
     SPARSE_EMBED_MODEL: str = os.getenv("SPARSE_EMBED_MODEL")
+    QDRANT_HYBRID_SEARCH_TIMEOUT: int = int(os.getenv("QDRANT_HYBRID_SEARCH_TIMEOUT"))
+    EMBEDDING_QUANTIZATION: str = os.getenv("EMBEDDING_QUANTIZATION")
     QDRANT_COLLECTION: str = os.getenv("QDRANT_COLLECTION")
+    
     QDRANT_SPARSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_SPARSE_RETRIEVE_LIMIT"))
     QDRANT_DENSE_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_DENSE_RETRIEVE_LIMIT"))
     QDRANT_HYBRID_RETRIEVE_LIMIT: int = int(os.getenv("QDRANT_HYBRID_RETRIEVE_LIMIT"))
-    EMBEDDING_QUANTIZATION: str = os.getenv("EMBEDDING_QUANTIZATION")
     RERANK_DOC_RETRIEVE_LIMIT: int = int(os.getenv("RERANK_DOC_RETRIEVE_LIMIT"))
+    MMR_DOC_RETRIEVE_LIMIT: int = int(os.getenv("MMR_DOC_RETRIEVE_LIMIT"))
+    RERANK_RELEVANCE_THRESHOLD: float = float(os.getenv("RERANK_RELEVANCE_THRESHOLD"))    
+    MMR_DOC_LAMBDA_PARAM: float = float(os.getenv("MMR_DOC_LAMBDA_PARAM"))
+    
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "").split(",")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT")
     # Qdrant settings
-    QDRANT_POOL_SIZE: int = 20
-    QDRANT_POOL_TIMEOUT: int = 30
-    QDRANT_TIMEOUT: int = 60
+    QDRANT_POOL_SIZE: int = int(os.getenv("QDRANT_POOL_SIZE"))
+    QDRANT_POOL_TIMEOUT: int = int(os.getenv("QDRANT_POOL_TIMEOUT"))
+    QDRANT_TIMEOUT: int = int(os.getenv("QDRANT_TIMEOUT"))
     SENTRY_DSN: str = os.getenv("SENTRY_DSN")
 
     OTEL_EXPORTER_OTLP_HEADER: str = os.getenv("OTEL_EXPORTER_OTLP_HEADER")

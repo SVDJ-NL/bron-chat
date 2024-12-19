@@ -12,38 +12,81 @@
     let showAboutDialog = false;
 
     let samplePrompts = [
-        // "Jeugdzorg sector analyse: Waarom heeft Inspectie Gezondheidszorg en Jeugd de Mutsaersstichting onder verscherpt toezicht geplaatst in Limburg en Noord-Brabant?",
-        // "Parkeerbeheer: Wat speelt er in Utrecht rond foutparkeren bij invalideparkeerplaatsen?",
-        // "Pesticiden in landbouw: Welke maatregelen neemt Gelderland tegen de gevolgen van gewasbescherming?",
-        "Stikstofbeleid 2023",
-        "Uitgaven klimaatbeleid",
-        "Toeslagenaffaire",
-        "Aanpak cybercriminaliteit",
-        "Windenergie op zee",
-        "Stand van zaken woningmarkt",
-        "Coronasteun bedrijven",
-        "Problemen jeugdzorg",
-        "Rapport drugscriminaliteit",
-        "Personeelstekort onderwijs"
+        {
+            text: "Lerarentekort in Utrecht",
+            filters: {
+                locations: [
+                    {
+                        "id": "GM0344",
+                        "name": "Utrecht",
+                        "type": "Gemeente"
+                    }                    
+                ],
+            }
+        },
+        {
+            text: "Woningvoorraad in Leeuwarden",
+            filters: {
+                locations: [   
+                    {
+                        "id": "GM0080",
+                        "name": "Leeuwarden",
+                        "type": "Gemeente"
+                    },                 
+                ],     
+            }
+        },
+        {
+            text: "Drone-industrie in Enschede",
+            filters: {
+                locations: [   
+                    {
+                        "id": "GM0153",
+                        "name": "Enschede",
+                        "type": "Gemeente"
+                    },                
+                ],     
+            }
+        },
+        {
+            text: "Impact van AI op de arbeidsmarkt?",
+        },
+        {
+            text: "Energietransitie", 
+        },
+        {
+            text: "Hoe beschermt de overheid tegen cyberdreigingen?",
+        }
     ];
     
     let displayedPrompts = [];
     
     function getRandomPrompts() {
         let shuffled = [...samplePrompts].sort(() => 0.5 - Math.random());
-        displayedPrompts = shuffled.slice(0, 3);
+        displayedPrompts = shuffled.slice(0, 2);
     }
     
-    function handlePromptClick(value) {
+    function handlePromptClick(prompt) {
         const urlSearchParams = new URLSearchParams({
-            query: value.trim(),
-            rewrite_query: 'true',
-            locations: [],
-            start_date: '2010-01-01',
-            end_date: new Date().getFullYear().toString() + '-12-31',
+            query: prompt.text.trim(),
+            rewrite_query: 'true'
         });
 
-        handleSearch({ detail: { urlSearchParams } });
+        // Add year range filters if present
+        if (prompt.filters?.yearRange?.length === 2) {
+            urlSearchParams.append('start_date', `${prompt.filters.yearRange[0]}-01-01`);
+            urlSearchParams.append('end_date', `${prompt.filters.yearRange[1]}-12-31`);
+        }
+
+        let locations = [];
+        if (prompt.filters?.locations?.length > 0) {
+            locations = prompt.filters.locations;
+            prompt.filters.locations.forEach(loc => {
+                urlSearchParams.append('locations', loc.id);
+            });
+        }
+
+        handleSearch({ detail: { urlSearchParams, selectedLocations: locations } });
     }
     
     async function handleSearch(event) {        
@@ -142,13 +185,13 @@
         />
     </div>
 
-    <div class="w-full max-w-2xl mt-4 flex flex-wrap gap-2 justify-center">
+    <div class="w-full max-w-2xl mt-5 flex flex-wrap gap-2 justify-center">
         {#each displayedPrompts as prompt}
             <button
                 on:click={() => handlePromptClick(prompt)}
-                class="text-sm text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                class="text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-colors"
             >
-                {prompt}
+                {prompt.text}
             </button>
         {/each}
     </div>

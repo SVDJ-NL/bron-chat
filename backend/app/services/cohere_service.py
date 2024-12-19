@@ -212,13 +212,15 @@ New query: {message.user_query}"""
                 
         return message.user_query  # Fall back to original query if rewriting fails
 
-    def rewrite_query_for_llm(self, message: ChatMessage) -> str:
+    def rewrite_query_for_llm(self, message: ChatMessage) -> str:       
         rewritten_query = message.content
-        
+        # Check if any location names are already in the content
         if message.search_filters.locations:
-            locations_str = ", en ".join([location.name for location in message.search_filters.locations])
-            rewritten_query += f" in {locations_str}"
-                
+            location_names = [location.name for location in message.search_filters.locations]
+            if not any(loc_name in message.content for loc_name in location_names):
+                locations_str = ", of ".join(location_names) 
+                rewritten_query = f"{message.content} in {locations_str}"
+           
         # if message.search_filters.date_range:
         #     rewritten_query += f" van {message.search_filters.date_range[0].strftime('%d-%m-%Y')} tot {message.search_filters.date_range[1].strftime('%d-%m-%Y')}"
         
