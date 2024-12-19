@@ -519,11 +519,11 @@
     {/if}
 </div>
 
-{#if messages.length > 0 && !isReplaying && !isLoading}
+<!-- {#if messages.length > 0 && !isReplaying && !isLoading}
     <div class="fixed top-12 lg:top-16 left-2 lg:left-8 z-50">
         <CloneSessionButton {sessionId} />
     </div>
-{/if}
+{/if} -->
 
 <style lang="postcss">    
     @tailwind base;
