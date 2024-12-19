@@ -96,10 +96,10 @@ services:
       --collation-server=utf8mb4_unicode_ci
       --default-authentication-plugin=caching_sha2_password
       --max-connections=100
-      --innodb-buffer-pool-size=2G
-      --innodb-thread-concurrency=8
-      --innodb-read-io-threads=4
-      --innodb-write-io-threads=4
+      --innodb-buffer-pool-size=1G
+      --innodb-thread-concurrency=4
+      --innodb-read-io-threads=2
+      --innodb-write-io-threads=2
       --wait_timeout=28800
       --interactive_timeout=28800
       --max_allowed_packet=256M

@@ -4,7 +4,7 @@
 
     export let data;
 
-    const MAINTENANCE_MODE = true; // You can toggle this to enable/disable maintenance mode
+    const MAINTENANCE_MODE = false; // You can toggle this to enable/disable maintenance mode
     const MAINTENANCE_MESSAGE = "Bron chat is momenteel niet beschikbaar wegens onderhoud. Wanneer we weer online zijn wordt zoeken nog beter en gemakkelijker! Probeer het later opnieuw.";
 
     $: sessionStore.set({
