@@ -253,7 +253,7 @@
 
                     <div class="pl-2 flex items-center space-x-1 text-sm text-gray-400">
                         {#if selectedLocations.length === 0 && selectedYearRange.length === 0 }
-                            <span>Filter op locatie of jaar (zoeken duurt wel een stuk langer)</span> 
+                            <span>Filter op locatie of jaar (krachtig maar langzaam)</span> 
                         {:else}
                             {#if selectedLocations.length > 0}
                                 <span>in</span>
