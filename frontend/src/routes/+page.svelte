@@ -16,6 +16,7 @@
 
     let samplePrompts = [
         {
+            query: "Lerarentekort",
             text: "Lerarentekort in Utrecht",
             filters: {
                 locations: [
@@ -28,6 +29,7 @@
             }
         },
         {
+            query: "Woningvoorraad",
             text: "Woningvoorraad in Leeuwarden",
             filters: {
                 locations: [   
@@ -40,6 +42,7 @@
             }
         },
         {
+            query: "Drone-industrie",
             text: "Drone-industrie in Enschede",
             filters: {
                 locations: [   
@@ -52,12 +55,15 @@
             }
         },
         {
+            query: "Impact van AI op de arbeidsmarkt?",
             text: "Impact van AI op de arbeidsmarkt?",
         },
         {
+            query: "Energietransitie", 
             text: "Energietransitie", 
         },
         {
+            query: "Hoe beschermt de overheid tegen cyberdreigingen?",
             text: "Hoe beschermt de overheid tegen cyberdreigingen?",
         }
     ];
@@ -71,7 +77,7 @@
     
     function handlePromptClick(prompt) {
         const urlSearchParams = new URLSearchParams({
-            query: prompt.text.trim(),
+            query: prompt.query.trim(),
             rewrite_query: 'true'
         });
 
@@ -211,7 +217,7 @@
         {/each}
     </div>
 
-    <div class="w-full max-w-2xl text-center mt-4 md:mt-6">
+    <div class="w-full max-w-2xl text-center ∂mt-4 md:mt-6">
         <button
                 on:click={() => showAboutDialog = true}
                 class="ml-2 text-sm font-normal text-blue-600 hover:underline flex items-center w-full justify-center flex-wrap flex-col"
