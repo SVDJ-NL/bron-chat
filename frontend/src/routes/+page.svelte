@@ -182,6 +182,10 @@
 
 </script>
 
+<svelte:head>
+    <title>Bron chat - Vraag alles over 3.5 miljoen open overheidsdocumenten</title>
+</svelte:head>
+
 <div class="min-h-screen flex flex-col items-center justify-center bg-gray-100">
     {#if MAINTENANCE_MODE}
         <div class="fixed inset-0 bg-gray-900 bg-opacity-90 z-50 flex items-center justify-center p-4">
