@@ -16,6 +16,10 @@
 
     let samplePrompts = [
         {
+            query: "Ravijnjaar 2026",
+            text: "Ravijnjaar 2026"
+        },
+        {
             query: "Lerarentekort",
             text: "Lerarentekort in Utrecht",
             filters: {
