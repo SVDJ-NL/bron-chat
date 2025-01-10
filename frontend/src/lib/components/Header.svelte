@@ -266,7 +266,6 @@
                 <p class="">Op dinsdag 18 februari 2025 lanceren we Bron chat. Bij Open State Foundation, met een avond en programma speciaal voor nuchtere onderzoekers:</p>
                 
                 <div>
-                    <h3 class="mb-2">Wat Bron chat biedt:</h3>
                     <ul class="list-disc pl-5 space-y-1">
                         <li><strong>Bron chat demo:</strong> met voorbeeld uit de praktijk</li>
                         <li><strong>Kritische Reviewer Carrousel:</strong> met 10 lokale en landelijke journalisten</li>
