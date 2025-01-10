@@ -35,9 +35,9 @@
 
 </script>
 
-<div class="pt-5 pb-6 lg:pt-6 lg:pb-0 pl-4 lg:pl-6 lg:pr-2 flex flex-col h-full relative">
+<div class="pt-10 pb-6 lg:pt-10 lg:pb-0 pl-4 lg:pl-6 lg:pr-2 flex flex-col h-full relative">
     <button
-        class="absolute -top-2 sm:top-2 -left-16 bg-gray-50 border border-gray-300 rounded-l-xl p-2 lg:p-2 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'hidden' : ''}"
+        class="absolute top-8 sm:top-10 -left-16 bg-gray-50 border border-gray-300 rounded-l-xl p-2 lg:p-2 rounded-l-lg flex items-center justify-center transition-colors duration-200 {isDocumentsPanelOpen ? 'hidden' : ''}"
         on:click={togglePanel}
     >
         {#if !isDocumentsPanelOpen}

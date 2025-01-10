@@ -4,7 +4,8 @@
     import { onMount } from 'svelte';
     import { sessionStore } from '$lib/stores/sessionStore';
 
-    let showModal = false;
+    let showFeedbackModal = false;
+    let showNoticeModal = false;
     let formData = {
         question: '',
         name: '',
@@ -13,23 +14,39 @@
     };
     let showThankYou = false;
     let isSubmitting = false;
-    let modalContent;
+    let feedbackModalContent;
+    let noticeModalContent;
 
     $: formData.session_id = $sessionStore.sessionId;
 
-    function handleClickOutside(event) {
-        if (modalContent && !modalContent.contains(event.target)) {
-            closeModal();
+    function handleClickOutsideFeedbackModal(event) {
+        if (feedbackModalContent && !feedbackModalContent.contains(event.target)) {
+            closeFeedbackModal();
         }
     }
 
-    function closeModal() {
-        showModal = false;
+    function handleClickOutsideNoticeModal(event) {
+        if (noticeModalContent && !noticeModalContent.contains(event.target)) {
+            closeNoticeModal();
+        }
+    }
+
+    function closeFeedbackModal() {
+        showFeedbackModal = false;
         showThankYou = false;
         formData = { question: '', name: '', email: '' };
     }
 
-    async function handleSubmit() {
+    function closeNoticeModal() {
+        showNoticeModal = false;
+    }
+
+    function openNoticeModal() {
+        console.log('openNoticeModal');
+        showNoticeModal = true;
+    }
+
+    async function handleSubmitFeedbackModal() {
         isSubmitting = true;
         let feedbackEndpoint = `${API_BASE_URL}/feedback`;
 
@@ -62,6 +79,13 @@
 </script>
 
 <header class="fixed w-full top-0 z-10 bg-gray-100">
+    <div class="top-0 left-0 w-full h-10 bg-black z-50 text-center py-1 flex items-center justify-center" >
+        <button
+            on:click={openNoticeModal}
+            class="text-blue-200 hover:underline" >
+            🎉 Bron chat lanceert! Wordt ook VIP gast
+        </button>
+    </div>
     <div class="px-2 sm:px-6 lg:px-8">
         <div class="flex h-12 sm:h-16">
             <div class="flex-shrink-0 flex items-center">
@@ -90,7 +114,7 @@
             </div>
             <div class="flex items-center ml-auto pr-4 pl-8">
                 <button
-                    on:click={() => showModal = true}
+                    on:click={() => showFeedbackModal = true}
                     class="text-blue-600 hover:underline"
                 >
                     <div class="flex items-center flex-wrap flex-col md:flex-row">                        
@@ -121,19 +145,19 @@
     </div>
 </header>
 
-{#if showModal}
+{#if showFeedbackModal}
     <div 
         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
-        on:click={handleClickOutside}
+        on:click={handleClickOutsideFeedbackModal}
     >
         <div 
-            bind:this={modalContent}
+            bind:this={feedbackModalContent}
             class="bg-white rounded-lg p-8 max-w-md w-full mx-4"
         >
             {#if showThankYou}
                 <div class="text-center relative">
                     <button 
-                        on:click={closeModal}
+                        on:click={closeFeedbackModal}
                         class="absolute -top-4 -right-4 text-gray-500 hover:text-gray-700"
                     >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,7 +181,7 @@
                 <div class="flex justify-between items-start mb-4">
                     <h2 class="text-xl font-bold">Hebben wij je vraag kunnen beantwoorden?</h2>
                     <button 
-                        on:click={closeModal}
+                        on:click={closeFeedbackModal}
                         class="text-gray-500 hover:text-gray-700"
                     >
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,7 +189,7 @@
                         </svg>
                     </button>
                 </div>
-                <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+                <form on:submit|preventDefault={handleSubmitFeedbackModal} class="space-y-4">
                     <div>
                         <textarea
                             id="question"
@@ -219,3 +243,47 @@
         </div>
     </div>
 {/if} 
+
+
+{#if showNoticeModal}
+    <div 
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+        on:click={handleClickOutsideNoticeModal}
+    >
+        <div class="bg-white rounded-lg p-6 max-w-2xl max-h-[90vh] overflow-y-auto"
+            bind:this={noticeModalContent}>
+            <div class="flex justify-between items-start mb-4 w-full">
+                <h2 class="text-xl font-bold">Wil je onze VIP gast zijn?</h2>
+                <button
+                    on:click={closeNoticeModal}
+                    class="text-gray-500 hover:text-gray-700"
+                >
+                    ✕
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <p class="">Op dinsdag 18 februari 2025 lanceren we Bron chat. Bij Open State Foundation, met een avond en programma speciaal voor nuchtere onderzoekers:</p>
+                
+                <div>
+                    <h3 class="mb-2">Wat Bron chat biedt:</h3>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Bron chat demo:</strong> met voorbeeld uit de praktijk</li>
+                        <li><strong>Kritische Reviewer Carrousel:</strong> met 10 lokale en landelijke journalisten</li>
+                        <li><strong>Q&A:</strong> met makers van Bron chat</li>
+                    </ul>
+                </div>
+
+                <div class="mt-4">
+                    <p>
+                        <span class="font-bold" >Locatie en tijd:</span> Marineterrein in Amsterdam, 19:30 - 21:00 (inloop vanaf 19:00).
+                    </p>
+                </div>
+                <div class="mt-4">
+                    <p>Wil je erbij zijn? Wil je iets delen, heb je een idee of een vraag? Neem contact op met </p>
+                    <p>Joost van de Loo, <a href="tel:06-50733904" class="text-blue-600 hover:underline">06-50733904</a>, <a href="mailto:joostvandeloo@svdjincubator.nl" class="text-blue-600 hover:underline">joostvandeloo@svdjincubator.nl</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
