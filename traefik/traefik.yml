@@ -26,7 +26,7 @@ certificatesResolvers:
 http:
   routers:
     frontend-router:
-      rule: 'Host(`chat.bron.live`)'
+      rule: 'Host(`bron-chat.linksmith.nl`)'
       entryPoints:
         - web-secure
       service: frontend
@@ -34,7 +34,7 @@ http:
         certResolver: letsencrypt
 
     backend-router:
-      rule: 'Host(`api.chat.bron.live`)'
+      rule: 'Host(`api.bron-chat.linksmith.nl`)'
       entryPoints:
         - web-secure
       service: backend
