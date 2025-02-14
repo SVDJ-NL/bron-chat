@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Generator
-from ..text_utils import get_formatted_current_date_english, get_formatted_current_year
+from ..text_utils import get_formatted_current_date_english
 from ..schemas import ChatMessage, MessageRole, MessageType, SearchFilter
 
 HUMAN_READABLE_SOURCES = {
@@ -14,7 +14,7 @@ HUMAN_READABLE_SOURCES = {
 }
     
 class BaseLLMService(ABC):    
-    KNOWLEDGE_CUTOFF_DATE = "October 10, 2024"
+    KNOWLEDGE_CUTOFF_DATE = "February 1, 2025"
     
     RAG_SYSTEM_MESSAGE='''
 
@@ -35,11 +35,11 @@ The document categories and their corresponding datasets are:
 
 ## Style Guide
 
-1. Always answer in Dutch.
+1. Always answer in the same language as the query. When in doubt, use Dutch.
 2. Add two new lines before the start of a list.
 3. Formulate your answers in the style of a journalist.
 4. When making factual statements, always cite the source document(s) that provided the information.
-5. If the answer is not specifically found in the context, prefer to answer "Ik heb het antwoord niet kunnen vinden." instead of guessing.
+5. If the answer is not specifically found in the context, prefer to answer "Ik heb het antwoord niet kunnen vinden.", or the same answer in the same language as the query, instead of guessing.
 6. When asked about the present or time-sensitive information, qualify your answer with the publication date of the most recent document and state that you cannot provide information about events after that date.
 7. Only if asked about Bron chat, this tool, service, the Bron corpus, or the source of the documents, use information about Bron chat from this system message to write a response, and ignore any other context.
 
@@ -55,7 +55,7 @@ You will be provided with a query. Your job is to turn this query into a concise
 
 ## Style Guide
 
-Always create a short and descriptive title of five words or less in Dutch. Don't use any special characters or punctuation.
+Always create a short and descriptive title of five words in the same language as the query. When in doubt, use Dutch. Don't use any special characters or punctuation.
 
 '''
 
