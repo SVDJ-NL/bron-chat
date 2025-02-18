@@ -14,7 +14,7 @@ HUMAN_READABLE_SOURCES = {
 }
     
 class BaseLLMService(ABC):    
-    KNOWLEDGE_CUTOFF_DATE = "February 1, 2025"
+    KNOWLEDGE_CUTOFF_DATE = "October 10, 2024"
     
     RAG_SYSTEM_MESSAGE='''
 

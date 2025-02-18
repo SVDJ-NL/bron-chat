@@ -44,89 +44,61 @@
         Op de site van Open State Foundation vind je meer informatie over de financiële steun voor dit project (Bron chat) en de stichting.
       </p>
     </div>
-  
+    
     <div class="bg-white rounded-lg p-2 shadow-sm">
-      <h2 class="text-xl font-semibold mb-2">Bij welke uitdagingen komt Bron chat van pas?</h2>
-      <ul class="list-disc text-gray-700 space-y-2 pl-8 mb-4">
-        <li>
-          <em>Bergen documenten.</em> Te veel documenten en bronnen om alles door te werken.
-        </li>
-        <li>
-          <em>Woo ontmoediging.</em> Overspoeld door grote Woo verzoeken.
-        </li>
-        <li>
-          <em>Data disbalans.</em> Zoveel tijd doorbrengen met data dat je nauwelijks tijd meer hebt voor je verhaal.
-        </li>
-        <li>
-          <em>Schermtijd en overbelasting.</em> Steeds meer werkdruk en schermtijd: vastgeklikt raken aan bureau en scherm.
-        </li>
-        <li>
-          <em>Saaie invalshoeken.</em> Gevoel alsof je bekende paden bewandelt, ondanks je kennis, creativiteit en netwerk.
-        </li>
-        <li>
-          <em>Vastlopen in details.</em> Vastlopen met een onderzoek waar je diep in zit.
-        </li>
-        <li>
-          <em>Traagheid.</em> Complexe dossiers maken het lastig om je snel in te werken en te bepalen of verder onderzoek zin heeft.
-        </li>
-        <li>
-          <em>Onbetrouwbare AI.</em> Ongemak bij commerciële tools en services met AI.
-        </li>
-      </ul>
-    </div>
-  
-    <div class="bg-white rounded-lg p-2 shadow-sm">
-      <h2 class="text-xl font-semibold mb-2">Welke data zit er wel en niet in Bron chat?</h2>
+      <h2 class="text-xl font-semibold mb-2">Welke databronnen zitten er wel en niet in Bron chat?</h2>
       <p class="text-gray-700 mb-4">
-        Bron chat bevat op dit moment documenten tot 1 februari 2025. Er wordt gewerkt aan een oplossing waarbij Bron chat dagelijks wordt geüpdatet.
+        Bron chat is afhankelijk van documenten uit bronnen van Open State Foundation, de overheid en onderzoeksinstituten. 
+        De compleetheid van deze bronnen is nooit volledig. Overheidsorganen waar we geen data van hebben zijn: gemeente Súdwest-Fryslân en provincies Flevoland en Groningen.
       </p>
       <p class="text-gray-700 mb-4">
-        Bron chat bevat documenten uit verschillende bronnen:
+        Er wordt op het moment een <a href="https://bron.live/data" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Data Quality Reporting tool</a> ontwikkeld om visueel in kaart te brengen welke data wel en niet in Bron, en Bron chat zitten. 
+        Deze zal binnenkort te vinden zijn op <a href="https://bron.live/data" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">https://bron.live/data</a>.
       </p>
       <ul class="list-disc text-gray-700 space-y-2 pl-8 mb-4 mb-4">
         <li>
-          Openraadsinformatie: raadstukken van honderden gemeenten, zie:
+          <strong>Openraadsinformatie:</strong> raadsstukken van honderden gemeenten. Hier mist wel een flink aantal overheden: 37 gemeenten, 5 provincies en 17 waterschappen hebben zich niet aangesloten. Voor de overheden die wel aangesloten zijn, halen we dagelijks nieuwe documenten binnen. Deze documenten halen we binnen via de aanbieders van de systemen die deze overheden daarvoor hebben ingehuurd. Het binnenhalen van deze documenten gaat soms mis omdat onze verzoeken worden geblokkeerd of documenten missen. Er wordt momenteel gewerkt aan een fix die bijna al deze gebreken moet oplossen. Voor meer informatie zie:
           <a href="https://openraadsinformatie.nl" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-            https://openraadsinformatie.nl
+            openraadsinformatie.nl
           </a>.
         </li>
         <li>
-          PoliFLW: Nieuwsberichten van lokale politieke partijen.
+          <strong>PoliFLW:</strong> Nieuwsberichten van lokale politieke partijen. Deze worden van de websites van de partijen gedownload (ge-’scraped’). Het komt zo nu en dan voor dan een website wijzigt of tijdelijk offline gaat. Daardoor komen niet alle nieuwsberichten in de PoliFLW database. Zie
           <a href="https://poliflw.nl" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
             poliflw.nl
           </a>
         </li>
         <li>
-          Lokale wet- en regelgeving: Wetten en regels van decentrale overheden zoals gemeenten, provincies en waterschappen.
+          <strong>Lokale wet- en regelgeving:</strong> Wetten en regels van decentrale overheden zoals gemeenten, provincies en waterschappen.
           Zie:
           <a href="https://lokaleregelgeving.overheid.nl" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-            https://lokaleregelgeving.overheid.nl
+            lokaleregelgeving.overheid.nl
           </a>
         </li>
         <li>
-          Woo-verzoeken: Woo-verzoeken, besluiten en bijbehorende documenten uit de database van
+          <strong>Woo-verzoeken:</strong> Woo-verzoeken, besluiten en bijbehorende documenten uit de database van
           <a href="https://woogle.nl" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
             Woogle.nl
           </a>
         </li>
         <li>
-          Officiële Bekendmakingen: de officiële publicaties van het Staatsblad, de Staatscourant, het Tractatenblad, de Gemeentebladen, Provinciale bladen,
+          <strong>Officiële Bekendmakingen:</strong> de officiële publicaties van het Staatsblad, de Staatscourant, het Tractatenblad, de Gemeentebladen, Provinciale bladen,
           Waterschapsbladen en Bladen gemeenschappelijke regeling.
           Zie:
           <a href="https://www.officielebekendmakingen.nl/" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-            https://www.officielebekendmakingen.nl/
+            officielebekendmakingen.nl
           </a>
         </li>
         <li>
-          Rapporten: Alle overheidsrapporten zoals adviezen, visie documenten, strategieën, monitoren, etc.
+          <strong>Rapporten:</strong> Alle overheidsrapporten zoals adviezen, visie documenten, strategieën, monitoren, etc.
           Zie:
           <a
-            href="https://open.overheid.nl/zoekresultaten?informatiesoort=c_3300f29a"
+            href="https://open.overheid.nl/zoekresultaten"
             class="text-blue-600 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
-            https://open.overheid.nl/zoekresultaten?informatiesoort=c_3300f29a
+            open.overheid.nl/zoekresultaten
           </a>
         </li>
       </ul>
@@ -154,18 +126,12 @@
     <div class="bg-white rounded-lg p-2 shadow-sm">
       <h2 class="text-xl font-semibold mb-2">Hoe actueel is de data in Bron chat?</h2>
       <p class="text-gray-700 mb-4">
-        Open State Foundation brengt 3.5 miljoen documenten samen op één centrale plek.
+        Open State Foundation brengt 3,5 miljoen documenten samen op één centrale plek.
         Het actualiseren, updaten en beter doorzoekbaar maken van al die informatie is een continu proces.
-        Informatie ouder dan 3 maanden is te vinden via Bron chat, mits het opgenomen is in
-        <a
-          href="https://openstate.eu/nl/projecten-tools-data/resultaten/bron/"
-          class="text-blue-600 hover:underline"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Bron
-        </a>
+        Er zitten documenten in Bron chat tot en met 10 oktober 2024, mits het opgenomen is in
+        <a href="https://openstate.eu/nl/projecten-tools-data/resultaten/bron/" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Bron</a>
         (het platform van Open State Foundation waarin alle data bij elkaar wordt gebracht).
+        Er wordt op het moment gewerkt aan een oplossing waarbij Bron chat dagelijks wordt geüpdatet met de laatste documenten.
       </p>
     </div>
   
@@ -243,11 +209,13 @@
       <p class="text-gray-700 mb-4">
         Bron chat slaat de zoekopdrachten op, en de feedback die wordt gegeven via de like/dislike knoppen.
         Bron chat bewaart niets over jouw identiteit als gebruiker.
-        Deze data wordt momenteel in de cloud in Frankrijk opgeslagen bij OVH.
-        De server wordt beheerd door onze developer Jeremy Crowlesmith.
+        Deze data wordt momenteel in de cloud in Frankrijk opgeslagen bij OVH. Zie OVH privacy policy:
+        <a href="https://www.ovhcloud.com/nl/personal-data-protection/" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+          https://www.ovhcloud.com/nl/personal-data-protection/
+        </a>.        
       </p>
       <p class="text-gray-700 mb-4">
-        Zodra de SVDJ de code van het project open sourced, wordt het beheer van de server overgedragen aan de Open State Foundation.
+        De server wordt beheerd door onze developer Jeremy Crowlesmith. Zodra de SVDJ de code van het project open sourced, wordt het beheer van de server overgedragen aan de Open State Foundation.
       </p>
       <p class="text-gray-700 mb-4">
         De zoekopdrachten en chats die via de API van Cohere worden gegenereerd worden door dit bedrijf opgeslagen.
@@ -270,11 +238,11 @@
     <div class="bg-white rounded-lg p-2 shadow-sm">
       <h2 class="text-xl font-semibold mb-2">Wat willen jullie bereiken met Bron chat?</h2>
       <p class="text-gray-700 mb-4">
-        Bron chat democratiseert het doen van onderzoek, doordat zoeken in openbare overheidsdata (3,7 miljoen documenten,
+        Bron chat democratiseert het doen van onderzoek, doordat zoeken in openbare overheidsdata (3,5 miljoen documenten,
         van bijvoorbeeld raadsvergaderingen gepubliceerde Woo verzoeken) nu flexibel en makkelijk wordt voor alle soorten journalisten en onderzoekers,
         zowel landelijk als in de regio. Hierdoor kan de journalistiek met minder middelen meer bereiken.
         Onze visie voor Bron chat, en diensten die er mogelijk in de toekomst nog bij gaan komen,
-        is dat iedere journalist in Nederland moet kunnen onderzoeken op het niveau van Follow The Money.
+        is dat iedere journalist in Nederland moet kunnen onderzoeken op een hoog niveau.
       </p>
     </div>
   
@@ -286,14 +254,14 @@
         Ben je er net als wij van overtuigd dat iedereen vrij moet kunnen beschikken over vitale overheidsinformatie
         over bijvoorbeeld het onderwijs, de zorg of het klimaat?
         Steun dan Open State Foundation in haar missie voor digitale transparantie bij de overheid.
-        <a
+        <!-- <a
           href="https://openstate.eu/nl/doneren/"
           class="text-blue-600 hover:underline"
           target="_blank"
           rel="noopener noreferrer"
         >
           Doneren kan via dit formulier
-        </a>.
+        </a>. -->
       </p>
     </div>
   

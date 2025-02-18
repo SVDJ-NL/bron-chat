@@ -39,7 +39,7 @@
           <strong>Nieuwe inzichten dankzij AI:</strong> Ontdek verbanden en patronen in overheidsdata.
         </li>
         <li>
-          <strong>Miljoenen documenten:</strong> Doorzoek 3,7 miljoen overheidsdocumenten op één centrale plek.
+          <strong>Miljoenen documenten:</strong> Doorzoek 3,5 miljoen overheidsdocumenten op één centrale plek.
         </li>
         <li>
           <strong>Bronverwijzingen:</strong> Directe links naar originele documenten en downloadbare pdf's.
@@ -77,7 +77,7 @@
       </p>
       <p class="text-gray-700">
         Onze visie voor Bron chat, en diensten die er mogelijk in de toekomst nog bij gaan komen,
-        is dat iedere journalist in Nederland moet kunnen onderzoeken op het niveau van Follow The Money.
+        is dat iedere journalist in Nederland moet kunnen onderzoeken op een hoog niveau.
       </p>
     </div>
 
@@ -93,7 +93,7 @@
         over bijvoorbeeld het onderwijs, de zorg of het klimaat?
         Steun dan Open State Foundation in haar missie voor digitale transparantie bij de overheid.
       </p>
-      <div class="mt-4">
+      <!-- <div class="mt-4">
         <a
           href="https://openstate.eu/nl/doneren/"
           class="inline-block bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
@@ -102,7 +102,7 @@
         >
           Doneer aan Open State Foundation
         </a>
-      </div>
+      </div> -->
     </div>
   </div>
 </div> 

@@ -145,7 +145,6 @@
     }
 
     onMount(() => {
-        window.addEventListener('keydown', handleEscape);
         const typedTitle = new Typed('#typed-title', {
             strings: ["Vraag alles over 3.5 miljoen open overheidsdocumenten"],
             typeSpeed: 50,
@@ -160,7 +159,6 @@
     });
 
     onDestroy(() => {
-        window.removeEventListener('keydown', handleEscape);
     });
 
 
