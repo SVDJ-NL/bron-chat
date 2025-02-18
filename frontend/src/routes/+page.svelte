@@ -46,19 +46,6 @@
             }
         },
         {
-            query: "Drone-industrie",
-            text: "Drone-industrie in Enschede",
-            filters: {
-                locations: [   
-                    {
-                        "id": "GM0153",
-                        "name": "Enschede",
-                        "type": "Gemeente"
-                    },                
-                ],     
-            }
-        },
-        {
             query: "Impact van AI op de arbeidsmarkt?",
             text: "Impact van AI op de arbeidsmarkt?",
         },
