@@ -1,64 +1,68 @@
+# Development environment configuration for Bron Chat
+# This file extends the base docker-compose.yml with development-specific settings
+# It configures hot-reloading, volume mounts, and other development conveniences
+
 services:
   backend:
     env_file:
-      - .env
+      - .env  # Load environment variables from .env file
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.dev  # Development-specific Dockerfile
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Expose API on port 8000
     environment:
-      - PYTHONPATH=/app/backend
-      - QDRANT_HOST=${QDRANT_HOST}
-      - QDRANT_PORT=${QDRANT_PORT}
-      - COHERE_API_KEY=${COHERE_API_KEY}
-      - ENVIRONMENT=${ENVIRONMENT}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - PYTHONPATH=/app/backend  # Ensure Python can find the application modules
+      - QDRANT_HOST=${QDRANT_HOST}  # Vector database host
+      - QDRANT_PORT=${QDRANT_PORT}  # Vector database port
+      - COHERE_API_KEY=${COHERE_API_KEY}  # API key for Cohere LLM service
+      - ENVIRONMENT=${ENVIRONMENT}  # Current environment (development)
+      - MYSQL_DATABASE=${MYSQL_DATABASE}  # Database name
+      - MYSQL_USER=${MYSQL_USER}  # Database user
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}  # Database password
     volumes:
-      - ./backend:/app/backend
+      - ./backend:/app/backend  # Mount local backend code for hot-reloading
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"  # Allow container to access host services
     depends_on:
-      - mysql
+      - mysql  # Ensure database is started before backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]  # Health check endpoint
       interval: 30s
       timeout: 10s
       retries: 3
-    command: /entrypoint.sh
+    command: /entrypoint.sh  # Development entrypoint script
 
   frontend:
     env_file:
-      - .env
+      - .env  # Load environment variables from .env file
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.dev  # Development-specific Dockerfile
     ports:
-      - "5173:5173"
+      - "5173:5173"  # Expose frontend on port 5173 (SvelteKit dev server)
     stdin_open: true
     tty: true
     environment:
-      - PUBLIC_API_URL=${PUBLIC_API_URL}
+      - PUBLIC_API_URL=${PUBLIC_API_URL}  # API URL for frontend to connect to
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0
+      - ./frontend:/app  # Mount local frontend code for hot-reloading
+      - /app/node_modules  # Exclude node_modules from mounting (performance)
+    command: npm run dev -- --host 0.0.0.0  # Run SvelteKit dev server
     depends_on:
-      - backend
+      - backend  # Ensure backend is started before frontend
 
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0  # MySQL database server
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}  # Root password
+      MYSQL_DATABASE: ${MYSQL_DATABASE}  # Database name
+      MYSQL_USER: ${MYSQL_USER}  # Database user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}  # Database password
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql  # Persist database data
     ports:
-      - "3306:3306"
+      - "3306:3306"  # Expose MySQL port
     command: >
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
@@ -71,10 +75,10 @@ services:
       --wait_timeout=300
       --interactive_timeout=300
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]  # Database health check
       timeout: 20s
       retries: 10
-    restart: always
+    restart: always  # Ensure database restarts on failure
 
 volumes:
-  mysql_data:
+  mysql_data:  # Named volume for persisting MySQL data

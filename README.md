@@ -90,16 +90,19 @@ ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8000
 
 #### Ontwikkelingsmodus
 ```bash
+# Start de applicatie in ontwikkelingsmodus met hot-reloading
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
 #### Productiemodus
 ```bash
+# Start de applicatie in productiemodus als achtergrondproces
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 #### Stagingmodus
 ```bash
+# Start de applicatie in stagingmodus als achtergrondproces
 docker-compose -f docker-compose.yml -f docker-compose.stag.yml up -d
 ```
 

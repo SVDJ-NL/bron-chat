@@ -1,3 +1,7 @@
+# Production environment configuration for Bron Chat
+# This file extends the base docker-compose.yml with production-specific settings
+# It includes optimizations for performance, security, and reliability
+
 services:
   traefik:
     build:

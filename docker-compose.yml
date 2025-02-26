@@ -1,3 +1,7 @@
+# Base Docker Compose configuration for Bron Chat
+# This file contains the common configuration shared across all environments
+# It is extended by environment-specific files (dev, prod, staging)
+
 services:
   backend:
     # ... existing backend configuration ...
@@ -12,5 +16,5 @@ services:
     extends: backend
     profiles:
       - cli
-    command: python -m app.config_cli
+    command: python -m app.config_cli  # CLI entry point for administrative tasks
     entrypoint: [] 

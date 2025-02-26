@@ -1,3 +1,7 @@
+# Staging environment configuration for Bron Chat
+# This file extends the base docker-compose.yml with staging-specific settings
+# It mimics the production environment but with staging-specific configurations
+
 services:
   traefik:
     build:
