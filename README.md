@@ -119,7 +119,7 @@ Bij het draaien van de applicatie is de API-documentatie beschikbaar op:
 ## 👥 Team
 
 Bron Chat is ontwikkeld door een team van SVDJ Incubator dat bestaat uit:
-- Jeremy Crowlesmith
+- Jeremy Crowlesmith [linksmith](https://github.com/linksmith)
 - Henri Bouwmeester
 - Joost van de Loo
 
