@@ -2,6 +2,10 @@
 
 Bron Chat is een tool voor journalisten en onderzoekers. Onze missie: openbare overheidsinformatie makkelijk en snel doorzoekbaar maken door middel van een AI chat. Dagelijks werken wij aan het uitbreiden en verbeteren van Bron chat. De tool is op het moment in beta.
 
+## Development
+
+Deze code is ontwikkeld door [linksmith](https://github.com/linksmith), tijdens SVDJ Incubator 2024-2025 programma van de SVDJ in samenwerking met Open State Foundation.
+
 ## 🌟 Functies
 
 - **AI-gestuurde inzichten**: Ontdek verbanden en patronen in overheidsdata
@@ -135,7 +139,32 @@ Ben je er net als wij van overtuigd dat iedereen vrij moet kunnen beschikken ove
 
 ## 📄 Licentie
 
-[Licentie-informatie wordt toegevoegd]
+Dit project is gelicenseerd onder de MIT-licentie:
+
+```
+MIT License
+
+Copyright (c) 2025 Bron
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+``` 
+
 
 ---
 
