@@ -131,12 +131,6 @@ Bron Chat democratiseert het doen van onderzoek, doordat zoeken in openbare over
 
 Onze visie voor Bron Chat, en diensten die er mogelijk in de toekomst nog bij gaan komen, is dat iedere journalist in Nederland moet kunnen onderzoeken op een hoog niveau.
 
-## 🤝 Steun ons
-
-Tot eind maart 2025 wordt Bron Chat als prototype ondersteund door de SVDJ Incubator. Daarna wordt het overgenomen als een dienst van Open State Foundation, en daarmee afhankelijk van donaties.
-
-Ben je er net als wij van overtuigd dat iedereen vrij moet kunnen beschikken over vitale overheidsinformatie over bijvoorbeeld het onderwijs, de zorg of het klimaat? Steun dan Open State Foundation in haar missie voor digitale transparantie bij de overheid.
-
 ## 📄 Licentie
 
 Dit project is gelicenseerd onder de MIT-licentie:
@@ -167,6 +161,8 @@ SOFTWARE.
 
 
 ---
+
+## 🤝 SVDJ Incubator 2024-2025
 
 Bron chat is tot stand gekomen tijdens de SVDJ Incubator 2024-2025. De SVDJ Incubator is een subsidie- en begeleidingsprogramma van het Stimuleringsfonds voor de Journalistiek (SVDJ) gericht op het vinden van oplossingen voor gedeelde vraagstukken binnen de journalistieke sector. 
 
